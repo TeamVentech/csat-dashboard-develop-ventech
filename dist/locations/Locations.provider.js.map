@@ -1,0 +1,1 @@
+{"version":3,"file":"Locations.provider.js","sourceRoot":"","sources":["../../src/locations/Locations.provider.ts"],"names":[],"mappings":";;;AACA,kEAAuD;AAE1C,QAAA,gBAAgB,GAAG;IAC9B;QACE,OAAO,EAAE,sBAAsB;QAC/B,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CACrC,UAAU,CAAC,aAAa,CAAC,2BAAQ,CAAC;QACpC,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}

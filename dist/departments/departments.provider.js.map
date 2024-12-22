@@ -1,0 +1,1 @@
+{"version":3,"file":"departments.provider.js","sourceRoot":"","sources":["../../src/departments/departments.provider.ts"],"names":[],"mappings":";;;AACA,sEAA2D;AAE9C,QAAA,kBAAkB,GAAG;IAChC;QACE,OAAO,EAAE,uBAAuB;QAChC,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CACrC,UAAU,CAAC,aAAa,CAAC,+BAAU,CAAC;QACtC,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"subcategory.provider.js","sourceRoot":"","sources":["../../src/sub-categories/subcategory.provider.ts"],"names":[],"mappings":";;;AACA,0EAA8D;AAEjD,QAAA,mBAAmB,GAAG;IACjC;QACE,OAAO,EAAE,wBAAwB;QACjC,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CAAC,UAAU,CAAC,aAAa,CAAC,kCAAW,CAAC;QAC7E,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"touchPoint.provider.js","sourceRoot":"","sources":["../../src/touchpoint/touchPoint.provider.ts"],"names":[],"mappings":";;;AACA,oEAA0D;AAE7C,QAAA,kBAAkB,GAAG;IAChC;QACE,OAAO,EAAE,uBAAuB;QAChC,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CAAC,UAAU,CAAC,aAAa,CAAC,8BAAU,CAAC;QAC5E,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}

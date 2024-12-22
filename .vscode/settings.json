@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/5aaf0d9d-3179-4de1-b180-2e5fc8cb6d26/resourceGroups/csat-resource-groups/providers/Microsoft.Web/sites/csat-centerized",
+    "appService.deploySubpath": "dist"
+}

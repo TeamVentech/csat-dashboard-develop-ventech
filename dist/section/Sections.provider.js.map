@@ -1,0 +1,1 @@
+{"version":3,"file":"Sections.provider.js","sourceRoot":"","sources":["../../src/section/Sections.provider.ts"],"names":[],"mappings":";;;AACA,gEAAqD;AAExC,QAAA,eAAe,GAAG;IAC7B;QACE,OAAO,EAAE,qBAAqB;QAC9B,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CACrC,UAAU,CAAC,aAAa,CAAC,yBAAO,CAAC;QACnC,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}
