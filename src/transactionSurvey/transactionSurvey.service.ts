@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { TransactionSurvey } from './entities/transactionSurvey.entity';
 import { CreateTransactionSurveyDto } from './dto/create.dto';
 import { UpdateTransactionSurveyDto } from './dto/update.dto';
-import { TouchPoint } from '../touchpoint/entities/touchpoint.entity';
+import { Touchpoint } from '../touchpoint/entities/touchpoint.entity';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 
 @Injectable()
@@ -13,9 +13,9 @@ export class TransactionSurveyService {
     @Inject('TRANSACTION_SURVEY_REPOSITORY')
     private readonly transactionSurveyRepository: Repository<TransactionSurvey>,
     @Inject('TOUCHPOINT_REPOSITORY')
-    private readonly touchPointRepository: Repository<TouchPoint>,
+    private readonly touchPointRepository: Repository<Touchpoint>,
     private readonly dataSource: DataSource,
-    private readonly touchPointsService: TouchPointsService, // Inject TouchPointsService
+    private readonly touchPointsService: TouchPointsService, // Inject TouchPointsSegrvice
   ) { }
 
 
@@ -58,7 +58,7 @@ export class TransactionSurveyService {
 
         filterOptions.search = searchString;
 
-        queryBuilder.andWhere('(survey.name LIKE :search OR customer.name LIKE :search OR transactionSurvey.state LIKE :search)', {
+        queryBuilder.andWhere('(survey.name ILIKE :search OR customer.name ILIKE :search OR transactionSurvey.state ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }
@@ -97,7 +97,7 @@ export class TransactionSurveyService {
 
         filterOptions.search = searchString;
 
-        queryBuilder.andWhere('(transactionSurvey.state LIKE :search)', {
+        queryBuilder.andWhere('(transactionSurvey.state ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }
@@ -270,10 +270,10 @@ export class TransactionSurveyService {
   async getRatingsBySurveyCategoryAndTouchPoint(
     surveyId: string,
     categoryId: string,
-    touchPointId: string,
+    touchpointId: string,
   ) {
     const transactions = await this.transactionSurveyRepository.find({
-      where: { surveyId, categoryId, touchPointId },
+      where: { surveyId, categoryId, touchpointId },
       select: ['answers'],
     });
 
@@ -372,7 +372,8 @@ export class TransactionSurveyService {
     }
   ) {
     const queryBuilder = this.transactionSurveyRepository.createQueryBuilder('transactionSurvey')
-      .leftJoinAndSelect('transactionSurvey.customer', 'customer');
+    .leftJoinAndSelect('transactionSurvey.customer', 'customer')
+    .leftJoinAndSelect('transactionSurvey.category', 'categories')
 
     if (filterOptions.cutomerId) {
       queryBuilder.andWhere('customer.id = :cutomerId', {

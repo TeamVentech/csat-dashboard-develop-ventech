@@ -11,6 +11,7 @@ export declare class SectionsController {
     }>;
     findOne(id: string): Promise<import("./entities/Sections.entity").Section>;
     findallwithoutfilter(): Promise<import("./entities/Sections.entity").Section[]>;
+    findAllCategory(): Promise<import("./entities/Sections.entity").Section[]>;
     update(id: string, updateSectionDto: UpdateSectionDto): Promise<import("./entities/Sections.entity").Section>;
     remove(id: string): Promise<void>;
 }

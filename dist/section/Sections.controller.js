@@ -26,7 +26,6 @@ let SectionsController = class SectionsController {
         this.sectionsService = sectionsService;
     }
     create(createSectionDto) {
-        console.log(createSectionDto);
         return this.sectionsService.create(createSectionDto);
     }
     findAll(page, perPage, search) {
@@ -40,6 +39,9 @@ let SectionsController = class SectionsController {
     }
     findallwithoutfilter() {
         return this.sectionsService.findallwithoutfilter();
+    }
+    findAllCategory() {
+        return this.sectionsService.findAllSections();
     }
     update(id, updateSectionDto) {
         return this.sectionsService.update(id, updateSectionDto);
@@ -81,6 +83,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], SectionsController.prototype, "findallwithoutfilter", null);
+__decorate([
+    (0, common_1.Get)('sections/all'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SectionsController.prototype, "findAllCategory", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, permissions_decorator_1.Permissions)('Lookups::update'),

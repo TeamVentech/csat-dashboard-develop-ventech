@@ -3,8 +3,12 @@ export declare class RequestServices {
     name: string;
     type: string;
     state: string;
+    rating: string;
     addedBy: string;
     metadata: any;
     createdAt: Date;
     updatedAt: Date;
+    serviceId: string;
+    generateCustomId(): void;
+    isExpiringSoon(): boolean;
 }

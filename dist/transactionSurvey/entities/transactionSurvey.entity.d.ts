@@ -1,5 +1,6 @@
 import { Customer } from '../../customers/entities/customers.entity';
 import { Surveys } from '../../surveys/entities/Surveys.entity';
+import { Category } from '../../categories/entities/categories.entity';
 export declare class TransactionSurvey {
     id: string;
     state: string;
@@ -18,6 +19,7 @@ export declare class TransactionSurvey {
     customer: Customer;
     surveyId: string;
     survey: Surveys;
-    touchPointId: string;
+    touchpointId: string;
     categoryId: string;
+    category: Category;
 }

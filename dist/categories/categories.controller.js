@@ -40,6 +40,9 @@ let CategoriesController = class CategoriesController {
     async findOne(id) {
         return this.categoriesService.findOne(id);
     }
+    async findByType(type) {
+        return this.categoriesService.findByType(type);
+    }
     async update(id, updateCategoryDto) {
         return this.categoriesService.update(id, updateCategoryDto);
     }
@@ -80,6 +83,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CategoriesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Get)('type/:type'),
+    (0, permissions_decorator_1.Permissions)('Survey::read'),
+    __param(0, (0, common_1.Param)('type')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CategoriesController.prototype, "findByType", null);
 __decorate([
     (0, common_1.Put)(':id'),
     (0, permissions_decorator_1.Permissions)('Survey::update'),

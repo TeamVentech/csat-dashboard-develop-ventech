@@ -4,8 +4,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity('touchpoints')
-export class TouchPoint {
-  [x: string]: any;
+export class Touchpoint {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuidv4();
 

@@ -58,7 +58,7 @@ let TransactionSurveyService = class TransactionSurveyService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(survey.name LIKE :search OR customer.name LIKE :search OR transactionSurvey.state LIKE :search)', {
+                queryBuilder.andWhere('(survey.name ILIKE :search OR customer.name ILIKE :search OR transactionSurvey.state ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
@@ -86,7 +86,7 @@ let TransactionSurveyService = class TransactionSurveyService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(transactionSurvey.state LIKE :search)', {
+                queryBuilder.andWhere('(transactionSurvey.state ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
@@ -235,9 +235,9 @@ let TransactionSurveyService = class TransactionSurveyService {
             relations: ['customer', 'survey'],
         });
     }
-    async getRatingsBySurveyCategoryAndTouchPoint(surveyId, categoryId, touchPointId) {
+    async getRatingsBySurveyCategoryAndTouchPoint(surveyId, categoryId, touchpointId) {
         const transactions = await this.transactionSurveyRepository.find({
-            where: { surveyId, categoryId, touchPointId },
+            where: { surveyId, categoryId, touchpointId },
             select: ['answers'],
         });
         const ratings = transactions
@@ -303,7 +303,8 @@ let TransactionSurveyService = class TransactionSurveyService {
     }
     async getCustomerSurvey(filterOptions) {
         const queryBuilder = this.transactionSurveyRepository.createQueryBuilder('transactionSurvey')
-            .leftJoinAndSelect('transactionSurvey.customer', 'customer');
+            .leftJoinAndSelect('transactionSurvey.customer', 'customer')
+            .leftJoinAndSelect('transactionSurvey.category', 'categories');
         if (filterOptions.cutomerId) {
             queryBuilder.andWhere('customer.id = :cutomerId', {
                 cutomerId: filterOptions.cutomerId,

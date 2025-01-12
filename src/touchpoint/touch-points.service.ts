@@ -1,16 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { TouchPoint } from './entities/touchpoint.entity';
-import { CreateTouchPointDto } from './dto/create.dto';
-import { UpdateTouchPointDto } from './dto/update.dto';
+import { Touchpoint } from './entities/touchpoint.entity';
 import { Category } from 'categories/entities/categories.entity';
 
 @Injectable()
 export class TouchPointsService {
   constructor(
     @Inject('TOUCHPOINT_REPOSITORY')
-    private readonly touchPointRepository: Repository<TouchPoint>,
+    private readonly touchPointRepository: Repository<Touchpoint>,
     @Inject('CATEGORY_REPOSITORY')
     private readonly categoryRepository: Repository<Category>,
 
@@ -45,7 +43,7 @@ export class TouchPointsService {
   
         filterOptions.search = searchString;
   
-        queryBuilder.andWhere('(touchpoint.name LIKE :search)', {
+        queryBuilder.andWhere('(touchpoint.name ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }
@@ -67,13 +65,18 @@ export class TouchPointsService {
 
   // Get a single touchpoint by ID
   async findOne(id: string) {
-    console.log(id)
     return this.touchPointRepository.findOne({
       where: { id },
       relations: ['category','location'], // Fetch customer relationship
     });
   }
-
+  async findByCategory(id: string) {
+    return this.touchPointRepository.find({
+      where: { categoryId : id },
+      relations: ['category','location'], // Fetch customer relationship
+    });
+  }
+  
   async getAll() {
     return this.touchPointRepository.find({
       relations: ['category','location'],

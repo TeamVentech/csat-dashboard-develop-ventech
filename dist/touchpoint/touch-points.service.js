@@ -44,7 +44,7 @@ let TouchPointsService = class TouchPointsService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(touchpoint.name LIKE :search)', {
+                queryBuilder.andWhere('(touchpoint.name ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
@@ -61,9 +61,14 @@ let TouchPointsService = class TouchPointsService {
         return { categories, total };
     }
     async findOne(id) {
-        console.log(id);
         return this.touchPointRepository.findOne({
             where: { id },
+            relations: ['category', 'location'],
+        });
+    }
+    async findByCategory(id) {
+        return this.touchPointRepository.find({
+            where: { categoryId: id },
             relations: ['category', 'location'],
         });
     }

@@ -1,13 +1,13 @@
 import { DataSource, Repository } from 'typeorm';
 import { TransactionSurvey } from './entities/transactionSurvey.entity';
-import { TouchPoint } from '../touchpoint/entities/touchpoint.entity';
+import { Touchpoint } from '../touchpoint/entities/touchpoint.entity';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 export declare class TransactionSurveyService {
     private readonly transactionSurveyRepository;
     private readonly touchPointRepository;
     private readonly dataSource;
     private readonly touchPointsService;
-    constructor(transactionSurveyRepository: Repository<TransactionSurvey>, touchPointRepository: Repository<TouchPoint>, dataSource: DataSource, touchPointsService: TouchPointsService);
+    constructor(transactionSurveyRepository: Repository<TransactionSurvey>, touchPointRepository: Repository<Touchpoint>, dataSource: DataSource, touchPointsService: TouchPointsService);
     create(createTransactionSurveyDto: any): Promise<TransactionSurvey[]>;
     findAlls(): Promise<TransactionSurvey[]>;
     findAll(page: number, perPage: number, filterOptions: any): Promise<{
@@ -33,7 +33,7 @@ export declare class TransactionSurveyService {
         most_touchpoints: any;
     }>;
     findOneServey(id: string): Promise<TransactionSurvey[]>;
-    getRatingsBySurveyCategoryAndTouchPoint(surveyId: string, categoryId: string, touchPointId: string): Promise<{
+    getRatingsBySurveyCategoryAndTouchPoint(surveyId: string, categoryId: string, touchpointId: string): Promise<{
         question: any;
         averageRating: string;
     }[]>;

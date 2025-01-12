@@ -13,6 +13,7 @@ exports.TransactionSurvey = void 0;
 const typeorm_1 = require("typeorm");
 const customers_entity_1 = require("../../customers/entities/customers.entity");
 const Surveys_entity_1 = require("../../surveys/entities/Surveys.entity");
+const categories_entity_1 = require("../../categories/entities/categories.entity");
 let TransactionSurvey = class TransactionSurvey {
 };
 exports.TransactionSurvey = TransactionSurvey;
@@ -65,16 +66,21 @@ __decorate([
 __decorate([
     (0, typeorm_1.PrimaryColumn)({ name: 'touchpoint_id', type: 'uuid' }),
     __metadata("design:type", String)
-], TransactionSurvey.prototype, "touchPointId", void 0);
+], TransactionSurvey.prototype, "touchpointId", void 0);
 __decorate([
     (0, typeorm_1.PrimaryColumn)({ name: 'category_id', type: 'uuid' }),
     __metadata("design:type", String)
 ], TransactionSurvey.prototype, "categoryId", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => categories_entity_1.Category, { eager: true }),
+    (0, typeorm_1.JoinColumn)({ name: 'category_id' }),
+    __metadata("design:type", categories_entity_1.Category)
+], TransactionSurvey.prototype, "category", void 0);
 exports.TransactionSurvey = TransactionSurvey = __decorate([
     (0, typeorm_1.Entity)('transaction_survey'),
-    (0, typeorm_1.Index)('idx_category_touchpoint', ['categoryId', 'touchPointId']),
+    (0, typeorm_1.Index)('idx_category_touchpoint', ['categoryId', 'touchpointId']),
     (0, typeorm_1.Index)('idx_customer_gender_age', ['customerId']),
     (0, typeorm_1.Index)('idx_created_at', ['createdAt']),
-    (0, typeorm_1.Index)('idx_survey_touchpoint', ['surveyId', 'touchPointId'])
+    (0, typeorm_1.Index)('idx_survey_touchpoint', ['surveyId', 'touchpointId'])
 ], TransactionSurvey);
 //# sourceMappingURL=transactionSurvey.entity.js.map

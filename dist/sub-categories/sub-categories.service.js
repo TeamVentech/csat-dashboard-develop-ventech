@@ -43,7 +43,7 @@ let SubCategoriesService = class SubCategoriesService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(subCategories.name LIKE :search)', {
+                queryBuilder.andWhere('(subCategories.name ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }

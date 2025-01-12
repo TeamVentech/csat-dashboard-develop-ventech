@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateRequestServicesDto {
   @IsNotEmpty()
@@ -20,4 +20,8 @@ export class CreateRequestServicesDto {
   @IsNotEmpty()
   @IsString()
   type: string;
+
+  @IsOptional()
+  rating: string;
+
 }

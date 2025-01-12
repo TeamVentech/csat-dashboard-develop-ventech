@@ -1,7 +1,6 @@
 import { Category } from 'categories/entities/categories.entity';
 import { Location } from 'locations/entities/Locations.entity';
-export declare class TouchPoint {
-    [x: string]: any;
+export declare class Touchpoint {
     id: string;
     name: any;
     rating: string;

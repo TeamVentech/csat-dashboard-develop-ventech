@@ -17,11 +17,6 @@ export class CreateSurveysDto {
 
   @IsNotEmpty()
   @IsString()
-  type: string;
-
-
-  @IsNotEmpty()
-  @IsString()
   brief: string;
 
 

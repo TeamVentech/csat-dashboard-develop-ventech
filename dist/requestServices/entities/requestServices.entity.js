@@ -16,6 +16,22 @@ let RequestServices = class RequestServices {
     constructor() {
         this.id = (0, uuid_1.v4)();
     }
+    generateCustomId() {
+        const prefix = 'LC';
+        const year = new Date().getFullYear().toString();
+        const numericPart = parseInt(this.id.split('-')[0], 16) % 1000;
+        const formattedNumber = numericPart.toString().padStart(3, '0');
+        this.serviceId = `#${prefix}${year}-${formattedNumber}`;
+    }
+    isExpiringSoon() {
+        if (this.name === 'Gift Voucher Sales' && this.metadata?.Expiry_date) {
+            const expiryDate = new Date(this.metadata.Expiry_date);
+            const currentDate = new Date();
+            const diffInDays = Math.ceil((expiryDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+            return diffInDays === 7;
+        }
+        return false;
+    }
 };
 exports.RequestServices = RequestServices;
 __decorate([
@@ -37,6 +53,10 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
+], RequestServices.prototype, "rating", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
 ], RequestServices.prototype, "addedBy", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
@@ -50,6 +70,16 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], RequestServices.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'service_id', unique: true }),
+    __metadata("design:type", String)
+], RequestServices.prototype, "serviceId", void 0);
+__decorate([
+    (0, typeorm_1.BeforeInsert)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], RequestServices.prototype, "generateCustomId", null);
 exports.RequestServices = RequestServices = __decorate([
     (0, typeorm_1.Entity)('request-services')
 ], RequestServices);

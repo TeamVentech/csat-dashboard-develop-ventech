@@ -42,6 +42,10 @@ let RequestServicesController = class RequestServicesController {
     update(id, updateRequestServicesDto) {
         return this.requestServicesService.update(id, updateRequestServicesDto);
     }
+    rating(id, rate) {
+        console.log('fffffffffffffffff');
+        return this.requestServicesService.rating(id, rate);
+    }
     remove(id) {
         return this.requestServicesService.remove(id);
     }
@@ -50,6 +54,7 @@ exports.RequestServicesController = RequestServicesController;
 __decorate([
     (0, common_1.Post)(),
     (0, permissions_decorator_1.Permissions)('Service::write'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -58,6 +63,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, permissions_decorator_1.Permissions)('Service::read'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('perPage')),
     __param(2, (0, common_1.Query)('search')),
@@ -68,6 +74,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id'),
     (0, permissions_decorator_1.Permissions)('Service::read'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -76,6 +83,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)('type/:type'),
     (0, permissions_decorator_1.Permissions)('Service::read'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __param(0, (0, common_1.Param)('type')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -84,6 +92,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, permissions_decorator_1.Permissions)('Service::update'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -91,7 +100,16 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], RequestServicesController.prototype, "update", null);
 __decorate([
+    (0, common_1.Patch)(':id/rating'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], RequestServicesController.prototype, "rating", null);
+__decorate([
     (0, common_1.Delete)(':id'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)('Service::delete'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -100,7 +118,6 @@ __decorate([
 ], RequestServicesController.prototype, "remove", null);
 exports.RequestServicesController = RequestServicesController = __decorate([
     (0, common_1.Controller)('request-services'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     (0, common_1.UseInterceptors)(common_1.ClassSerializerInterceptor),
     (0, common_1.UseInterceptors)(transform_interceptor_1.TransformInterceptor),
     __metadata("design:paramtypes", [requestServices_service_1.RequestServicesService])

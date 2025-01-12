@@ -90,7 +90,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CorporatesController.prototype, "remove", null);
 exports.CorporatesController = CorporatesController = __decorate([
-    (0, common_1.Controller)('corprates'),
+    (0, common_1.Controller)('corporates'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
     (0, common_1.UseInterceptors)(common_1.ClassSerializerInterceptor),

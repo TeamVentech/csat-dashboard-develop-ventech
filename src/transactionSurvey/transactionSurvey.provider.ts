@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { TransactionSurvey } from './entities/transactionSurvey.entity';
-import { TouchPoint } from 'touchpoint/entities/touchpoint.entity';
+import { Touchpoint } from 'touchpoint/entities/touchpoint.entity';
 
 export const TransactionSurveyProvider = [
   {
@@ -12,7 +12,7 @@ export const TransactionSurveyProvider = [
   {
     provide: 'TOUCHPOINT_REPOSITORY',
     useFactory: (dataSource: DataSource) =>
-      dataSource.getRepository(TouchPoint),
+      dataSource.getRepository(Touchpoint),
     inject: ['DATA_SOURCE'],
   },
 ];

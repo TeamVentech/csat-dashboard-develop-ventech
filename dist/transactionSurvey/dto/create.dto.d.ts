@@ -8,7 +8,7 @@ export declare class CreateTransactionSurveyDto {
     state: string;
     addedBy: string;
     surveyId: string;
-    touchPointId: string;
+    touchpointId: string;
     customerId: string;
     categoryId: string;
     answers: AnswerDto[];

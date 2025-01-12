@@ -30,8 +30,7 @@ let UsersService = class UsersService {
         const queryBuilder = this.userRepository.createQueryBuilder('user');
         if (filterOptions) {
             if (filterOptions.search) {
-                console.log(filterOptions.search);
-                queryBuilder.andWhere('(user.email LIKE :search OR user.username LIKE :search OR user.role LIKE :search OR user.phone_number LIKE :search)', {
+                queryBuilder.andWhere('(user.email ILIKE :search OR user.username ILIKE :search OR user.role ILIKE :search OR user.phone_number ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }

@@ -20,9 +20,6 @@ let DepartmentsService = class DepartmentsService {
         this.departmentRepository = departmentRepository;
     }
     async create(createDepartmentDto) {
-        console.log('createDepartmentDto');
-        console.log('createDepartmentDto');
-        console.log(createDepartmentDto);
         const department = this.departmentRepository.create(createDepartmentDto);
         return this.departmentRepository.save(department);
     }
@@ -32,11 +29,11 @@ let DepartmentsService = class DepartmentsService {
         const queryBuilder = this.departmentRepository.createQueryBuilder('user');
         if (filterOptions) {
             if (filterOptions.search) {
-                const searchString = await filterOptions.search.startsWith(' ')
+                const searchString = filterOptions.search.startsWith(' ')
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(user.name LIKE :search)', {
+                queryBuilder.andWhere('(user.name ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }

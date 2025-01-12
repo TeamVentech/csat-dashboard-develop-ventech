@@ -24,6 +24,13 @@ import { SectionsModule } from './section/Sections.module';
 import { SurveysModule } from './surveys/surveys.module';
 import { TransactionSurveyModule } from './transactionSurvey/transactionSurvey.module';
 import { RequestServicesModule } from './requestServices/requestServices.module';
+import { ComplaintsModule } from './complaint/complaint.module';
+import { CommentModule } from 'comment/comment.module';
+import { TenantsModule } from 'tenants/tenants.module';
+import { VouchersModule } from 'vochers/vouchers.module';
+import { CronService } from 'cron/cron.service'; // Adjust the path if needed
+import { ScheduleModule } from '@nestjs/schedule';
+import { RequestServices } from 'requestServices/entities/requestServices.entity';
 
 @Module({
   imports: [
@@ -51,8 +58,14 @@ import { RequestServicesModule } from './requestServices/requestServices.module'
     SectionsModule,
     TransactionSurveyModule,
     RequestServicesModule,
+    ComplaintsModule,
+    CommentModule,
+    TenantsModule,
+    VouchersModule,
+    ScheduleModule.forRoot(),
+    TypeOrmModule.forFeature([RequestServices]), 
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, CronService],
 })
 export class AppModule {}

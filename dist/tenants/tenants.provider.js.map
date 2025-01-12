@@ -1,0 +1,1 @@
+{"version":3,"file":"tenants.provider.js","sourceRoot":"","sources":["../../src/tenants/tenants.provider.ts"],"names":[],"mappings":";;;AACA,8DAAmD;AAEtC,QAAA,eAAe,GAAG;IAC7B;QACE,OAAO,EAAE,oBAAoB;QAC7B,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CACrC,UAAU,CAAC,aAAa,CAAC,uBAAM,CAAC;QAClC,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}

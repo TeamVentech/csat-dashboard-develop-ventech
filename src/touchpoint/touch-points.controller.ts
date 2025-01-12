@@ -47,6 +47,12 @@ export class TouchPointsController {
     return this.touchPointsService.findOne(id);
   }
 
+  @Get('category/:id')
+  @Permissions('Lookups::read')
+  findByCategory(@Param('id') id: string) {
+    return this.touchPointsService.findByCategory(id);
+  }
+
 
   @Get('/rating/high')
   findHLRating() {

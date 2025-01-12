@@ -38,4 +38,8 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateRequestServicesDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRequestServicesDto.prototype, "rating", void 0);
 //# sourceMappingURL=create.dto.js.map

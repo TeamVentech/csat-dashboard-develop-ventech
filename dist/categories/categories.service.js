@@ -35,7 +35,7 @@ let CategoriesService = class CategoriesService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(user.name LIKE :search OR user.description LIKE :search)', {
+                queryBuilder.andWhere('(user.type LIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
@@ -55,6 +55,13 @@ let CategoriesService = class CategoriesService {
         const category = await this.categoryRepository.findOne({ where: { id: id } });
         if (!category) {
             throw new common_1.NotFoundException(`Category with ID ${id} not found`);
+        }
+        return category;
+    }
+    async findByType(type) {
+        const category = await this.categoryRepository.find({ where: { type: type } });
+        if (!category) {
+            throw new common_1.NotFoundException(`Category with ID ${type} not found`);
         }
         return category;
     }

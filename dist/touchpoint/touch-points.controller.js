@@ -36,6 +36,9 @@ let TouchPointsController = class TouchPointsController {
     findOne(id) {
         return this.touchPointsService.findOne(id);
     }
+    findByCategory(id) {
+        return this.touchPointsService.findByCategory(id);
+    }
     findHLRating() {
         return this.touchPointsService.findHighestRated();
     }
@@ -82,6 +85,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], TouchPointsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Get)('category/:id'),
+    (0, permissions_decorator_1.Permissions)('Lookups::read'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], TouchPointsController.prototype, "findByCategory", null);
 __decorate([
     (0, common_1.Get)('/rating/high'),
     __metadata("design:type", Function),

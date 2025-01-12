@@ -6,6 +6,7 @@ export declare class SectionsService {
     private readonly sectionRepository;
     constructor(sectionRepository: Repository<Section>);
     create(createSectionDto: CreateSectionDto): Promise<Section>;
+    findAllSections(): Promise<Section[]>;
     findAll(page: any, perPage: any, filterOptions: any): Promise<{
         categories: Section[];
         total: number;

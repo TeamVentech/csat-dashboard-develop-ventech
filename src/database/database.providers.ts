@@ -13,6 +13,7 @@ export const databaseProviders = [
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         migrations: ['../../src/database/migrations/**/*.ts'],
         useUTC: true,
+        
         logging: Boolean(process.env.PRINT_QUERIES), // to print sql queries on console
       };
       const dataSource = new DataSource(options);

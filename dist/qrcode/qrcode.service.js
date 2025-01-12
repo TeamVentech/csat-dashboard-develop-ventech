@@ -22,7 +22,6 @@ let QRCodesService = class QRCodesService {
         this.qrCodeRepository = qrCodeRepository;
     }
     async create(createQRCodeDto) {
-        console.log(createQRCodeDto);
         const identifier = `https://nooracademy.co.uk/#/${createQRCodeDto.surveyId}/${createQRCodeDto.subcategoryId}/`;
         const qrCodeData = await QRCodeLib.toDataURL(identifier);
         const qrImage = await canvas.loadImage(qrCodeData);

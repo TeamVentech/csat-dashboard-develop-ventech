@@ -16,7 +16,6 @@ export class QRCodesService {
   ) { }
 
   async create(createQRCodeDto: any) {
-    console.log(createQRCodeDto);
   
     // Create the identifier URL for the QR code
     const identifier = `https://nooracademy.co.uk/#/${createQRCodeDto.surveyId}/${createQRCodeDto.subcategoryId}/`;

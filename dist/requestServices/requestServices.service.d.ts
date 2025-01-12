@@ -13,5 +13,7 @@ export declare class RequestServicesService {
     findOne(id: string): Promise<RequestServices>;
     findType(type: string): Promise<RequestServices[]>;
     update(id: string, updateRequestServicesDto: UpdateRequestServicesDto): Promise<RequestServices>;
+    rating(id: string, rate: any): Promise<RequestServices>;
     remove(id: string): Promise<void>;
+    sendSms(data: any, message: string, number: string): Promise<void>;
 }

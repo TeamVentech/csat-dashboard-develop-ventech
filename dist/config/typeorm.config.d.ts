@@ -7,6 +7,11 @@ export declare const configurationCentrize: () => Promise<{
         username: string;
         password: string;
         database: string;
+        pool: {
+            max: number;
+            min: number;
+            idleTimeoutMillis: number;
+        };
         extra: {
             ssl: {};
         };

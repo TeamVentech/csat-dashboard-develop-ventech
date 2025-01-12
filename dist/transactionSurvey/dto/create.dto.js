@@ -54,7 +54,7 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateTransactionSurveyDto.prototype, "touchPointId", void 0);
+], CreateTransactionSurveyDto.prototype, "touchpointId", void 0);
 __decorate([
     (0, class_validator_1.IsUUID)(),
     (0, class_validator_1.IsNotEmpty)(),

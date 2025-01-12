@@ -54,6 +54,12 @@ export class CategoriesController {
     return this.categoriesService.findOne(id);
   }
 
+  @Get('type/:type')
+  @Permissions('Survey::read')
+  async findByType(@Param('type') type: string) {
+    return this.categoriesService.findByType(type);
+  }
+
   @Put(':id')
   @Permissions('Survey::update')
 

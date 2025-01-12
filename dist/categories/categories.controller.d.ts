@@ -11,6 +11,7 @@ export declare class CategoriesController {
     }>;
     findAllCategory(): Promise<import("./entities/categories.entity").Category[]>;
     findOne(id: string): Promise<import("./entities/categories.entity").Category>;
+    findByType(type: string): Promise<import("./entities/categories.entity").Category[]>;
     update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<import("./entities/categories.entity").Category>;
     remove(id: string): Promise<void>;
 }

@@ -1,21 +1,22 @@
 import { Repository } from 'typeorm';
-import { TouchPoint } from './entities/touchpoint.entity';
+import { Touchpoint } from './entities/touchpoint.entity';
 import { Category } from 'categories/entities/categories.entity';
 export declare class TouchPointsService {
     private readonly touchPointRepository;
     private readonly categoryRepository;
-    constructor(touchPointRepository: Repository<TouchPoint>, categoryRepository: Repository<Category>);
-    create(createTouchPointDto: any): Promise<TouchPoint[]>;
+    constructor(touchPointRepository: Repository<Touchpoint>, categoryRepository: Repository<Category>);
+    create(createTouchPointDto: any): Promise<Touchpoint[]>;
     findAll(page: number, perPage: number, filterOptions: any): Promise<{
-        categories: TouchPoint[];
+        categories: Touchpoint[];
         total: number;
     }>;
-    findOne(id: string): Promise<TouchPoint>;
-    getAll(): Promise<TouchPoint[]>;
-    findAllCategory(): Promise<TouchPoint[]>;
+    findOne(id: string): Promise<Touchpoint>;
+    findByCategory(id: string): Promise<Touchpoint[]>;
+    getAll(): Promise<Touchpoint[]>;
+    findAllCategory(): Promise<Touchpoint[]>;
     update(id: string, rating: string): Promise<void>;
-    updaterochpoint(id: string, updateTouchPointDto: any): Promise<TouchPoint>;
+    updaterochpoint(id: string, updateTouchPointDto: any): Promise<Touchpoint>;
     remove(id: string): Promise<void>;
-    findHighestRated(): Promise<TouchPoint>;
-    findLowestRated(): Promise<TouchPoint>;
+    findHighestRated(): Promise<Touchpoint>;
+    findLowestRated(): Promise<Touchpoint>;
 }

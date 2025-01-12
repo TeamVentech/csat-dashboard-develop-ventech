@@ -29,6 +29,13 @@ const Sections_module_1 = require("./section/Sections.module");
 const surveys_module_1 = require("./surveys/surveys.module");
 const transactionSurvey_module_1 = require("./transactionSurvey/transactionSurvey.module");
 const requestServices_module_1 = require("./requestServices/requestServices.module");
+const complaint_module_1 = require("./complaint/complaint.module");
+const comment_module_1 = require("./comment/comment.module");
+const tenants_module_1 = require("./tenants/tenants.module");
+const vouchers_module_1 = require("./vochers/vouchers.module");
+const cron_service_1 = require("./cron/cron.service");
+const schedule_1 = require("@nestjs/schedule");
+const requestServices_entity_1 = require("./requestServices/entities/requestServices.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -59,9 +66,15 @@ exports.AppModule = AppModule = __decorate([
             Sections_module_1.SectionsModule,
             transactionSurvey_module_1.TransactionSurveyModule,
             requestServices_module_1.RequestServicesModule,
+            complaint_module_1.ComplaintsModule,
+            comment_module_1.CommentModule,
+            tenants_module_1.TenantsModule,
+            vouchers_module_1.VouchersModule,
+            schedule_1.ScheduleModule.forRoot(),
+            typeorm_1.TypeOrmModule.forFeature([requestServices_entity_1.RequestServices]),
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [app_service_1.AppService, cron_service_1.CronService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

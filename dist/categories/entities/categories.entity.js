@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Category = void 0;
 const typeorm_1 = require("typeorm");
-const subcategories_entity_1 = require("../../sub-categories/entities/subcategories.entity");
 const uuid_1 = require("uuid");
 let Category = class Category {
     constructor() {
@@ -36,6 +35,10 @@ __decorate([
     __metadata("design:type", String)
 ], Category.prototype, "rating", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ default: "survey" }),
+    __metadata("design:type", String)
+], Category.prototype, "species", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: "0" }),
     __metadata("design:type", String)
 ], Category.prototype, "counted", void 0);
@@ -43,10 +46,6 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], Category.prototype, "description", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => subcategories_entity_1.SubCategory, (subCategory) => subCategory.category),
-    __metadata("design:type", Array)
-], Category.prototype, "subcategories", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

@@ -11,12 +11,14 @@ import {
 } from 'typeorm';
 import { Customer } from '../../customers/entities/customers.entity';
 import { Surveys } from '../../surveys/entities/Surveys.entity';
+import { Touchpoint } from '../../touchpoint/entities/touchpoint.entity';
+import { Category } from '../../categories/entities/categories.entity';
 
 @Entity('transaction_survey')
-@Index('idx_category_touchpoint', ['categoryId', 'touchPointId'])
+@Index('idx_category_touchpoint', ['categoryId', 'touchpointId'])
 @Index('idx_customer_gender_age', ['customerId'])
 @Index('idx_created_at', ['createdAt']) // For time range filtering
-@Index('idx_survey_touchpoint', ['surveyId', 'touchPointId']) // Add asn indsexf
+@Index('idx_survey_touchpoint', ['surveyId', 'touchpointId']) // Add asn indsexf
 export class TransactionSurvey {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -61,8 +63,18 @@ export class TransactionSurvey {
   survey: Surveys;
 
   @PrimaryColumn({ name: 'touchpoint_id', type: 'uuid' })
-  touchPointId: string;
+  touchpointId: string;  
+
+  // @ManyToOne(() => Touchpoint, { eager: true })
+  // @JoinColumn({ name: 'touchpoint_id' })
+  // touchpoint: Touchpoint;
 
   @PrimaryColumn({ name: 'category_id', type: 'uuid' })
   categoryId: string;
+
+  @ManyToOne(() => Category, { eager: true })
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
+
+
 }

@@ -1,11 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { SubCategory } from '../../sub-categories/entities/subcategories.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { Touchpoint } from 'touchpoint/entities/touchpoint.entity';
 
 @Entity('categories')
 export class Category {
   @PrimaryGeneratedColumn('uuid')
-  id: string = uuidv4(); // Generate UUID using the uuid package
+  id: string = uuidv4();
 
   @Column({ type: 'jsonb', nullable: true })
   name: any;
@@ -16,14 +17,14 @@ export class Category {
   @Column({ default: "0" })
   rating: string;
 
+  @Column({ default: "survey" })
+  species: string;
+
   @Column({ default: "0" })
   counted: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
-
-  @OneToMany(() => SubCategory, (subCategory) => subCategory.category)
-  subcategories: SubCategory[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

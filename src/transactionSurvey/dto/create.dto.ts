@@ -33,7 +33,7 @@ export class CreateTransactionSurveyDto {
 
   @IsUUID()
   @IsNotEmpty()
-  touchPointId: string;
+  touchpointId: string;
 
   @IsUUID()
   @IsNotEmpty()

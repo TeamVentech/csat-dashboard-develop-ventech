@@ -29,7 +29,7 @@ export class LocationsService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.name LIKE :search)', {
+        queryBuilder.andWhere('(user.floor ILIKE :search OR user.tenant ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
 

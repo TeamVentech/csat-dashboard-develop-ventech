@@ -22,7 +22,6 @@ export class SectionsController {
   @Post()
   @Permissions('Lookups::write')
   create(@Body() createSectionDto: CreateSectionDto) {
-    console.log(createSectionDto)
     return this.sectionsService.create(createSectionDto);
   }
 
@@ -50,6 +49,12 @@ export class SectionsController {
     return this.sectionsService.findallwithoutfilter();
   }
 
+  @Get('sections/all')
+  findAllCategory(
+  ) {
+
+    return this.sectionsService.findAllSections();
+  }
   @Patch(':id')
   @Permissions('Lookups::update')
   update(@Param('id') id: string, @Body() updateSectionDto: UpdateSectionDto) {

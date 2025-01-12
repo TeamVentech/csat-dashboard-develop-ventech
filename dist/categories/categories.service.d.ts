@@ -11,6 +11,7 @@ export declare class CategoriesService {
         total: number;
     }>;
     findOne(id: string): Promise<Category>;
+    findByType(type: string): Promise<Category[]>;
     findAllCategory(): Promise<Category[]>;
     update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category>;
     remove(id: string): Promise<void>;

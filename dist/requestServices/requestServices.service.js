@@ -15,14 +15,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestServicesService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
+const axios_1 = require("axios");
+const smsMessages_1 = require("./messages/smsMessages");
 let RequestServicesService = class RequestServicesService {
     constructor(requestServicesRepository) {
         this.requestServicesRepository = requestServicesRepository;
     }
     async create(createRequestServicesDto) {
-        console.log(createRequestServicesDto);
-        const department = this.requestServicesRepository.create(createRequestServicesDto);
-        return this.requestServicesRepository.save(department);
+        try {
+            const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.constact?.phone_number;
+            if (createRequestServicesDto.type === 'Found Child') {
+                if (createRequestServicesDto.metadata.parents.phone_number) {
+                    const numbers = createRequestServicesDto?.metadata?.parents?.phone_number;
+                    const message = createRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العملاء]." : "Dear Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child.";
+                    await this.sendSms(numbers, message, numbers);
+                    createRequestServicesDto.state = "Awaiting Collection";
+                }
+            }
+            else if (createRequestServicesDto.name !== 'Gift Voucher Sales') {
+                const language = createRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
+                const message = smsMessages_1.default[createRequestServicesDto.type][createRequestServicesDto.state][language];
+                await this.sendSms(numbers, message, numbers);
+            }
+            const Service = this.requestServicesRepository.create(createRequestServicesDto);
+            var savedService = await this.requestServicesRepository.save(Service);
+        }
+        catch (error) {
+            console.error('Error sending SMS:', error.message);
+        }
+        return savedService;
     }
     async findAll(page, perPage, filterOptions) {
         page = page || 1;
@@ -34,7 +55,7 @@ let RequestServicesService = class RequestServicesService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(user.name LIKE :search)', {
+                queryBuilder.andWhere('(user.type ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
@@ -65,13 +86,52 @@ let RequestServicesService = class RequestServicesService {
         return RequestServices;
     }
     async update(id, updateRequestServicesDto) {
-        await this.findOne(id);
+        const data = await this.findOne(id);
+        if (data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed') {
+            const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
+            const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
+            const message = smsMessages_1.default[updateRequestServicesDto.type][updateRequestServicesDto.state][language];
+            await this.sendSms(numbers, `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers);
+        }
+        if (data.state === 'Open' && updateRequestServicesDto.state === 'Child Found' && updateRequestServicesDto.type === 'Lost Child') {
+            const numbers = data?.metadata?.parents?.phone_number;
+            await this.sendSms(numbers, `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`, numbers);
+        }
+        if (updateRequestServicesDto.name === 'Gift Voucher Sales' && updateRequestServicesDto.state === "Sold" && data.state === "Pending") {
+            const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number || updateRequestServicesDto?.metadata?.Company?.constact?.phone_number;
+            const message = updateRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العمsلاء]." : "Dears Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child.";
+            await this.sendSms(numbers, message, numbers);
+        }
         await this.requestServicesRepository.update(id, updateRequestServicesDto);
+        return this.findOne(id);
+    }
+    async rating(id, rate) {
+        const data = await this.findOne(id);
+        console.log(rate);
+        await this.requestServicesRepository.update(id, { ...data, rating: rate.rating });
         return this.findOne(id);
     }
     async remove(id) {
         const RequestServices = await this.findOne(id);
         await this.requestServicesRepository.remove(RequestServices);
+    }
+    async sendSms(data, message, number) {
+        const senderId = 'City Mall';
+        const numbers = number;
+        const accName = 'CityMall';
+        console.log(numbers);
+        const accPass = 'G_PAXDujRvrw_KoD';
+        const msg = message;
+        const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
+        const response = await axios_1.default.get(smsUrl, {
+            params: {
+                senderid: senderId,
+                numbers: numbers,
+                accname: accName,
+                AccPass: accPass,
+                msg: msg,
+            },
+        });
     }
 };
 exports.RequestServicesService = RequestServicesService;

@@ -46,7 +46,7 @@ export class SubCategoriesService {
   
         filterOptions.search = searchString;
   
-        queryBuilder.andWhere('(subCategories.name LIKE :search)', {
+        queryBuilder.andWhere('(subCategories.name ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }

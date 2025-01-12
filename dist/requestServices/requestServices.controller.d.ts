@@ -11,5 +11,6 @@ export declare class RequestServicesController {
     findOne(id: string): Promise<import("./entities/requestServices.entity").RequestServices>;
     findType(type: string): Promise<import("./entities/requestServices.entity").RequestServices[]>;
     update(id: string, updateRequestServicesDto: UpdateRequestServicesDto): Promise<import("./entities/requestServices.entity").RequestServices>;
+    rating(id: string, rate: any): Promise<import("./entities/requestServices.entity").RequestServices>;
     remove(id: string): Promise<void>;
 }

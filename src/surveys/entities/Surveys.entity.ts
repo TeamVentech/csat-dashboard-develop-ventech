@@ -10,11 +10,8 @@ export class Surveys {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuidv4();
 
-  @Column()
+  @Column({unique: true})
   name: string;
-
-  @Column()
-  type: string;
 
   @Column()
   state: string;

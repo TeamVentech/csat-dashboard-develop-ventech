@@ -4,4 +4,5 @@ export declare class CreateRequestServicesDto {
     state: string;
     addedBy: string;
     type: string;
+    rating: string;
 }

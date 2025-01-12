@@ -22,7 +22,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
 
-@Controller('corprates')
+@Controller('corporates')
 @UseGuards(JwtAuthGuard) // Protect all routes in this controller
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @UseInterceptors(ClassSerializerInterceptor)

@@ -20,7 +20,6 @@ let SurveysService = class SurveysService {
         this.SurveysRepository = SurveysRepository;
     }
     async create(createSurveysDto) {
-        console.log(createSurveysDto);
         const Surveys = this.SurveysRepository.create(createSurveysDto);
         return this.SurveysRepository.save(Surveys);
     }
@@ -34,7 +33,7 @@ let SurveysService = class SurveysService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(user.name LIKE :search)', {
+                queryBuilder.andWhere('(user.name ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
@@ -102,7 +101,13 @@ let SurveysService = class SurveysService {
     }
     async update(id, updateSurveysDto) {
         const survey = await this.findOne(id);
-        survey.metadata.questions = updateSurveysDto.metadata.questions;
+        console.log(updateSurveysDto);
+        if (updateSurveysDto.metadata) {
+            survey.metadata.questions = updateSurveysDto.metadata.questions;
+        }
+        survey.name = updateSurveysDto?.name;
+        survey.brief = updateSurveysDto?.brief;
+        survey.state = updateSurveysDto?.state;
         await this.SurveysRepository.update(id, survey);
         return this.findOne(id);
     }

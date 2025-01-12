@@ -15,7 +15,6 @@ export class SurveysService {
   ) {}
 
   async create(createSurveysDto: any) {
-    console.log(createSurveysDto)
     const Surveys = this.SurveysRepository.create(createSurveysDto);
     return this.SurveysRepository.save(Surveys);
   }
@@ -32,7 +31,7 @@ export class SurveysService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.name LIKE :search)', {
+        queryBuilder.andWhere('(user.name ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
 
@@ -117,9 +116,13 @@ export class SurveysService {
   // Update a Surveys by ID
   async update(id: string, updateSurveysDto: any) {
     const survey = await this.findOne(id);
-    // console.log(updateSurveysDto.metadata.questions[0])
-    // console.log(survey.metadata.questions)
-    survey.metadata.questions = updateSurveysDto.metadata.questions
+    console.log(updateSurveysDto)
+    if(updateSurveysDto.metadata){
+      survey.metadata.questions = updateSurveysDto.metadata.questions
+    }
+    survey.name = updateSurveysDto?.name
+    survey.brief = updateSurveysDto?.brief
+    survey.state = updateSurveysDto?.state
     await this.SurveysRepository.update(id, survey);
     return this.findOne(id);
   }

@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { TouchPoint } from './entities/touchpoint.entity';
+import { Touchpoint } from './entities/touchpoint.entity';
 export declare const TouchPointProvider: {
     provide: string;
-    useFactory: (dataSource: DataSource) => import("typeorm").Repository<TouchPoint>;
+    useFactory: (dataSource: DataSource) => import("typeorm").Repository<Touchpoint>;
     inject: string[];
 }[];

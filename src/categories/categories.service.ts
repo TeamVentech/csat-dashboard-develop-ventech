@@ -29,8 +29,8 @@ export class CategoriesService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.name LIKE :search OR user.description LIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substring search
+        queryBuilder.andWhere('(user.type LIKE :search)', {
+          search: `%${filterOptions.search}%`,
         });
 
       }
@@ -59,6 +59,13 @@ export class CategoriesService {
     return category;
   }
 
+  async findByType(type: string){
+    const category = await this.categoryRepository.find({ where: { type: type } });
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${type} not found`);
+    }
+    return category;
+  }
 
   async findAllCategory() {
     return this.categoryRepository.find();

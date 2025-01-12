@@ -33,7 +33,7 @@ let CorporatesService = class CorporatesService {
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(user.email LIKE :search OR user.name LIKE :search OR user.phone_number LIKE :search OR user.gender LIKE :search)', {
+                queryBuilder.andWhere('(user.email ILIKE :search OR user.name ILIKE :search OR user.phone_number ILIKE :search OR user.gender ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }

@@ -23,23 +23,26 @@ let SectionsService = class SectionsService {
         const Section = this.sectionRepository.create(createSectionDto);
         return this.sectionRepository.save(Section);
     }
+    async findAllSections() {
+        return this.sectionRepository.find();
+    }
     async findAll(page, perPage, filterOptions) {
         page = page || 1;
         perPage = perPage || 10;
-        const queryBuilder = this.sectionRepository.createQueryBuilder('user');
+        const queryBuilder = this.sectionRepository.createQueryBuilder('section');
         if (filterOptions) {
             if (filterOptions.search) {
-                const searchString = await filterOptions.search.startsWith(' ')
+                const searchString = filterOptions.search.startsWith(' ')
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(user.name LIKE :search)', {
+                queryBuilder.andWhere('(section.name ILIKE :search OR section.role ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }
             Object.keys(filterOptions).forEach(key => {
                 if (key !== 'search' && filterOptions[key]) {
-                    queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
+                    queryBuilder.andWhere(`section.${key} = :${key}`, { [key]: filterOptions[key] });
                 }
             });
         }

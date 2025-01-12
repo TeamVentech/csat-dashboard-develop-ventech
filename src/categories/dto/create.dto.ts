@@ -7,6 +7,9 @@ export class CreateCategoryDto {
   @IsOptional()
   description: string;
 
+  @IsOptional()
+  species: string;
+
   @IsNotEmpty()
   type: string;
-}
+  }

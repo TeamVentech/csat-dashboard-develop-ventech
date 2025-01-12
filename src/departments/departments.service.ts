@@ -10,12 +10,9 @@ export class DepartmentsService {
   constructor(
     @Inject('DEPARTMENT_REPOSITORY')
     private readonly departmentRepository: Repository<Department>,
-  ) {}
+  ) { }
 
   async create(createDepartmentDto: CreateDepartmentDto) {
-    console.log('createDepartmentDto')
-    console.log('createDepartmentDto')
-    console.log(createDepartmentDto)
     const department = this.departmentRepository.create(createDepartmentDto);
     return this.departmentRepository.save(department);
   }
@@ -28,14 +25,13 @@ export class DepartmentsService {
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString =await filterOptions.search.startsWith(' ')
+        const searchString = filterOptions.search.startsWith(' ')
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.name LIKE :search)', {
+        queryBuilder.andWhere('(user.name ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
-
       }
 
       Object.keys(filterOptions).forEach(key => {
@@ -53,12 +49,13 @@ export class DepartmentsService {
     return { categories, total };
   }
 
+
   async find() {
-    const roles =  await this.departmentRepository.find()
+    const roles = await this.departmentRepository.find()
     return roles;
   }
-  
-  async findOne(id: string){
+
+  async findOne(id: string) {
     const department = await this.departmentRepository.findOne({ where: { id: id } });
     if (!department) {
       throw new NotFoundException(`Department with ID ${id} not found`);
