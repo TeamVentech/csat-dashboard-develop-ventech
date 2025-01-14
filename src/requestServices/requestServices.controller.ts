@@ -11,12 +11,13 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
+import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 
 @Controller('request-services')
 @UseInterceptors(ClassSerializerInterceptor)
 @UseInterceptors(TransformInterceptor)
 export class RequestServicesController {
-  constructor(private readonly requestServicesService: RequestServicesService) { }
+  constructor(private readonly requestServicesService: RequestServicesService, private readonly elasticSearchService: ElasticService) { }
 
   @Post()
   @Permissions('Service::write')
@@ -72,4 +73,15 @@ export class RequestServicesController {
   remove(@Param('id') id: string) {
     return this.requestServicesService.remove(id);
   }
+  @Get('search/query')
+  @Permissions('Service::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  elasticSerchQurey(
+    @Query('page') page: number,
+    @Query('perPage') perPage: number,
+    @Query('search') search?: any,
+  ) {
+    return this.elasticSearchService.search("services", search, page, perPage);
+  }
+
 }

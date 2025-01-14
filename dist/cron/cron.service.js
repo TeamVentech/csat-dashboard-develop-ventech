@@ -19,26 +19,17 @@ const schedule_1 = require("@nestjs/schedule");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const axios_1 = require("axios");
+const elasticsearch_service_1 = require("../ElasticSearch/elasticsearch.service");
 let CronService = class CronService {
-    constructor(requestServicesRepo) {
+    constructor(requestServicesRepo, elasticService) {
         this.requestServicesRepo = requestServicesRepo;
+        this.elasticService = elasticService;
     }
     async handleDailyJob() {
         console.log('Running daily check for expiring vouchers at 10:00 AM');
-        const currentDate = new Date();
-        const oneWeekLater = new Date();
-        oneWeekLater.setDate(currentDate.getDate() + 7);
-        const expiringServices = await this.requestServicesRepo.find({
-            where: {
-                name: 'Gift Voucher Sales',
-                state: 'Sold',
-                metadata: (0, typeorm_2.Raw)((alias) => `metadata->>'Expiry_date' IS NOT NULL AND metadata->>'Expiry_date' <> '' AND (metadata->>'Expiry_date')::timestamp >= :currentDate AND (metadata->>'Expiry_date')::timestamp <= :oneWeekLater`, {
-                    currentDate: currentDate.toISOString(),
-                    oneWeekLater: oneWeekLater.toISOString(),
-                }),
-            },
-        });
-        expiringServices.forEach(async (service) => {
+        const expiringServices = await this.elasticService.searchExpiringSoon("services");
+        console.log(expiringServices);
+        expiringServices.results.forEach(async (service) => {
             const senderId = 'City Mall';
             console.log(service);
             const numbers = service?.metadata?.customer?.phone_number || service?.metadata?.Company?.constact?.phone_number;
@@ -61,7 +52,7 @@ let CronService = class CronService {
 };
 exports.CronService = CronService;
 __decorate([
-    (0, schedule_1.Cron)('* 13 * * *', { timeZone: 'Asia/Amman' }),
+    (0, schedule_1.Cron)('* 10 * * *', { timeZone: 'Asia/Amman' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
@@ -69,6 +60,7 @@ __decorate([
 exports.CronService = CronService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(requestServices_entity_1.RequestServices)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        elasticsearch_service_1.ElasticService])
 ], CronService);
 //# sourceMappingURL=cron.service.js.map

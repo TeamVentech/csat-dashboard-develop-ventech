@@ -31,6 +31,7 @@ import { VouchersModule } from 'vochers/vouchers.module';
 import { CronService } from 'cron/cron.service'; // Adjust the path if needed
 import { ScheduleModule } from '@nestjs/schedule';
 import { RequestServices } from 'requestServices/entities/requestServices.entity';
+import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { RequestServices } from 'requestServices/entities/requestServices.entity
     CommentModule,
     TenantsModule,
     VouchersModule,
+    ElasticSearchModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
   ],

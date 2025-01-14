@@ -17,9 +17,11 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
 const axios_1 = require("axios");
 const smsMessages_1 = require("./messages/smsMessages");
+const elasticsearch_service_1 = require("../ElasticSearch/elasticsearch.service");
 let RequestServicesService = class RequestServicesService {
-    constructor(requestServicesRepository) {
+    constructor(requestServicesRepository, elasticService) {
         this.requestServicesRepository = requestServicesRepository;
+        this.elasticService = elasticService;
     }
     async create(createRequestServicesDto) {
         try {
@@ -39,6 +41,7 @@ let RequestServicesService = class RequestServicesService {
             }
             const Service = this.requestServicesRepository.create(createRequestServicesDto);
             var savedService = await this.requestServicesRepository.save(Service);
+            await this.elasticService.indexData('services', Service.id, Service);
         }
         catch (error) {
             console.error('Error sending SMS:', error.message);
@@ -51,7 +54,7 @@ let RequestServicesService = class RequestServicesService {
         const queryBuilder = this.requestServicesRepository.createQueryBuilder('user');
         if (filterOptions) {
             if (filterOptions.search) {
-                const searchString = await filterOptions.search.startsWith(' ')
+                const searchString = filterOptions.search.startsWith(' ')
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
@@ -65,6 +68,7 @@ let RequestServicesService = class RequestServicesService {
                 }
             });
         }
+        queryBuilder.orderBy('user.createdAt', 'DESC');
         const [data, total] = await queryBuilder
             .skip((page - 1) * perPage)
             .take(perPage)
@@ -72,6 +76,13 @@ let RequestServicesService = class RequestServicesService {
         return { data, total };
     }
     async findOne(id) {
+        const RequestServices = await this.elasticService.getById('services', id);
+        if (!RequestServices) {
+            throw new common_1.NotFoundException(`Department with ID ${id} not found`);
+        }
+        return RequestServices.data;
+    }
+    async findOneColumn(id) {
         const RequestServices = await this.requestServicesRepository.findOne({ where: { id: id } });
         if (!RequestServices) {
             throw new common_1.NotFoundException(`Department with ID ${id} not found`);
@@ -86,7 +97,7 @@ let RequestServicesService = class RequestServicesService {
         return RequestServices;
     }
     async update(id, updateRequestServicesDto) {
-        const data = await this.findOne(id);
+        const data = await this.findOneColumn(id);
         if (data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed') {
             const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
             const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
@@ -97,29 +108,34 @@ let RequestServicesService = class RequestServicesService {
             const numbers = data?.metadata?.parents?.phone_number;
             await this.sendSms(numbers, `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`, numbers);
         }
+        if (data.state === 'Open' && updateRequestServicesDto.state === 'Item Found' && updateRequestServicesDto.type === 'Lost Item') {
+            const numbers = data?.metadata?.parents?.phone_number;
+            const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
+            const message = smsMessages_1.default[updateRequestServicesDto.type][updateRequestServicesDto.state][language];
+            await this.sendSms(numbers, `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`, numbers);
+        }
         if (updateRequestServicesDto.name === 'Gift Voucher Sales' && updateRequestServicesDto.state === "Sold" && data.state === "Pending") {
             const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number || updateRequestServicesDto?.metadata?.Company?.constact?.phone_number;
             const message = updateRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العمsلاء]." : "Dears Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child.";
             await this.sendSms(numbers, message, numbers);
         }
         await this.requestServicesRepository.update(id, updateRequestServicesDto);
+        await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
         return this.findOne(id);
     }
     async rating(id, rate) {
-        const data = await this.findOne(id);
-        console.log(rate);
+        const data = await this.findOneColumn(id);
         await this.requestServicesRepository.update(id, { ...data, rating: rate.rating });
         return this.findOne(id);
     }
     async remove(id) {
-        const RequestServices = await this.findOne(id);
+        const RequestServices = await this.findOneColumn(id);
         await this.requestServicesRepository.remove(RequestServices);
     }
     async sendSms(data, message, number) {
         const senderId = 'City Mall';
         const numbers = number;
         const accName = 'CityMall';
-        console.log(numbers);
         const accPass = 'G_PAXDujRvrw_KoD';
         const msg = message;
         const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
@@ -138,6 +154,7 @@ exports.RequestServicesService = RequestServicesService;
 exports.RequestServicesService = RequestServicesService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('REQUEST_SERVICES_REPOSITORY')),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __metadata("design:paramtypes", [typeorm_1.Repository,
+        elasticsearch_service_1.ElasticService])
 ], RequestServicesService);
 //# sourceMappingURL=requestServices.service.js.map

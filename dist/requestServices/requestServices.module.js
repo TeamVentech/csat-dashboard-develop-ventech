@@ -13,12 +13,13 @@ const requestServices_service_1 = require("./requestServices.service");
 const requestServices_provider_1 = require("./requestServices.provider");
 const database_module_1 = require("../database/database.module");
 const roles_module_1 = require("../roles/roles.module");
+const elasticsearch_module_1 = require("../ElasticSearch/elasticsearch.module");
 let RequestServicesModule = class RequestServicesModule {
 };
 exports.RequestServicesModule = RequestServicesModule;
 exports.RequestServicesModule = RequestServicesModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
+        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule, elasticsearch_module_1.ElasticSearchModule],
         controllers: [requestServices_controller_1.RequestServicesController],
         providers: [requestServices_service_1.RequestServicesService, ...requestServices_provider_1.RequestServicesProvider]
     })
