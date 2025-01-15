@@ -25,7 +25,7 @@ export class CorporatesService {
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString =await filterOptions.search.startsWith(' ')
+        const searchString = await filterOptions.search.startsWith(' ')
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
@@ -53,6 +53,10 @@ export class CorporatesService {
       throw new NotFoundException(`Corporate with ID ${id} not found`);
     }
     return Corporate;
+  }
+
+  async find(name: string) {
+    return await this.corporateRepository.find({ where: { name } });
   }
 
   async update(id: string, updateCorporateDto: UpdateCorporateDto): Promise<Corporate> {

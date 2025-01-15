@@ -20,6 +20,10 @@ declare const SmsMessage: {
         };
     };
     "Lost Item": {
+        Open: {
+            ar: string;
+            en: string;
+        };
         "In Progress": {
             ar: string;
             en: string;
@@ -35,6 +39,10 @@ declare const SmsMessage: {
         "Article Not Found": {
             ar: string;
             en: string;
+        };
+        Closed: {
+            en: string;
+            ar: string;
         };
     };
     "Incident Reporting": {
@@ -53,6 +61,48 @@ declare const SmsMessage: {
             en: string;
         };
         Open: {
+            ar: string;
+            en: string;
+        };
+        Closed: {
+            ar: string;
+            en: string;
+        };
+    };
+    "Individual Voucher Sale": {
+        Sold: {
+            ar: string;
+            en: string;
+        };
+        Expired: {
+            ar: string;
+            en: string;
+        };
+        Closed: {
+            ar: string;
+            en: string;
+        };
+    };
+    "Corporate Voucher Sale": {
+        Sold: {
+            ar: string;
+            en: string;
+        };
+        Expired: {
+            ar: string;
+            en: string;
+        };
+        Closed: {
+            ar: string;
+            en: string;
+        };
+    };
+    "Power Bank Request": {
+        Open: {
+            ar: string;
+            en: string;
+        };
+        "In Service": {
             ar: string;
             en: string;
         };

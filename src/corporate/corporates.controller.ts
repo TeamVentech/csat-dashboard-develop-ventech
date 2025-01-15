@@ -52,6 +52,13 @@ export class CorporatesController {
         return this.corporatesService.findAll(page, perPage, filterOptions);
     }
 
+    @Get('get/all')
+    @Permissions('Corporate::read')
+    find(@Query('name') name?: string,
+    ) {
+        return this.corporatesService.find(name);
+    }
+
 
     // Get a corporate by ID
     @Get(':id')

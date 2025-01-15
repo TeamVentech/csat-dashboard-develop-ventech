@@ -8,17 +8,17 @@
     @PrimaryGeneratedColumn('uuid')
     id: string = uuidv4();
 
-    @Column()
+    @Column({ unique: true })
     name: string;
 
-    @Column({ length: 15, unique: true })
+    @Column({ nullable: true })
     phone_number: string;
 
-    @Column({ unique: true })
+    @Column({ nullable: true })
     email: string;
 
     @Column({ nullable: true })
-    address: string;
+    contact_name: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

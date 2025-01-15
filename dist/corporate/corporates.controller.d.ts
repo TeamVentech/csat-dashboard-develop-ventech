@@ -10,6 +10,7 @@ export declare class CorporatesController {
         categories: Corporate[];
         total: number;
     }>;
+    find(name?: string): Promise<Corporate[]>;
     findOne(id: string): Promise<Corporate>;
     update(id: string, updatecorporateDto: UpdateCorporateDto): Promise<Corporate>;
     remove(id: string): Promise<void>;

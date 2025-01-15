@@ -3,7 +3,7 @@ export declare class Corporate {
     name: string;
     phone_number: string;
     email: string;
-    address: string;
+    contact_name: string;
     createdAt: Date;
     updatedAt: Date;
 }

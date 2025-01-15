@@ -19,20 +19,15 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCorporateDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateCorporateDto.prototype, "phone_number", void 0);
 __decorate([
-    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateCorporateDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateCorporateDto.prototype, "address", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateCorporateDto.prototype, "age", void 0);
+], CreateCorporateDto.prototype, "contact_name", void 0);
 //# sourceMappingURL=create.dto.js.map

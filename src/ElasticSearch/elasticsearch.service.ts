@@ -110,8 +110,11 @@ export class ElasticService {
         if (query?.state) {
             must.push({ match: { "state": query.state } });
         }
+        if (query?.customer) {
+            must.push({ match: { "metadata.customer.id": query.customer } });
+        }
         if (query?.location) {
-            must.push({ match: { "metadata.location.tenant": query.location } });
+            must.push({ match: { "metadata.location.tenant.keyword": query.location } });
         }
         if (query?.department) {
             must.push({ match: { "metadata.department.name": query.department } });

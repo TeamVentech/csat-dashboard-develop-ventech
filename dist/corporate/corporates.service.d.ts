@@ -11,6 +11,7 @@ export declare class CorporatesService {
         total: number;
     }>;
     findOne(id: string): Promise<Corporate>;
+    find(name: string): Promise<Corporate[]>;
     update(id: string, updateCorporateDto: UpdateCorporateDto): Promise<Corporate>;
     remove(id: string): Promise<void>;
 }

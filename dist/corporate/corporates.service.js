@@ -56,6 +56,9 @@ let CorporatesService = class CorporatesService {
         }
         return Corporate;
     }
+    async find(name) {
+        return await this.corporateRepository.find({ where: { name } });
+    }
     async update(id, updateCorporateDto) {
         await this.findOne(id);
         await this.corporateRepository.update(id, updateCorporateDto);

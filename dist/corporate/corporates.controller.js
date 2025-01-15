@@ -35,6 +35,9 @@ let CorporatesController = class CorporatesController {
         };
         return this.corporatesService.findAll(page, perPage, filterOptions);
     }
+    find(name) {
+        return this.corporatesService.find(name);
+    }
     async findOne(id) {
         return this.corporatesService.findOne(id);
     }
@@ -64,6 +67,14 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], CorporatesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('get/all'),
+    (0, permissions_decorator_1.Permissions)('Corporate::read'),
+    __param(0, (0, common_1.Query)('name')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CorporatesController.prototype, "find", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, permissions_decorator_1.Permissions)('Corporate::read'),

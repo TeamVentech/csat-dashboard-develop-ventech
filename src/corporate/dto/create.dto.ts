@@ -5,18 +5,12 @@ export class CreateCorporateDto {
   @IsString()
   name: string;
 
-  @IsString()
+  @IsOptional()
   phone_number: string;
 
-  @IsEmail()
+  @IsOptional()
   email: string;
 
-
   @IsOptional()
-  @IsString()
-  address?: string;
-
-  @IsOptional()
-  age?: string;
-
+  contact_name?: string;
 }

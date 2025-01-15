@@ -33,7 +33,7 @@ export class CustomersService {
           : filterOptions.search;
         filterOptions.search = searchString
         queryBuilder.andWhere('(user.email ILIKE :search OR user.name ILIKE :search OR user.phone_number ILIKE :search OR user.gender ILIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substring search
+          search: `%${filterOptions.search}%`,  
         });
       }
       Object.keys(filterOptions).forEach(key => {
@@ -42,6 +42,7 @@ export class CustomersService {
         }
       });
     }
+    queryBuilder.orderBy('user.createdAt', 'DESC');
 
     const [categories, total] = await queryBuilder
       .skip((page - 1) * perPage)
