@@ -25,7 +25,7 @@ __decorate([
     __metadata("design:type", String)
 ], Touchpoint.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true, unique: true }),
     __metadata("design:type", Object)
 ], Touchpoint.prototype, "name", void 0);
 __decorate([

@@ -16,36 +16,20 @@ export class CronService {
     private readonly elasticService: ElasticService,
   ) { }
 
-  // This will run every day at 10:00 AM
-  @Cron('* 10 * * *', { timeZone: 'Asia/Amman' })
+  @Cron('0 22 * * *', { timeZone: 'Asia/Amman' })
+  async handleDailyJobs() {
+    console.log('Running daily check for expiring vouchers at 10:00 AM');    
+    const expiringServices = await this.elasticService.searchInServiceState("services")
+
+  }
+  @Cron('0 10 * * *', { timeZone: 'Asia/Amman' })
   async handleDailyJob() {
     console.log('Running daily check for expiring vouchers at 10:00 AM');
     const expiringServices = await this.elasticService.searchExpiringSoon("services")
-
-    // find({
-    //   where: {
-    //     name: 'Gift Voucher Sales',
-    //     state: 'Sold',
-    //     metadata: Raw(
-    //       (alias) =>
-    //         `metadata->>'Expiry_date' IS NOT NULL AND metadata->>'Expiry_date' <> '' AND (metadata->>'Expiry_date')::timestamp >= :currentDate AND (metadata->>'Expiry_date')::timestamp <= :oneWeekLater`,
-    //       {
-    //         currentDate: currentDate.toISOString(),
-    //         oneWeekLater: oneWeekLater.toISOString(),
-    //       },
-    //     ),
-    //   },
-    // });
-
-
-    console.log(expiringServices)
-
-    expiringServices.results.forEach(async(service) => {
+    expiringServices.results.forEach(async (service) => {
       const senderId = 'City Mall';
-      console.log(service)
-      const numbers = service?.metadata?.customer?.phone_number || service?.metadata?.Company?.constact?.phone_number 
+      const numbers = service?.metadata?.customer?.phone_number || service?.metadata?.Company?.constact?.phone_number
       const accName = 'CityMall';
-      console.log(numbers)
       const accPass = 'G_PAXDujRvrw_KoD';
       const msg = "Your Voucher will done after 1 Week ";
 
@@ -59,9 +43,6 @@ export class CronService {
           msg: msg,
         },
       });
-
-
     });
-
   }
 }

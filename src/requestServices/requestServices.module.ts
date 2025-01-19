@@ -11,7 +11,8 @@ import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 @Module({
   imports: [DatabaseModule, RolesModule, ElasticSearchModule],
   controllers: [RequestServicesController],
-  providers: [RequestServicesService, ...RequestServicesProvider]
+  providers: [RequestServicesService, ...RequestServicesProvider],
+  exports:[RequestServicesService]
 })
 export class RequestServicesModule {}
 

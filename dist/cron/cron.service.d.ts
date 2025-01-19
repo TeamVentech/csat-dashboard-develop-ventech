@@ -5,5 +5,6 @@ export declare class CronService {
     private readonly requestServicesRepo;
     private readonly elasticService;
     constructor(requestServicesRepo: Repository<RequestServices>, elasticService: ElasticService);
+    handleDailyJobs(): Promise<void>;
     handleDailyJob(): Promise<void>;
 }

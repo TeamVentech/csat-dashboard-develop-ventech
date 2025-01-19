@@ -20,7 +20,8 @@ exports.ComplaintsModule = ComplaintsModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
         controllers: [complaint_controller_1.ComplaintsController],
-        providers: [complaint_service_1.ComplaintsService, ...complaint_provider_1.ComplaintsProvider]
+        providers: [complaint_service_1.ComplaintsService, ...complaint_provider_1.ComplaintsProvider],
+        exports: [complaint_service_1.ComplaintsService],
     })
 ], ComplaintsModule);
 //# sourceMappingURL=complaint.module.js.map

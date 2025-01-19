@@ -4,7 +4,7 @@ export declare class CommentController {
     private readonly requestServicesService;
     constructor(requestServicesService: CommentService);
     create(createCommentDto: any): Promise<import("./entities/comment.entity").Comment>;
-    findAll(page: number, perPage: number, search?: string): Promise<{
+    findAll(page: number, perPage: number, search?: string, state?: string): Promise<{
         data: import("./entities/comment.entity").Comment[];
         total: number;
     }>;

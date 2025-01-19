@@ -32,11 +32,12 @@ export class CommentController {
     @Query('page') page: number,
     @Query('perPage') perPage: number,
     @Query('search') search?: string,
+    @Query('state') state?: string,
   ) {
     const filterOptions = {
       search
   };
-    return this.requestServicesService.findAll(page, perPage, filterOptions);
+    return this.requestServicesService.findAll(page, perPage, filterOptions, state);
   }
 
   @Get(':id')

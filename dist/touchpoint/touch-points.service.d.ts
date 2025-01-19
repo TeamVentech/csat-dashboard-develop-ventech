@@ -10,6 +10,10 @@ export declare class TouchPointsService {
         categories: Touchpoint[];
         total: number;
     }>;
+    findAllSearch(page: number, perPage: number, filterOptions: any, categoryType: string): Promise<{
+        categories: Touchpoint[];
+        total: number;
+    }>;
     findOne(id: string): Promise<Touchpoint>;
     findByCategory(id: string): Promise<Touchpoint[]>;
     getAll(): Promise<Touchpoint[]>;

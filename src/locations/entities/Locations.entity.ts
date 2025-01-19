@@ -10,7 +10,7 @@ export class Location {
   @Column()
   floor: string;
 
-  @Column()
+  @Column({ unique: true })
   tenant: string;
 
   @CreateDateColumn({ name: 'created_at' })

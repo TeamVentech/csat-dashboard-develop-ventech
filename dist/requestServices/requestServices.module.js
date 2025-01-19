@@ -21,7 +21,8 @@ exports.RequestServicesModule = RequestServicesModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule, elasticsearch_module_1.ElasticSearchModule],
         controllers: [requestServices_controller_1.RequestServicesController],
-        providers: [requestServices_service_1.RequestServicesService, ...requestServices_provider_1.RequestServicesProvider]
+        providers: [requestServices_service_1.RequestServicesService, ...requestServices_provider_1.RequestServicesProvider],
+        exports: [requestServices_service_1.RequestServicesService]
     })
 ], RequestServicesModule);
 //# sourceMappingURL=requestServices.module.js.map

@@ -1,8 +1,9 @@
 export declare class Tenant {
     id: string;
     name: string;
-    manager_name: string;
-    manager_email: string;
+    contact_name: string;
+    email: string;
+    phone_number: string;
     createdAt: Date;
     updatedAt: Date;
 }

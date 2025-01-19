@@ -8,7 +8,7 @@ export class Category {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuidv4();
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'jsonb', nullable: true,  unique: true  })
   name: any;
 
   @Column({ type: 'varchar', length: 255, default:"parking" })

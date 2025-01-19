@@ -25,16 +25,17 @@ let CronService = class CronService {
         this.requestServicesRepo = requestServicesRepo;
         this.elasticService = elasticService;
     }
+    async handleDailyJobs() {
+        console.log('Running daily check for expiring vouchers at 10:00 AM');
+        const expiringServices = await this.elasticService.searchInServiceState("services");
+    }
     async handleDailyJob() {
         console.log('Running daily check for expiring vouchers at 10:00 AM');
         const expiringServices = await this.elasticService.searchExpiringSoon("services");
-        console.log(expiringServices);
         expiringServices.results.forEach(async (service) => {
             const senderId = 'City Mall';
-            console.log(service);
             const numbers = service?.metadata?.customer?.phone_number || service?.metadata?.Company?.constact?.phone_number;
             const accName = 'CityMall';
-            console.log(numbers);
             const accPass = 'G_PAXDujRvrw_KoD';
             const msg = "Your Voucher will done after 1 Week ";
             const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
@@ -52,7 +53,13 @@ let CronService = class CronService {
 };
 exports.CronService = CronService;
 __decorate([
-    (0, schedule_1.Cron)('* 10 * * *', { timeZone: 'Asia/Amman' }),
+    (0, schedule_1.Cron)('0 22 * * *', { timeZone: 'Asia/Amman' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CronService.prototype, "handleDailyJobs", null);
+__decorate([
+    (0, schedule_1.Cron)('0 10 * * *', { timeZone: 'Asia/Amman' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

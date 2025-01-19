@@ -10,7 +10,9 @@ import { RolesModule } from 'roles/roles.module';
 @Module({
   imports: [DatabaseModule, RolesModule],
   controllers: [ComplaintsController],
-  providers: [ComplaintsService, ...ComplaintsProvider]
+  providers: [ComplaintsService, ...ComplaintsProvider],
+  exports: [ComplaintsService],
+
 })
-export class ComplaintsModule {}
+export class ComplaintsModule { }
 

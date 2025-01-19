@@ -6,9 +6,11 @@ export class CreateTenantDto {
   name: string;
 
   @IsString()
-  manager_name: string;
+  contact_name: string;
 
   @IsString()
-  manager_email: string;
+  email: string;
 
+  @IsString()
+  phone_number: string;
 }

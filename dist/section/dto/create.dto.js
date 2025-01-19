@@ -21,12 +21,10 @@ __decorate([
 ], CreateSectionDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], CreateSectionDto.prototype, "role", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateSectionDto.prototype, "department", void 0);
+], CreateSectionDto.prototype, "departmentId", void 0);
 //# sourceMappingURL=create.dto.js.map

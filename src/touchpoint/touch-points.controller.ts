@@ -34,6 +34,18 @@ export class TouchPointsController {
     return this.touchPointsService.findAll(page, perPage, filter);
   }
 
+
+  @Get('search/all')
+  @Permissions('Lookups::read')
+  findAllSearch(
+    @Query('page') page: number = 1,
+    @Query('perPage') perPage: number = 10,
+    @Query('filter') filter: string = '',
+    @Query('type') type: string = '',
+  ) {
+    return this.touchPointsService.findAllSearch(page, perPage, filter, type);
+  }
+
   @Get('touchpoint/all')
   findAllCategory(
   ) {

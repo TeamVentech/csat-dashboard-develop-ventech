@@ -15,15 +15,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommentService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
+const complaint_service_1 = require("../complaint/complaint.service");
+const requestServices_service_1 = require("../requestServices/requestServices.service");
+const touch_points_service_1 = require("../touchpoint/touch-points.service");
 let CommentService = class CommentService {
-    constructor(commentRepository) {
+    constructor(commentRepository, complaintService, suggestionService, touchPointsService) {
         this.commentRepository = commentRepository;
+        this.complaintService = complaintService;
+        this.suggestionService = suggestionService;
+        this.touchPointsService = touchPointsService;
     }
     async create(createCommentDto) {
         const department = this.commentRepository.create(createCommentDto);
         return this.commentRepository.save(department);
     }
-    async findAll(page, perPage, filterOptions) {
+    async findAll(page, perPage, filterOptions, state) {
         page = page || 1;
         perPage = perPage || 10;
         const queryBuilder = this.commentRepository.createQueryBuilder('comments')
@@ -40,6 +46,11 @@ let CommentService = class CommentService {
                     search: `%${filterOptions.search}%`,
                 });
             }
+            if (state) {
+                queryBuilder.andWhere(`comments.status ILIKE :state`, {
+                    state: `%${state}%`,
+                });
+            }
             Object.keys(filterOptions).forEach(key => {
                 if (key !== 'search' && filterOptions[key]) {
                     queryBuilder.andWhere(`comments.${key} = :${key}`, { [key]: filterOptions[key] });
@@ -53,15 +64,49 @@ let CommentService = class CommentService {
         return { data, total };
     }
     async findOne(id) {
-        const Comment = await this.commentRepository.findOne({ where: { id: id } });
+        const Comment = await this.commentRepository.findOne({
+            where: { id: id },
+            relations: ['customer', 'category'],
+        });
         if (!Comment) {
             throw new common_1.NotFoundException(`Department with ID ${id} not found`);
         }
         return Comment;
     }
     async update(id, updateCommentDto) {
-        await this.findOne(id);
+        const data = await this.findOne(id);
         await this.commentRepository.update(id, updateCommentDto);
+        if (data.status === "Open" && updateCommentDto.status === "Moved To Complaints") {
+            await this.complaintService.create({
+                state: "Open",
+                metadata: updateCommentDto.metadata,
+                name: "Comment Complaint",
+                customerId: updateCommentDto.customerId,
+                touchpointId: updateCommentDto.touchpointId,
+                categoryId: updateCommentDto.categoryId,
+                addedBy: "system",
+                type: "Comment",
+            });
+        }
+        if (data.status === "Open" && updateCommentDto.status === "Moved To Suggestions") {
+            await this.suggestionService.create({
+                state: "Pending",
+                metadata: {
+                    type: updateCommentDto.metadata.suggestionType,
+                    customer: data.customer,
+                    Signature: "",
+                    Department: "",
+                    Suggestion: updateCommentDto.message,
+                    department: updateCommentDto.metadata.ConcernedDepartment,
+                    touchpoint: updateCommentDto.metadata.SuggestionTouchpoint,
+                    category: updateCommentDto.metadata.SuggestionCategory
+                },
+                name: "Suggestion Box",
+                addedBy: "system",
+                type: "Suggestion Box",
+                rating: null
+            });
+        }
         return this.findOne(id);
     }
     async remove(id) {
@@ -73,6 +118,9 @@ exports.CommentService = CommentService;
 exports.CommentService = CommentService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('COMMENT_REPOSITORY')),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __metadata("design:paramtypes", [typeorm_1.Repository,
+        complaint_service_1.ComplaintsService,
+        requestServices_service_1.RequestServicesService,
+        touch_points_service_1.TouchPointsService])
 ], CommentService);
 //# sourceMappingURL=comment.service.js.map

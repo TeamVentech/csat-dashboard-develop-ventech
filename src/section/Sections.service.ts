@@ -24,7 +24,9 @@ export class SectionsService {
   async findAll(page, perPage, filterOptions) {
     page = page || 1;
     perPage = perPage || 10;
-    const queryBuilder = this.sectionRepository.createQueryBuilder('section');
+    const queryBuilder = this.sectionRepository.createQueryBuilder('section')
+    .leftJoinAndSelect('section.department', 'department') // Include customer relationship
+
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
@@ -32,7 +34,7 @@ export class SectionsService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(section.name ILIKE :search OR section.role ILIKE :search)', {
+        queryBuilder.andWhere('(section.name ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
 

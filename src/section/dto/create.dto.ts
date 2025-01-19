@@ -6,10 +6,8 @@ export class CreateSectionDto {
   name: string;
 
   @IsNotEmpty()
-  @IsString()
-  role: string;
+  role: any;
 
   @IsNotEmpty()
-  @IsString()
-  department: string;
+  departmentId: string;
 }

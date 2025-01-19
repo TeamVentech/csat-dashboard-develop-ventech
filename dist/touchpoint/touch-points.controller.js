@@ -30,6 +30,9 @@ let TouchPointsController = class TouchPointsController {
     findAll(page = 1, perPage = 10, filter = '') {
         return this.touchPointsService.findAll(page, perPage, filter);
     }
+    findAllSearch(page = 1, perPage = 10, filter = '', type = '') {
+        return this.touchPointsService.findAllSearch(page, perPage, filter, type);
+    }
     findAllCategory() {
         return this.touchPointsService.findAllCategory();
     }
@@ -71,6 +74,17 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], TouchPointsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('search/all'),
+    (0, permissions_decorator_1.Permissions)('Lookups::read'),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('perPage')),
+    __param(2, (0, common_1.Query)('filter')),
+    __param(3, (0, common_1.Query)('type')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, String]),
+    __metadata("design:returntype", void 0)
+], TouchPointsController.prototype, "findAllSearch", null);
 __decorate([
     (0, common_1.Get)('touchpoint/all'),
     __metadata("design:type", Function),

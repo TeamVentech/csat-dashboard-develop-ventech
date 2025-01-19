@@ -11,10 +11,13 @@
     name: string;
 
     @Column()
-    manager_name: string;
+    contact_name: string;
 
     @Column()
-    manager_email: string;
+    email: string;
+
+    @Column()
+    phone_number: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

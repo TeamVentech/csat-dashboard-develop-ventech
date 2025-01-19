@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Department } from 'departments/entities/departments.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity('sections')
@@ -6,14 +7,18 @@ export class Section {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuidv4();
 
-  @Column()
+  @Column({ unique: true })
   name: string;
 
-  @Column()
-  role: string;
+  @Column('json', { nullable: true })
+  role: any[];
 
-  @Column({nullable: true})
-  department: string;
+  @PrimaryColumn({ name: 'department_id', type: 'uuid' })
+  departmentId: string;
+
+  @ManyToOne(() => Department, { eager: true })
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

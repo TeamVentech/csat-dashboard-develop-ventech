@@ -29,10 +29,7 @@ let DepartmentsController = class DepartmentsController {
         return this.departmentsService.create(createDepartmentDto);
     }
     findAll(page, perPage, search) {
-        const filterOptions = {
-            search
-        };
-        return this.departmentsService.findAll(page, perPage, filterOptions);
+        return this.departmentsService.findAll(page, perPage, search);
     }
     find() {
         return this.departmentsService.find();
@@ -63,7 +60,7 @@ __decorate([
     __param(1, (0, common_1.Query)('perPage')),
     __param(2, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, String]),
+    __metadata("design:paramtypes", [Number, Number, Object]),
     __metadata("design:returntype", void 0)
 ], DepartmentsController.prototype, "findAll", null);
 __decorate([

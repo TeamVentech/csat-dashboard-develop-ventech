@@ -111,5 +111,23 @@ declare const SmsMessage: {
             en: string;
         };
     };
+    "Wheelchair & Stroller Request": {
+        Open: {
+            ar: string;
+            en: string;
+        };
+        "In Service": {
+            ar: string;
+            en: string;
+        };
+        "Item Not Returned": {
+            ar: string;
+            en: string;
+        };
+        "Item Returned": {
+            ar: string;
+            en: string;
+        };
+    };
 };
 export default SmsMessage;

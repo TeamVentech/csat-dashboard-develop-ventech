@@ -7,7 +7,7 @@ export class Department {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuidv4();
 
-  @Column()
+  @Column({ unique: true })
   name: string;
 
   @OneToMany(() => User, (user) => user.department)

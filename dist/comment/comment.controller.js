@@ -27,11 +27,11 @@ let CommentController = class CommentController {
     create(createCommentDto) {
         return this.requestServicesService.create(createCommentDto);
     }
-    findAll(page, perPage, search) {
+    findAll(page, perPage, search, state) {
         const filterOptions = {
             search
         };
-        return this.requestServicesService.findAll(page, perPage, filterOptions);
+        return this.requestServicesService.findAll(page, perPage, filterOptions, state);
     }
     findOne(id) {
         return this.requestServicesService.findOne(id);
@@ -58,8 +58,9 @@ __decorate([
     __param(0, (0, common_1.Query)('page')),
     __param(1, (0, common_1.Query)('perPage')),
     __param(2, (0, common_1.Query)('search')),
+    __param(3, (0, common_1.Query)('state')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number, String]),
+    __metadata("design:paramtypes", [Number, Number, String, String]),
     __metadata("design:returntype", void 0)
 ], CommentController.prototype, "findAll", null);
 __decorate([

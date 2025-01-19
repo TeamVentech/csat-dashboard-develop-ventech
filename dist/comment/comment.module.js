@@ -13,12 +13,15 @@ const comment_service_1 = require("./comment.service");
 const comment_provider_1 = require("./comment.provider");
 const database_module_1 = require("../database/database.module");
 const roles_module_1 = require("../roles/roles.module");
+const complaint_module_1 = require("../complaint/complaint.module");
+const requestServices_module_1 = require("../requestServices/requestServices.module");
+const touch_points_module_1 = require("../touchpoint/touch-points.module");
 let CommentModule = class CommentModule {
 };
 exports.CommentModule = CommentModule;
 exports.CommentModule = CommentModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
+        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule, requestServices_module_1.RequestServicesModule, touch_points_module_1.TouchPointsModule, complaint_module_1.ComplaintsModule],
         controllers: [comment_controller_1.CommentController],
         providers: [comment_service_1.CommentService, ...comment_provider_1.CommentProvider]
     })

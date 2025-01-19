@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Section = void 0;
+const departments_entity_1 = require("../../departments/entities/departments.entity");
 const typeorm_1 = require("typeorm");
 const uuid_1 = require("uuid");
 let Section = class Section {
@@ -23,16 +24,21 @@ __decorate([
     __metadata("design:type", String)
 ], Section.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ unique: true }),
     __metadata("design:type", String)
 ], Section.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)('json', { nullable: true }),
+    __metadata("design:type", Array)
 ], Section.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.PrimaryColumn)({ name: 'department_id', type: 'uuid' }),
     __metadata("design:type", String)
+], Section.prototype, "departmentId", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => departments_entity_1.Department, { eager: true }),
+    (0, typeorm_1.JoinColumn)({ name: 'department_id' }),
+    __metadata("design:type", departments_entity_1.Department)
 ], Section.prototype, "department", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),

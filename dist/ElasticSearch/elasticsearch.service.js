@@ -23,22 +23,62 @@ let ElasticService = class ElasticService {
             body: data,
         });
     }
+    async getAllDocuments(index) {
+        try {
+            const result = await this.elasticsearchService.search({
+                index,
+                body: {
+                    query: { match_all: {} },
+                    sort: [{ createdAt: { order: 'desc' } }],
+                },
+                size: 400,
+            });
+            const hits = result.hits.hits.map((hit) => hit._source);
+            return {
+                data: hits,
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                message: 'Error fetching documents',
+                error,
+            };
+        }
+    }
     async getById(index, id) {
         try {
-            const result = await this.elasticsearchService.get({
+            const result = await this.elasticsearchService.search({
                 index,
-                id,
+                body: {
+                    query: {
+                        term: { _id: id },
+                    },
+                    sort: [{ createdAt: { order: 'desc' } }],
+                },
             });
-            if (result.found) {
+            const hits = result.hits.hits;
+            if (hits.length > 0) {
                 return {
                     success: true,
                     message: 'Document found',
-                    data: result._source,
+                    data: hits[0]._source,
+                };
+            }
+            else {
+                return {
+                    success: false,
+                    message: 'Document not found',
                 };
             }
         }
         catch (error) {
-            console.log(error);
+            console.error('Error fetching document:', error);
+            return {
+                success: false,
+                message: 'Error fetching document',
+                error,
+            };
         }
     }
     async updateDocument(index, id, updateData) {
@@ -106,11 +146,49 @@ let ElasticService = class ElasticService {
             };
         }
     }
+    async searchInServiceState(index) {
+        try {
+            const result = await this.elasticsearchService.search({
+                index,
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                { match: { type: 'Wheelchair & Stroller Request' } },
+                                { match: { state: 'In Service' } }
+                            ]
+                        }
+                    },
+                    size: 10000
+                }
+            });
+            const hits = result.hits.hits.map((hit) => hit._source);
+            let totalHits;
+            if (typeof result.hits.total === 'number') {
+                totalHits = result.hits.total;
+            }
+            else {
+                totalHits = result.hits.total.value;
+            }
+            return {
+                success: true,
+                totalHits: totalHits,
+                results: hits
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                message: 'Error searching documents',
+                error
+            };
+        }
+    }
     async search(index, query, page = 1, pageSize = 10) {
         const from = (page - 1) * pageSize;
         const must = [];
         if (query?.name) {
-            must.push({ match: { "name.keyword": query.name } });
+            must.push({ match: { "name": query.name } });
         }
         if (query?.type) {
             must.push({ match: { "type.keyword": query.type } });
@@ -165,6 +243,24 @@ let ElasticService = class ElasticService {
             pageSize,
             results: sources,
         };
+    }
+    async deleteDocument(index, id) {
+        try {
+            const result = await this.elasticsearchService.delete({
+                index,
+                id,
+            });
+            return {
+                result
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                message: 'Error deleting document',
+                error,
+            };
+        }
     }
 };
 exports.ElasticService = ElasticService;

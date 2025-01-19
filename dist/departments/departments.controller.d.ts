@@ -5,12 +5,55 @@ export declare class DepartmentsController {
     private readonly departmentsService;
     constructor(departmentsService: DepartmentsService);
     create(createDepartmentDto: CreateDepartmentDto): Promise<import("./entities/departments.entity").Department>;
-    findAll(page: number, perPage: number, search?: string): Promise<{
-        categories: import("./entities/departments.entity").Department[];
-        total: number;
+    findAll(page: number, perPage: number, search?: any): Promise<{
+        totalHits: number;
+        totalPages: number;
+        currentPage: number;
+        pageSize: number;
+        results: unknown[];
     }>;
-    find(): Promise<import("./entities/departments.entity").Department[]>;
-    findOne(id: string): Promise<import("./entities/departments.entity").Department>;
-    update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<import("./entities/departments.entity").Department>;
-    remove(id: string): Promise<void>;
+    find(): Promise<{
+        data: unknown[];
+        success?: undefined;
+        message?: undefined;
+        error?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        error: any;
+        data?: undefined;
+    }>;
+    findOne(id: string): Promise<{
+        success: boolean;
+        message: string;
+        data: unknown;
+        error?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        data?: undefined;
+        error?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        error: any;
+        data?: undefined;
+    }>;
+    update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<{
+        success: boolean;
+        message: string;
+        data: unknown;
+        error?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        data?: undefined;
+        error?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        error: any;
+        data?: undefined;
+    }>;
+    remove(id: string): Promise<{}>;
 }

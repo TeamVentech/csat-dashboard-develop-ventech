@@ -13,12 +13,13 @@ const departments_service_1 = require("./departments.service");
 const departments_provider_1 = require("./departments.provider");
 const database_module_1 = require("../database/database.module");
 const roles_module_1 = require("../roles/roles.module");
+const elasticsearch_module_1 = require("../ElasticSearch/elasticsearch.module");
 let DepartmentsModule = class DepartmentsModule {
 };
 exports.DepartmentsModule = DepartmentsModule;
 exports.DepartmentsModule = DepartmentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
+        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule, elasticsearch_module_1.ElasticSearchModule],
         controllers: [departments_controller_1.DepartmentsController],
         providers: [departments_service_1.DepartmentsService, ...departments_provider_1.DepartmentProvider]
     })

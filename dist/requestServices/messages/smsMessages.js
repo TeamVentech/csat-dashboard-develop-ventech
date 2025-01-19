@@ -112,6 +112,24 @@ const SmsMessage = {
             "ar": " شكراً لك. نتمنى لك الاستمتاع بقسائم الإهداء! يرجى تقييم الخدمة المقدمة من خلال الضغط على الرابط أدناه: الرابط",
             "en": "Dear Customer, Your suggestion has been processed. Please rate our service by following the below link:"
         }
+    },
+    "Wheelchair & Stroller Request": {
+        "Open": {
+            "ar": "شكراً لاقتراحك! تم استلامه بنجاح وسنقوم بمراجعته قريباً. ملاحظاتك تساعدنا على التحسين. ترقب التحديثات!",
+            "en": "Thank you for your suggestion! We’ve successfully received it and will review it soon. Your feedback helps us improve. Stay tuned for updates!"
+        },
+        "In Service": {
+            "ar": "شكراً لاقتراحك! تم استلامه بنجاح وسنقوم بمراجعته قريباً. ملاحظاتك تساعدنا على التحسين. ترقب التحديثات!",
+            "en": "Thank you for your suggestion! We’ve successfully received it and will review it soon. Your feedback helps us improve. Stay tuned for updates!"
+        },
+        "Item Not Returned": {
+            "ar": "شكراً لاقتراحك! تم استلامه بنجاح وسنقوم بمراجعته قريباً. ملاحظاتك تساعدنا على التحسين. ترقب التحديثات!",
+            "en": "Thank you for your suggestion! We’ve successfully received it and will review it soon. Your feedback helps us improve. Stay tuned for updates!"
+        },
+        "Item Returned": {
+            "ar": " شكراً لك. نتمنى لك الاستمتاع بقسائم الإهداء! يرجى تقييم الخدمة المقدمة من خلال الضغط على الرابط أدناه: الرابط",
+            "en": "Dear Customer, Your suggestion has been processed. Please rate our service by following the below link:"
+        }
     }
 };
 exports.default = SmsMessage;

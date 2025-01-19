@@ -29,12 +29,10 @@ export class DepartmentsController {
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
-    @Query('search') search?: string,
+    @Query('search') search?: any,
   ) {
-    const filterOptions = {
-      search
-  };
-    return this.departmentsService.findAll(page, perPage, filterOptions);
+
+    return this.departmentsService.findAll(page, perPage, search);
   }
 
   @Get('get-department')

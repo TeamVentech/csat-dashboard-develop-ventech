@@ -60,6 +60,36 @@ let TouchPointsService = class TouchPointsService {
             .getManyAndCount();
         return { categories, total };
     }
+    async findAllSearch(page, perPage, filterOptions, categoryType) {
+        page = page || 1;
+        perPage = perPage || 10;
+        const queryBuilder = this.touchPointRepository
+            .createQueryBuilder('touchpoint')
+            .leftJoinAndSelect('touchpoint.category', 'category')
+            .leftJoinAndSelect('touchpoint.location', 'location')
+            .where('category.type = :categoryType', { categoryType });
+        if (filterOptions) {
+            if (filterOptions.search) {
+                const searchString = filterOptions.search.trim().startsWith(' ')
+                    ? filterOptions.search.replace(' ', '+')
+                    : filterOptions.search;
+                filterOptions.search = searchString;
+                queryBuilder.andWhere('(touchpoint.name ILIKE :search)', {
+                    search: `%${filterOptions.search}%`,
+                });
+            }
+            Object.keys(filterOptions).forEach(key => {
+                if (key !== 'search' && filterOptions[key]) {
+                    queryBuilder.andWhere(`touchpoint.${key} = :${key}`, { [key]: filterOptions[key] });
+                }
+            });
+        }
+        const [categories, total] = await queryBuilder
+            .skip((page - 1) * perPage)
+            .take(perPage)
+            .getManyAndCount();
+        return { categories, total };
+    }
     async findOne(id) {
         return this.touchPointRepository.findOne({
             where: { id },

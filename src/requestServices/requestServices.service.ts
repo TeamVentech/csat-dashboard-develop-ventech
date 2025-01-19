@@ -20,7 +20,7 @@ export class RequestServicesService {
 
   async create(createRequestServicesDto: CreateRequestServicesDto) {
     try {
-      const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.constact?.phone_number;
+      const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.phone_number;
       if (createRequestServicesDto.type === 'Found Child') {
         if (createRequestServicesDto.metadata.parents.phone_number) {
           const numbers = createRequestServicesDto?.metadata?.parents?.phone_number
@@ -50,7 +50,7 @@ export class RequestServicesService {
     page = page || 1;
     perPage = perPage || 10;
     const queryBuilder = this.requestServicesRepository.createQueryBuilder('user');
-  
+
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
@@ -62,27 +62,27 @@ export class RequestServicesService {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }
-  
+
       Object.keys(filterOptions).forEach(key => {
         if (key !== 'search' && filterOptions[key]) {
           queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
         }
       });
     }
-  
+
     // Sort by createdAt in descending order
     queryBuilder.orderBy('user.createdAt', 'DESC');
-  
+
     const [data, total] = await queryBuilder
       .skip((page - 1) * perPage)
       .take(perPage)
       .getManyAndCount();
-  
+
     return { data, total };
   }
-  
+
   async findOne(id: string) {
-    const RequestServices =  await this.elasticService.getById('services', id);
+    const RequestServices = await this.elasticService.getById('services', id);
     if (!RequestServices) {
       throw new NotFoundException(`Department with ID ${id} not found`);
     }
@@ -105,10 +105,10 @@ export class RequestServicesService {
   }
 
 
-  // Update a department by IDs
+  // Update a department by IDsdd
   async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
     const data = await this.findOneColumn(id);
-    if (data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed') {
+    if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed') || (updateRequestServicesDto.state === 'Item Returned' && data.state !== "Item Returned")) {
       const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
       const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
@@ -128,6 +128,12 @@ export class RequestServicesService {
       const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number || updateRequestServicesDto?.metadata?.Company?.constact?.phone_number
       const message = updateRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العمsلاء]." : "Dears Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child."
       await this.sendSms(numbers, message, numbers)
+    }
+    if (updateRequestServicesDto.type === "Wheelchair & Stroller Request" && updateRequestServicesDto.metadata.condition === "Damaged" && data.metadata.condition !== 'Damaged') {
+      const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+      const message = updateRequestServicesDto.metadata.isArabic ? "السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا" : "The item is damaged. As per policy, a payment of 20 JDs is required"
+      await this.sendSms(numbers, message, numbers)
+
     }
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
     await this.elasticService.updateDocument('services', id, updateRequestServicesDto);

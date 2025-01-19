@@ -29,14 +29,15 @@ let SectionsService = class SectionsService {
     async findAll(page, perPage, filterOptions) {
         page = page || 1;
         perPage = perPage || 10;
-        const queryBuilder = this.sectionRepository.createQueryBuilder('section');
+        const queryBuilder = this.sectionRepository.createQueryBuilder('section')
+            .leftJoinAndSelect('section.department', 'department');
         if (filterOptions) {
             if (filterOptions.search) {
                 const searchString = filterOptions.search.startsWith(' ')
                     ? filterOptions.search.replace(' ', '+')
                     : filterOptions.search;
                 filterOptions.search = searchString;
-                queryBuilder.andWhere('(section.name ILIKE :search OR section.role ILIKE :search)', {
+                queryBuilder.andWhere('(section.name ILIKE :search)', {
                     search: `%${filterOptions.search}%`,
                 });
             }

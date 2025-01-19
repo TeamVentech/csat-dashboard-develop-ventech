@@ -31,7 +31,7 @@ export class TenantsService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.name ILIKE :search OR user.manager_name ILIKE :search OR user.manager_email ILIKE :search)', {
+        queryBuilder.andWhere('(user.name ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }

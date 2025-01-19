@@ -25,7 +25,7 @@ let RequestServicesService = class RequestServicesService {
     }
     async create(createRequestServicesDto) {
         try {
-            const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.constact?.phone_number;
+            const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.phone_number;
             if (createRequestServicesDto.type === 'Found Child') {
                 if (createRequestServicesDto.metadata.parents.phone_number) {
                     const numbers = createRequestServicesDto?.metadata?.parents?.phone_number;
@@ -98,7 +98,7 @@ let RequestServicesService = class RequestServicesService {
     }
     async update(id, updateRequestServicesDto) {
         const data = await this.findOneColumn(id);
-        if (data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed') {
+        if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed') || (updateRequestServicesDto.state === 'Item Returned' && data.state !== "Item Returned")) {
             const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
             const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
             const message = smsMessages_1.default[updateRequestServicesDto.type][updateRequestServicesDto.state][language];
@@ -117,6 +117,11 @@ let RequestServicesService = class RequestServicesService {
         if (updateRequestServicesDto.name === 'Gift Voucher Sales' && updateRequestServicesDto.state === "Sold" && data.state === "Pending") {
             const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number || updateRequestServicesDto?.metadata?.Company?.constact?.phone_number;
             const message = updateRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العمsلاء]." : "Dears Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child.";
+            await this.sendSms(numbers, message, numbers);
+        }
+        if (updateRequestServicesDto.type === "Wheelchair & Stroller Request" && updateRequestServicesDto.metadata.condition === "Damaged" && data.metadata.condition !== 'Damaged') {
+            const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number;
+            const message = updateRequestServicesDto.metadata.isArabic ? "السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا" : "The item is damaged. As per policy, a payment of 20 JDs is required";
             await this.sendSms(numbers, message, numbers);
         }
         await this.requestServicesRepository.update(id, updateRequestServicesDto);

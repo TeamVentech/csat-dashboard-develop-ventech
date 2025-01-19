@@ -13,23 +13,67 @@ export class ElasticService {
         });
     }
 
+    async getAllDocuments(index: string) {
+        try {
+            const result = await this.elasticsearchService.search({
+                index,
+                body: {
+                    query: { match_all: {} },
+                    sort: [{ createdAt: { order: 'desc' } }], // Sort by createdAt in descending order
+                },
+                size: 400,
+            });
+
+            const hits = result.hits.hits.map((hit) => hit._source);
+
+            return {
+                data: hits,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Error fetching documents',
+                error,
+            };
+        }
+    }
+
     async getById(index: string, id: string) {
         try {
-            const result = await this.elasticsearchService.get({
+            const result = await this.elasticsearchService.search({
                 index,
-                id,
+                body: {
+                    query: {
+                        term: { _id: id }, // Search for the specific document by ID
+                    },
+                    sort: [{ createdAt: { order: 'desc' } }], // Sort by createdAt in descending order
+                },
             });
-            if (result.found) {
+
+            const hits = result.hits.hits;
+
+            if (hits.length > 0) {
                 return {
                     success: true,
                     message: 'Document found',
-                    data: result._source, // Document source data
+                    data: hits[0]._source, // Return the first (and only) document found
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'Document not found',
                 };
             }
         } catch (error) {
-            console.log(error)
+            console.error('Error fetching document:', error);
+            return {
+                success: false,
+                message: 'Error fetching document',
+                error,
+            };
         }
     }
+
 
     async updateDocument(index: string, id: string, updateData: any) {
         try {
@@ -96,13 +140,51 @@ export class ElasticService {
         }
     }
 
+    async searchInServiceState(index: string) {
+        try {
+            const result = await this.elasticsearchService.search({
+                index,
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                { match: { type: 'Wheelchair & Stroller Request' } },
+                                { match: { state: 'In Service' } }
+                            ]
+                        }
+                    },
+                    size: 10000 // Maximum number of documents
+                }
+            });
+            const hits = result.hits.hits.map((hit: any) => hit._source);
+            let totalHits: number;
+
+            if (typeof result.hits.total === 'number') {
+                totalHits = result.hits.total;
+            } else {
+                totalHits = result.hits.total.value;
+            }
+            return {
+                success: true,
+                totalHits: totalHits,
+                results: hits
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Error searching documents',
+                error
+            };
+        }
+    }
+
 
     async search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
 
         const must: any[] = [];
         if (query?.name) {
-            must.push({ match: { "name.keyword": query.name } });
+            must.push({ match: { "name": query.name } });
         }
         if (query?.type) {
             must.push({ match: { "type.keyword": query.type } });
@@ -142,7 +224,6 @@ export class ElasticService {
             from,
             size: pageSize,
         });
-
         let totalHits: number;
 
         if (typeof result.hits.total === 'number') {
@@ -153,7 +234,6 @@ export class ElasticService {
 
         const totalPages = Math.ceil(totalHits / pageSize);
         const sources = result.hits.hits.map((hit) => hit._source);
-
         return {
             totalHits,
             totalPages,
@@ -161,6 +241,25 @@ export class ElasticService {
             pageSize,
             results: sources,
         };
+    }
+
+    async deleteDocument(index: string, id: string) {
+        try {
+            const result = await this.elasticsearchService.delete({
+                index,
+                id,
+            });
+
+            return {
+                result
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Error deleting document',
+                error,
+            };
+        }
     }
 
 }
