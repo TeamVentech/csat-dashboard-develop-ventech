@@ -8,7 +8,7 @@ import { RolesModule } from 'roles/roles.module';
 @Module({
   imports: [DatabaseModule, RolesModule],
   controllers: [SectionsController],
-  providers: [SectionsService, ...SectionProvider]
+  providers: [SectionsService, ...SectionProvider],
 })
 export class SectionsModule {}
 

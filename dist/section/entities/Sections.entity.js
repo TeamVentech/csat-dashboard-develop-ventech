@@ -32,7 +32,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Section.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.PrimaryColumn)({ name: 'department_id', type: 'uuid' }),
+    (0, typeorm_1.Column)({ name: 'department_id', type: 'uuid' }),
     __metadata("design:type", String)
 ], Section.prototype, "departmentId", void 0);
 __decorate([

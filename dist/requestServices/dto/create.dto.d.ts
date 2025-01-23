@@ -5,4 +5,5 @@ export declare class CreateRequestServicesDto {
     addedBy: string;
     type: string;
     rating: string;
+    actions: string;
 }

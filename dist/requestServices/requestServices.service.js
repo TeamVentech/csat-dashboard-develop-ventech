@@ -34,7 +34,7 @@ let RequestServicesService = class RequestServicesService {
                     createRequestServicesDto.state = "Awaiting Collection";
                 }
             }
-            else if (createRequestServicesDto.name !== 'Gift Voucher Sales') {
+            else if (createRequestServicesDto.name !== 'Gift Voucher Sales' && createRequestServicesDto.name !== 'Added-Value Services') {
                 const language = createRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
                 const message = smsMessages_1.default[createRequestServicesDto.type][createRequestServicesDto.state][language];
                 await this.sendSms(numbers, message, numbers);
@@ -124,13 +124,35 @@ let RequestServicesService = class RequestServicesService {
             const message = updateRequestServicesDto.metadata.isArabic ? "السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا" : "The item is damaged. As per policy, a payment of 20 JDs is required";
             await this.sendSms(numbers, message, numbers);
         }
+        if (updateRequestServicesDto?.actions === "Awaiting Collection") {
+            const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number;
+            console.log(numbers);
+            const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`;
+            console.log(message);
+            await this.sendSms(numbers, message, numbers);
+        }
+        if (updateRequestServicesDto?.actions === "Refunded") {
+            const numbers = data?.metadata?.customer?.phone_number || data?.metadata?.Company?.phone_number;
+            console.log(numbers);
+            const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`;
+            console.log(message);
+            await this.sendSms(numbers, message, numbers);
+        }
+        if (updateRequestServicesDto?.actions === "In Service" || updateRequestServicesDto?.actions === "Bags Collected") {
+            const numbers = data?.metadata?.customer?.phone_number;
+            const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en";
+            const message = smsMessages_1.default[updateRequestServicesDto.type][updateRequestServicesDto.state][language];
+            await this.sendSms(numbers, message, numbers);
+        }
         await this.requestServicesRepository.update(id, updateRequestServicesDto);
         await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
         return this.findOne(id);
     }
     async rating(id, rate) {
         const data = await this.findOneColumn(id);
-        await this.requestServicesRepository.update(id, { ...data, rating: rate.rating });
+        data.rating = rate.rating;
+        await this.requestServicesRepository.update(id, data);
+        await this.elasticService.updateDocument('services', id, data);
         return this.findOne(id);
     }
     async remove(id) {

@@ -4,13 +4,17 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
+        "Child Found": {
+            ar: string;
+            en: string;
+        };
         Closed: {
             ar: string;
             en: string;
         };
     };
     "Found Child": {
-        Open: {
+        "Awaiting Collection": {
             ar: string;
             en: string;
         };
@@ -21,10 +25,6 @@ declare const SmsMessage: {
     };
     "Lost Item": {
         Open: {
-            ar: string;
-            en: string;
-        };
-        "In Progress": {
             ar: string;
             en: string;
         };
@@ -40,16 +40,8 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
-        Closed: {
-            en: string;
-            ar: string;
-        };
     };
     "Incident Reporting": {
-        Open: {
-            ar: string;
-            en: string;
-        };
         Closed: {
             en: string;
             ar: string;
@@ -57,10 +49,6 @@ declare const SmsMessage: {
     };
     "Suggestion Box": {
         Pending: {
-            ar: string;
-            en: string;
-        };
-        Open: {
             ar: string;
             en: string;
         };
@@ -74,11 +62,11 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
-        Expired: {
+        Extended: {
             ar: string;
             en: string;
         };
-        Closed: {
+        "Extension Rejected": {
             ar: string;
             en: string;
         };
@@ -88,17 +76,17 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
-        Expired: {
+        Extended: {
             ar: string;
             en: string;
         };
-        Closed: {
+        "Extension Rejected": {
             ar: string;
             en: string;
         };
     };
     "Power Bank Request": {
-        Open: {
+        "Out for Delivery": {
             ar: string;
             en: string;
         };
@@ -106,13 +94,21 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
-        Closed: {
+        "Pending Customer": {
+            ar: string;
+            en: string;
+        };
+        "En Route for Pickup": {
+            ar: string;
+            en: string;
+        };
+        "Item Returned": {
             ar: string;
             en: string;
         };
     };
     "Wheelchair & Stroller Request": {
-        Open: {
+        "Out for Delivery": {
             ar: string;
             en: string;
         };
@@ -120,11 +116,65 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
-        "Item Not Returned": {
+        "Pending Customer": {
+            ar: string;
+            en: string;
+        };
+        "En Route for Pickup": {
             ar: string;
             en: string;
         };
         "Item Returned": {
+            ar: string;
+            en: string;
+        };
+    };
+    "Handsfree Request": {
+        "En Route for Pickup": {
+            ar: string;
+            en: string;
+        };
+        "Bags Collected": {
+            ar: string;
+            en: string;
+        };
+        "Out for Delivery": {
+            ar: string;
+            en: string;
+        };
+        "Bags Returned": {
+            ar: string;
+            en: string;
+        };
+    };
+    "Stroller Request": {
+        "Out for Delivery": {
+            ar: string;
+            en: string;
+        };
+        "In Service": {
+            ar: string;
+            en: string;
+        };
+        "Pending Customer": {
+            ar: string;
+            en: string;
+        };
+        "En Route for Pickup": {
+            ar: string;
+            en: string;
+        };
+        "Item Returned": {
+            ar: string;
+            en: string;
+        };
+    };
+    Complaints: {
+        "Pending Review (Final Level)": {
+            ar: string;
+            en: string;
+        };
+        Closed: {
             ar: string;
             en: string;
         };

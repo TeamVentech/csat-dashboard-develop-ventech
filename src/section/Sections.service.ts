@@ -1,21 +1,36 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Section } from './entities/Sections.entity';
 import { CreateSectionDto } from './dto/create.dto';
 import { UpdateSectionDto } from './dto/update.dto';
+import { Role } from 'roles/entities/roles.entity';
 
 @Injectable()
 export class SectionsService {
   constructor(
     @Inject('SECTIONS_REPOSITORY')
     private readonly sectionRepository: Repository<Section>,
-  ) {}
+    @Inject('ROLE_REPOSITORY')
+    private readonly roleRepository: Repository<Role>,
+  ) { }
 
-  async create(createSectionDto: CreateSectionDto) {
-    const Section = this.sectionRepository.create(createSectionDto);
-    return this.sectionRepository.save(Section);
+  async create(createSectionDto: CreateSectionDto): Promise<Section> {
+    const { name, role, departmentId } = createSectionDto;
+
+    const sectionRoles = await this.roleRepository.findBy({
+      name: In(role),
+    });
+
+    const section = this.sectionRepository.create({
+      name,
+      role: role,
+      departmentId,
+    });
+
+    return this.sectionRepository.save(section);
   }
+
 
   async findAllSections() {
     return this.sectionRepository.find();
@@ -25,7 +40,7 @@ export class SectionsService {
     page = page || 1;
     perPage = perPage || 10;
     const queryBuilder = this.sectionRepository.createQueryBuilder('section')
-    .leftJoinAndSelect('section.department', 'department') // Include customer relationship
+      .leftJoinAndSelect('section.department', 'department') // Include customer relationship
 
     // Apply filters based on filterOptions
     if (filterOptions) {
@@ -55,15 +70,14 @@ export class SectionsService {
     return { categories, total };
   }
 
-  async findOne(id: string){
-    const Section = await this.sectionRepository.findOne({ where: { id: id } });
-    if (!Section) {
-      throw new NotFoundException(`Section with ID ${id} not found`);
-    }
-    return Section;
+  async findOne(id: string) {
+    const section = await this.sectionRepository.findOne({
+      where: { id: id }
+    });
+    return section
   }
 
-  async findallwithoutfilter(){
+  async findallwithoutfilter() {
     const Section = await this.sectionRepository.find();
     if (!Section) {
       throw new NotFoundException(`Section with not found`);
@@ -72,10 +86,25 @@ export class SectionsService {
   }
 
   async update(id: string, updateSectionDto: UpdateSectionDto) {
-    await this.findOne(id);
-    await this.sectionRepository.update(id, updateSectionDto);
-    return this.findOne(id);
+    const { name, role, departmentId } = updateSectionDto;
+    const section = await this.sectionRepository.findOne({
+      where: { id },
+    });
+    if (!section) {
+      throw new NotFoundException(`Section with ID ${id} not found`);
+    }
+    if (name) {
+      section.name = name;
+    }
+    if (departmentId) {
+      section.departmentId = departmentId;
+    }
+    if (role) {
+      section.role = role;
+    }
+    return this.sectionRepository.save(section);
   }
+
 
   async remove(id: string) {
     const Section = await this.findOne(id);

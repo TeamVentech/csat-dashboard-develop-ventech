@@ -16,6 +16,12 @@
     @Column()
     email: string;
 
+    @Column({nullable:true})
+    manager_account: string;
+
+    @Column({nullable:true})
+    manager_email: string;
+
     @Column()
     phone_number: string;
 

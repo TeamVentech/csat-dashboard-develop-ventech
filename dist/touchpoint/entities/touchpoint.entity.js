@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Touchpoint = void 0;
 const categories_entity_1 = require("../../categories/entities/categories.entity");
-const Locations_entity_1 = require("../../locations/entities/Locations.entity");
 const typeorm_1 = require("typeorm");
 const uuid_1 = require("uuid");
 let Touchpoint = class Touchpoint {
@@ -49,15 +48,6 @@ __decorate([
     (0, typeorm_1.JoinColumn)({ name: 'category_id' }),
     __metadata("design:type", categories_entity_1.Category)
 ], Touchpoint.prototype, "category", void 0);
-__decorate([
-    (0, typeorm_1.PrimaryColumn)({ name: 'location_id', type: 'uuid' }),
-    __metadata("design:type", String)
-], Touchpoint.prototype, "locationId", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => Locations_entity_1.Location),
-    (0, typeorm_1.JoinColumn)({ name: 'location_id' }),
-    __metadata("design:type", Locations_entity_1.Location)
-], Touchpoint.prototype, "location", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

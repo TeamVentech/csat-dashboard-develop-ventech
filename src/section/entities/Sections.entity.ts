@@ -13,7 +13,7 @@ export class Section {
   @Column('json', { nullable: true })
   role: any[];
 
-  @PrimaryColumn({ name: 'department_id', type: 'uuid' })
+  @Column({ name: 'department_id', type: 'uuid' })
   departmentId: string;
 
   @ManyToOne(() => Department, { eager: true })

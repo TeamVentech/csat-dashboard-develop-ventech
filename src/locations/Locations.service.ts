@@ -41,6 +41,7 @@ export class LocationsService {
         }
       });
     }
+    queryBuilder.orderBy('user.createdAt', 'DESC');
 
     const [categories, total] = await queryBuilder
       .skip((page - 1) * perPage)

@@ -13,4 +13,10 @@ export class CreateTenantDto {
 
   @IsString()
   phone_number: string;
+
+  @IsString()
+  manager_account: string;
+
+  @IsString()
+  manager_email: string;
 }

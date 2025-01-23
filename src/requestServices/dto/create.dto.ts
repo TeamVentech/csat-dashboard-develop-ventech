@@ -24,4 +24,7 @@ export class CreateRequestServicesDto {
   @IsOptional()
   rating: string;
 
+  @IsOptional()
+  actions: string;
+
 }

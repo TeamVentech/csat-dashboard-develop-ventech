@@ -59,6 +59,10 @@ __decorate([
     __metadata("design:type", String)
 ], RequestServices.prototype, "addedBy", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true, default: "" }),
+    __metadata("design:type", String)
+], RequestServices.prototype, "actions", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
     __metadata("design:type", Object)
 ], RequestServices.prototype, "metadata", void 0);

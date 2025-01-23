@@ -66,7 +66,6 @@ let TouchPointsService = class TouchPointsService {
         const queryBuilder = this.touchPointRepository
             .createQueryBuilder('touchpoint')
             .leftJoinAndSelect('touchpoint.category', 'category')
-            .leftJoinAndSelect('touchpoint.location', 'location')
             .where('category.type = :categoryType', { categoryType });
         if (filterOptions) {
             if (filterOptions.search) {
@@ -84,6 +83,7 @@ let TouchPointsService = class TouchPointsService {
                 }
             });
         }
+        queryBuilder.orderBy('touchpoint.createdAt', 'DESC');
         const [categories, total] = await queryBuilder
             .skip((page - 1) * perPage)
             .take(perPage)
@@ -93,18 +93,18 @@ let TouchPointsService = class TouchPointsService {
     async findOne(id) {
         return this.touchPointRepository.findOne({
             where: { id },
-            relations: ['category', 'location'],
+            relations: ['category'],
         });
     }
     async findByCategory(id) {
         return this.touchPointRepository.find({
             where: { categoryId: id },
-            relations: ['category', 'location'],
+            relations: ['category'],
         });
     }
     async getAll() {
         return this.touchPointRepository.find({
-            relations: ['category', 'location'],
+            relations: ['category'],
         });
     }
     async findAllCategory() {
@@ -133,7 +133,6 @@ let TouchPointsService = class TouchPointsService {
         const highestRatedTouchPoint = await this.touchPointRepository
             .createQueryBuilder('touchpoint')
             .leftJoinAndSelect('touchpoint.category', 'category')
-            .leftJoinAndSelect('touchpoint.location', 'location')
             .orderBy('touchpoint.rating', 'DESC')
             .addOrderBy('touchpoint.countTransaction', 'DESC')
             .getOne();
@@ -146,7 +145,6 @@ let TouchPointsService = class TouchPointsService {
         const lowestRatedTouchPoint = await this.touchPointRepository
             .createQueryBuilder('touchpoint')
             .leftJoinAndSelect('touchpoint.category', 'category')
-            .leftJoinAndSelect('touchpoint.location', 'location')
             .orderBy('touchpoint.rating', 'ASC')
             .addOrderBy('touchpoint.countTransaction', 'ASC')
             .getOne();

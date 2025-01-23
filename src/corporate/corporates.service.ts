@@ -29,7 +29,7 @@ export class CorporatesService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.email ILIKE :search OR user.name ILIKE :search OR user.phone_number ILIKE :search OR user.gender ILIKE :search)', {
+        queryBuilder.andWhere('(user.email ILIKE :search OR user.name ILIKE :search OR user.phone_number ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }

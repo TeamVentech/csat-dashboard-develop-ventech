@@ -20,7 +20,7 @@ exports.SectionsModule = SectionsModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
         controllers: [Sections_controller_1.SectionsController],
-        providers: [Sections_service_1.SectionsService, ...Sections_provider_1.SectionProvider]
+        providers: [Sections_service_1.SectionsService, ...Sections_provider_1.SectionProvider],
     })
 ], SectionsModule);
 //# sourceMappingURL=Sections.module.js.map

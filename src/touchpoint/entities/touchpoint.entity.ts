@@ -8,13 +8,13 @@ export class Touchpoint {
   @PrimaryGeneratedColumn('uuid')
   id: string = uuidv4();
 
-  @Column({ type: 'jsonb', nullable: true, unique: true  })
+  @Column({ type: 'jsonb', nullable: true, unique: true })
   name: any;
 
-  @Column({default:"0"})
+  @Column({ default: "0" })
   rating: string;
 
-  @Column({default: 0})
+  @Column({ default: 0 })
   countTransaction: number;
 
   @Column({ type: 'text', nullable: true })
@@ -26,13 +26,6 @@ export class Touchpoint {
   @ManyToOne(() => Category)
   @JoinColumn({ name: 'category_id' })
   category: Category;
-
-  @PrimaryColumn({ name: 'location_id', type: 'uuid' })
-  locationId: string;
-
-  @ManyToOne(() => Location)
-  @JoinColumn({ name: 'location_id' })
-  location: Location;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

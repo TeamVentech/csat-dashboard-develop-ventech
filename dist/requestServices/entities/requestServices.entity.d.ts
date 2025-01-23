@@ -5,6 +5,7 @@ export declare class RequestServices {
     state: string;
     rating: string;
     addedBy: string;
+    actions: string;
     metadata: any;
     createdAt: Date;
     updatedAt: Date;

@@ -30,4 +30,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateTenantDto.prototype, "phone_number", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "manager_account", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "manager_email", void 0);
 //# sourceMappingURL=create.dto.js.map

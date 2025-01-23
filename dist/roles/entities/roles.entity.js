@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Role = void 0;
 const typeorm_1 = require("typeorm");
+const Sections_entity_1 = require("../../section/entities/Sections.entity");
 let Role = class Role {
 };
 exports.Role = Role;
@@ -22,6 +23,10 @@ __decorate([
     (0, typeorm_1.Column)('json', { nullable: true }),
     __metadata("design:type", Array)
 ], Role.prototype, "ability", void 0);
+__decorate([
+    (0, typeorm_1.ManyToMany)(() => Sections_entity_1.Section, (section) => section.role),
+    __metadata("design:type", Array)
+], Role.prototype, "sections", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

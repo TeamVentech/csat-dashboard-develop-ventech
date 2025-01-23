@@ -107,7 +107,6 @@ export class CommentService {
       await this.suggestionService.create({
         state: "Pending",
         metadata: {
-          type: updateCommentDto.metadata.suggestionType,
           customer: data.customer,
           Signature:"",
           Department:"",
@@ -120,7 +119,8 @@ export class CommentService {
         name: "Suggestion Box",
         addedBy: "system",
         type: "Suggestion Box",
-        rating: null
+        rating: null,
+        actions:""
       })
     }
     return this.findOne(id);

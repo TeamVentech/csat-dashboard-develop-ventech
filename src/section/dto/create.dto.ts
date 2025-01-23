@@ -1,12 +1,13 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class CreateSectionDto {
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @IsNotEmpty()
-  role: any;
+  @IsArray()
+  @IsString({ each: true })
+  role: string[];
 
   @IsNotEmpty()
   departmentId: string;

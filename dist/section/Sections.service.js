@@ -16,12 +16,21 @@ exports.SectionsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("typeorm");
 let SectionsService = class SectionsService {
-    constructor(sectionRepository) {
+    constructor(sectionRepository, roleRepository) {
         this.sectionRepository = sectionRepository;
+        this.roleRepository = roleRepository;
     }
     async create(createSectionDto) {
-        const Section = this.sectionRepository.create(createSectionDto);
-        return this.sectionRepository.save(Section);
+        const { name, role, departmentId } = createSectionDto;
+        const sectionRoles = await this.roleRepository.findBy({
+            name: (0, typeorm_1.In)(role),
+        });
+        const section = this.sectionRepository.create({
+            name,
+            role: role,
+            departmentId,
+        });
+        return this.sectionRepository.save(section);
     }
     async findAllSections() {
         return this.sectionRepository.find();
@@ -54,11 +63,10 @@ let SectionsService = class SectionsService {
         return { categories, total };
     }
     async findOne(id) {
-        const Section = await this.sectionRepository.findOne({ where: { id: id } });
-        if (!Section) {
-            throw new common_1.NotFoundException(`Section with ID ${id} not found`);
-        }
-        return Section;
+        const section = await this.sectionRepository.findOne({
+            where: { id: id }
+        });
+        return section;
     }
     async findallwithoutfilter() {
         const Section = await this.sectionRepository.find();
@@ -68,9 +76,23 @@ let SectionsService = class SectionsService {
         return Section;
     }
     async update(id, updateSectionDto) {
-        await this.findOne(id);
-        await this.sectionRepository.update(id, updateSectionDto);
-        return this.findOne(id);
+        const { name, role, departmentId } = updateSectionDto;
+        const section = await this.sectionRepository.findOne({
+            where: { id },
+        });
+        if (!section) {
+            throw new common_1.NotFoundException(`Section with ID ${id} not found`);
+        }
+        if (name) {
+            section.name = name;
+        }
+        if (departmentId) {
+            section.departmentId = departmentId;
+        }
+        if (role) {
+            section.role = role;
+        }
+        return this.sectionRepository.save(section);
     }
     async remove(id) {
         const Section = await this.findOne(id);
@@ -81,6 +103,8 @@ exports.SectionsService = SectionsService;
 exports.SectionsService = SectionsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('SECTIONS_REPOSITORY')),
-    __metadata("design:paramtypes", [typeorm_1.Repository])
+    __param(1, (0, common_1.Inject)('ROLE_REPOSITORY')),
+    __metadata("design:paramtypes", [typeorm_1.Repository,
+        typeorm_1.Repository])
 ], SectionsService);
 //# sourceMappingURL=Sections.service.js.map

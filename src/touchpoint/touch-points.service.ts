@@ -70,7 +70,6 @@ export class TouchPointsService {
     const queryBuilder = this.touchPointRepository
     .createQueryBuilder('touchpoint')
     .leftJoinAndSelect('touchpoint.category', 'category')
-    .leftJoinAndSelect('touchpoint.location', 'location')
     .where('category.type = :categoryType', { categoryType })
 
     // Apply filters based on filterOpdtions
@@ -86,13 +85,13 @@ export class TouchPointsService {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }
-  
       Object.keys(filterOptions).forEach(key => {
         if (key !== 'search' && filterOptions[key]) {
           queryBuilder.andWhere(`touchpoint.${key} = :${key}`, { [key]: filterOptions[key] });
         }
       });
     }
+    queryBuilder.orderBy('touchpoint.createdAt', 'DESC');
   
     const [categories, total] = await queryBuilder
       .skip((page - 1) * perPage)
@@ -106,19 +105,19 @@ export class TouchPointsService {
   async findOne(id: string) {
     return this.touchPointRepository.findOne({
       where: { id },
-      relations: ['category','location'], // Fetch customer relationship
+      relations: ['category'], // Fetch customer relationship
     });
   }
   async findByCategory(id: string) {
     return this.touchPointRepository.find({
       where: { categoryId : id },
-      relations: ['category','location'], // Fetch customer relationship
+      relations: ['category'], // Fetch customer relationship
     });
   }
   
   async getAll() {
     return this.touchPointRepository.find({
-      relations: ['category','location'],
+      relations: ['category'],
     });
   }
 
@@ -153,7 +152,6 @@ export class TouchPointsService {
     const highestRatedTouchPoint = await this.touchPointRepository
       .createQueryBuilder('touchpoint')
       .leftJoinAndSelect('touchpoint.category', 'category')
-      .leftJoinAndSelect('touchpoint.location', 'location')
       .orderBy('touchpoint.rating', 'DESC')
       .addOrderBy('touchpoint.countTransaction', 'DESC') // Tie-breaker if ratings are the same
       .getOne();
@@ -170,7 +168,6 @@ export class TouchPointsService {
     const lowestRatedTouchPoint = await this.touchPointRepository
       .createQueryBuilder('touchpoint')
       .leftJoinAndSelect('touchpoint.category', 'category')
-      .leftJoinAndSelect('touchpoint.location', 'location')
       .orderBy('touchpoint.rating', 'ASC')
       .addOrderBy('touchpoint.countTransaction', 'ASC') // Tie-breaker if ratings are the same
       .getOne();

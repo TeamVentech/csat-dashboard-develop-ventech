@@ -12,8 +12,4 @@ export class CreateTouchPointDto {
   @IsUUID()
   categoryId: string;
 
-  @IsNotEmpty()
-  @IsUUID()
-  locationId: string;
-
 }
