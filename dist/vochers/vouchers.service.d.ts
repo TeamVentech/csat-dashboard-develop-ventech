@@ -12,6 +12,15 @@ export declare class VouchersService {
     }>;
     findOne(id: string): Promise<Vouchers>;
     importVouchers(data: any[]): Promise<void>;
+    GetAvailableVoucher(data: any): Promise<{
+        message: string;
+        success: boolean;
+        data?: undefined;
+    } | {
+        message: string;
+        success: boolean;
+        data: any[];
+    }>;
     update(id: string, updateVouchersDto: UpdateVouchersDto): Promise<Vouchers>;
     remove(id: string): Promise<void>;
 }

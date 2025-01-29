@@ -43,6 +43,9 @@ let VouchersController = class VouchersController {
         await this.vouchersService.importVouchers(data);
         return { message: 'Vouchers imported successfully' };
     }
+    async GetAvailableVoucher(data) {
+        return await this.vouchersService.GetAvailableVoucher(data);
+    }
     update(id, updateVouchersDto) {
         return this.vouchersService.update(id, updateVouchersDto);
     }
@@ -85,6 +88,14 @@ __decorate([
     __metadata("design:paramtypes", [Array]),
     __metadata("design:returntype", Promise)
 ], VouchersController.prototype, "importVouchers", null);
+__decorate([
+    (0, common_1.Post)('GetAvailableVoucher'),
+    (0, permissions_decorator_1.Permissions)('Stock::read'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], VouchersController.prototype, "GetAvailableVoucher", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, permissions_decorator_1.Permissions)('Stock::update'),

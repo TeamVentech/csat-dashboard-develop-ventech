@@ -82,6 +82,9 @@ let ElasticService = class ElasticService {
         }
     }
     async updateDocument(index, id, updateData) {
+        console.log(index);
+        console.log(id);
+        console.log(updateData);
         try {
             const result = await this.elasticsearchService.update({
                 index,
@@ -93,6 +96,7 @@ let ElasticService = class ElasticService {
             console.log(result);
         }
         catch (error) {
+            console.log(error);
             return {
                 success: false,
                 message: 'Error updating document',

@@ -10,7 +10,9 @@ import { RolesModule } from 'roles/roles.module';
 @Module({
   imports: [DatabaseModule, RolesModule],
   controllers: [VouchersController],
-  providers: [VouchersService, ...VouchersProvider]
+  providers: [VouchersService, ...VouchersProvider],
+  exports: [VouchersService],
+
 })
-export class VouchersModule {}
+export class VouchersModule { }
 

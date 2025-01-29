@@ -27,6 +27,12 @@
     @Column({ nullable: true })
     dob: Date;
 
+    @Column({ nullable: true })
+    passport_number: string;
+
+    @Column({ nullable: true })
+    national_id: string;
+
     @Column({ enum: Gender, nullable: true })
     gender: string;
 

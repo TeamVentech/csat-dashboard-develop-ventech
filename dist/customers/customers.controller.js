@@ -35,6 +35,13 @@ let CustomersController = class CustomersController {
         };
         return this.customersService.findAll(page, perPage, filterOptions);
     }
+    async checkExistence(email, phone_number) {
+        if (!email && !phone_number) {
+            throw new common_1.BadRequestException('You must provide an email or phone number.');
+        }
+        const exists = await this.customersService.doesEmailOrPhoneExist(email, phone_number);
+        return { exists };
+    }
     async findOne(id) {
         return this.customersService.findOne(id);
     }
@@ -64,6 +71,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], CustomersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('check-existence'),
+    (0, permissions_decorator_1.Permissions)('Customer::read'),
+    __param(0, (0, common_1.Query)('email')),
+    __param(1, (0, common_1.Query)('phone_number')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CustomersController.prototype, "checkExistence", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, permissions_decorator_1.Permissions)('Customer::read'),

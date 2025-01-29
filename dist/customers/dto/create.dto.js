@@ -42,4 +42,12 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateCustomerDto.prototype, "age", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateCustomerDto.prototype, "national_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateCustomerDto.prototype, "passport_number", void 0);
 //# sourceMappingURL=create.dto.js.map

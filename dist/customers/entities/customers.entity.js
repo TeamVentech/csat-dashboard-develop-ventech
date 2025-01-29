@@ -48,6 +48,14 @@ __decorate([
     __metadata("design:type", Date)
 ], Customer.prototype, "dob", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Customer.prototype, "passport_number", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Customer.prototype, "national_id", void 0);
+__decorate([
     (0, typeorm_1.Column)({ enum: Gender, nullable: true }),
     __metadata("design:type", String)
 ], Customer.prototype, "gender", void 0);

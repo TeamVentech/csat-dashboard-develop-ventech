@@ -40,6 +40,14 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
+        "In Progress": {
+            ar: string;
+            en: string;
+        };
+        "In Progress Day 3": {
+            ar: string;
+            en: string;
+        };
     };
     "Incident Reporting": {
         Closed: {
@@ -106,8 +114,20 @@ declare const SmsMessage: {
             ar: string;
             en: string;
         };
+        "Wire damaged": {
+            ar: string;
+            en: string;
+        };
+        "Power bank damaged": {
+            ar: string;
+            en: string;
+        };
+        "Wire and powerbank damaged": {
+            ar: string;
+            en: string;
+        };
     };
-    "Wheelchair & Stroller Request": {
+    "Wheelchair Request": {
         "Out for Delivery": {
             ar: string;
             en: string;

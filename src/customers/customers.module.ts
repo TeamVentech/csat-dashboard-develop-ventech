@@ -8,6 +8,7 @@ import { RolesModule } from 'roles/roles.module';
 @Module({
   imports: [DatabaseModule, RolesModule ],
   controllers: [CustomersController],
-  providers: [CustomersService, ...CustomersProvider]
+  providers: [CustomersService, ...CustomersProvider],
+  exports:[CustomersService]
 })
 export class CustomersModule {}

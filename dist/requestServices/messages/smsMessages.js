@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const SmsMessage = {
     "Lost Child": {
         "Open": {
-            "ar": "زبوننا العزيز،\nتم تسجيل حالة فقدان الطفل. فرقنا تقوم بعملية البحث. سنبلغكم بأي جديد.\nنتمنى لكم السلامة",
-            "en": "Dear customer,\nWe would like to inform you that missing child case is open. Our team is on the search. We will keep you updated.\n\"Stay Safe\" from City Mall"
+            "ar": `زبوننا العزيز،\nتم تسجيل حالة فقدان الطفل. فرقنا تقوم بعملية البحث. سنبلغكم بأي جديد.\nنتمنى لكم السلامة`,
+            "en": `Dear customer,\nWe would like to inform you that missing child case is open. Our team is on the search. We will keep you updated.\n\"Stay Safe\" from City Mall`
         },
         "Child Found": {
             "ar": "تم العثور على طفلكم المفقود. يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
@@ -39,6 +39,14 @@ const SmsMessage = {
             "en": "The case is closed.\nPlease rate our services by following the below link:\nLINK"
         },
         "Article Not Found": {
+            "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
+            "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+        },
+        "In Progress": {
+            "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
+            "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+        },
+        "In Progress Day 3": {
             "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
             "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
         }
@@ -106,10 +114,22 @@ const SmsMessage = {
         },
         "Item Returned": {
             "ar": "شكراً لك على استخدام خدمة الشاحن المتنقل. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
-            "en": "Thank you for using our Power Bank service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
+            "en": "Thank you for using our Power Bank service. We hope you had an enjoyable experience. Please rate our service by following the below link"
+        },
+        "Wire damaged": {
+            "ar": "نأسف لإبلاغكم بوجود ضرر في سلك الشاحن المتنقل. وفقًا لسياساتنا، سيتم خصم غرامة قدرها 4 د.أ من التأمين",
+            "en": "We regret to inform you that powerbank wire was found damaged. As per our policies, a fine of 4jds will be deducted from security deposit."
+        },
+        "Power bank damaged": {
+            "ar": "نأسف لإبلاغكم بوجود ضرر في الشاحن المتنقل. وفقًا لسياساتنا، سيتم خصم غرامة قدرها 6 د.أ من التأمين",
+            "en": "We regret to inform you that powerbank was found damaged. As per our policies, a fine of 6jds will be deducted from security deposit."
+        },
+        "Wire and powerbank damaged": {
+            "ar": "نأسف لإبلاغكم بوجود ضرر في الشاحن المتنقل والسلك. وفقًا لسياساتنا، سيتم خصم مبلغ التأمين بقيمة 10 د.أ",
+            "en": "We regret to inform you that powerbank and wire was found damaged. As per our policies, security deposit amount of 10jds will be deducted."
         }
     },
-    "Wheelchair & Stroller Request": {
+    "Wheelchair Request": {
         "Out for Delivery": {
             "ar": "زبوننا العزيز، شكراً لطلب خدمة توصيل الكرسي المتحرك. مندوب خدمة الزبائن في طريقه إليك.",
             "en": "Dear Customer, Thank you for requesting our wheelchair delivery service. Our representative is on their way to you."

@@ -57,16 +57,54 @@ let VouchersService = class VouchersService {
         return Vouchers;
     }
     async importVouchers(data) {
-        const vouchers = data.map(async (item) => {
+        for (const item of data) {
             console.log(item);
-            const res = this.vouchersRepository.create({
-                name: "Vouchers",
-                addedBy: "System",
-                metadata: item,
-                serialNumber: item.Serial_Number
+            let existingVoucher = await this.vouchersRepository.findOne({
+                where: { serialNumber: item.Serial_Number },
             });
-            await this.vouchersRepository.save(res);
-        });
+            if (existingVoucher) {
+                existingVoucher.metadata = item;
+                existingVoucher.updatedAt = new Date();
+            }
+            else {
+                existingVoucher = this.vouchersRepository.create({
+                    name: "Vouchers",
+                    addedBy: "System",
+                    metadata: item,
+                    serialNumber: item.Serial_Number
+                });
+            }
+            await this.vouchersRepository.save(existingVoucher);
+        }
+    }
+    async GetAvailableVoucher(data) {
+        const list = [];
+        console.log(data);
+        for (const item of data.vouchers) {
+            console.log(item);
+            const variables = item.denominations;
+            const result = await this.vouchersRepository
+                .createQueryBuilder('vouchers')
+                .where("vouchers.metadata->>'status' != :status", { status: 'Sold' })
+                .andWhere("vouchers.metadata->>'Denomination' = :denomination", { denomination: `${variables} JOD` })
+                .limit(item.Vouchers)
+                .getMany();
+            console.log(result);
+            list.push({ denominations: variables, vouchers: result, Vouchers: item.Vouchers });
+        }
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].vouchers.length !== list[i].Vouchers) {
+                return {
+                    message: `You Don't have enough denomination :${list[i].denominations}`,
+                    success: false,
+                };
+            }
+        }
+        return {
+            message: "success",
+            success: true,
+            data: list
+        };
     }
     async update(id, updateVouchersDto) {
         await this.findOne(id);

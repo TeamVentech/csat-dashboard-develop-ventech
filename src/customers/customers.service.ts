@@ -13,9 +13,12 @@ export class CustomersService {
   ) { }
 
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    const currentYear = new Date().getFullYear();
-    const DobYear = new Date(createCustomerDto.dob).getFullYear();
-    createCustomerDto.age = (currentYear - DobYear).toString()
+    if (createCustomerDto.dob) {
+      const currentYear = new Date().getFullYear();
+      const DobYear = new Date(createCustomerDto.dob).getFullYear();
+      createCustomerDto.age = (currentYear - DobYear).toString()
+
+    }
     const customer = this.customerRepository.create(createCustomerDto);
     return this.customerRepository.save(customer);
   }
@@ -28,12 +31,12 @@ export class CustomersService {
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString =await filterOptions.search.startsWith(' ')
+        const searchString = await filterOptions.search.startsWith(' ')
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
         queryBuilder.andWhere('(user.email ILIKE :search OR user.name ILIKE :search OR user.phone_number ILIKE :search OR user.gender ILIKE :search)', {
-          search: `%${filterOptions.search}%`,  
+          search: `%${filterOptions.search}%`,
         });
       }
       Object.keys(filterOptions).forEach(key => {
@@ -56,6 +59,21 @@ export class CustomersService {
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
+    return customer;
+  }
+
+  async doesEmailOrPhoneExist(email?: string, phone_number?: string) {
+    const query = this.customerRepository.createQueryBuilder('customer');
+
+    if (email) {
+      query.orWhere('customer.email = :email', { email });
+    }
+    if (phone_number) {
+      query.orWhere('customer.phone_number = :phone_number', { phone_number });
+    }
+
+    const customer = await query.getOne();
+    console.log(customer)
     return customer;
   }
 

@@ -59,6 +59,13 @@ export class VouchersController {
     return { message: 'Vouchers imported successfully' };
   }
 
+  @Post('GetAvailableVoucher')
+  @Permissions('Stock::read')
+  async GetAvailableVoucher(@Body() data: any) {
+    return await this.vouchersService.GetAvailableVoucher(data);
+    // return { message: 'Vouchers imported successfullsy' };
+  }
+
 
   // @Get('type/:type')
   // @Permissions('Stock::read')

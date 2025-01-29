@@ -9,6 +9,8 @@ export declare class Customer {
     phone_number: string;
     email: string;
     dob: Date;
+    passport_number: string;
+    national_id: string;
     gender: string;
     createdAt: Date;
     updatedAt: Date;

@@ -11,6 +11,7 @@ export declare class CustomersService {
         total: number;
     }>;
     findOne(id: string): Promise<Customer>;
+    doesEmailOrPhoneExist(email?: string, phone_number?: string): Promise<Customer>;
     update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer>;
     remove(id: string): Promise<void>;
 }

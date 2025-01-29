@@ -5,6 +5,7 @@ export declare enum AbilitySubjects {
     CUSTOMERS = "Customer",
     CORPORATE = "Corporate",
     SERVICE = "Service",
+    SERVICES = "Services",
     COMPLANIT = "Complaint",
     SUGGESTION = "Suggestion",
     COMMENT = "Comment",

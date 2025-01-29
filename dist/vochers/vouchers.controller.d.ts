@@ -12,6 +12,15 @@ export declare class VouchersController {
     importVouchers(data: any[]): Promise<{
         message: string;
     }>;
+    GetAvailableVoucher(data: any): Promise<{
+        message: string;
+        success: boolean;
+        data?: undefined;
+    } | {
+        message: string;
+        success: boolean;
+        data: any[];
+    }>;
     update(id: string, updateVouchersDto: UpdateVouchersDto): Promise<import("./entities/vouchers.entity").Vouchers>;
     remove(id: string): Promise<void>;
 }

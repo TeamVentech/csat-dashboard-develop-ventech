@@ -23,4 +23,10 @@ export class CreateCustomerDto {
   @IsOptional()
   age?: string;
 
+  @IsOptional()
+  national_id?: string;
+
+  @IsOptional()
+  passport_number?: string;
+
 }

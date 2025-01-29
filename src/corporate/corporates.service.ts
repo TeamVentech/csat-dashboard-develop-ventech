@@ -56,7 +56,15 @@ export class CorporatesService {
   }
 
   async find(name: string) {
-    return await this.corporateRepository.find({ where: { name } });
+    const queryBuilder = this.corporateRepository.createQueryBuilder('user');
+    queryBuilder.andWhere('(user.name ILIKE :search)', {
+      search: `%${name}%`, // Use wildcards for substring search
+    });
+    const res = await queryBuilder
+    .getManyAndCount()
+    console.log(res)
+    return res[0];
+    // return await this.corporat eRepository.find({ where: { name } });
   }
 
   async update(id: string, updateCorporateDto: UpdateCorporateDto): Promise<Corporate> {

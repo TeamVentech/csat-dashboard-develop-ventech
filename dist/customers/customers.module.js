@@ -20,7 +20,8 @@ exports.CustomersModule = CustomersModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
         controllers: [customers_controller_1.CustomersController],
-        providers: [customers_service_1.CustomersService, ...customers_provider_1.CustomersProvider]
+        providers: [customers_service_1.CustomersService, ...customers_provider_1.CustomersProvider],
+        exports: [customers_service_1.CustomersService]
     })
 ], CustomersModule);
 //# sourceMappingURL=customers.module.js.map

@@ -57,7 +57,14 @@ let CorporatesService = class CorporatesService {
         return Corporate;
     }
     async find(name) {
-        return await this.corporateRepository.find({ where: { name } });
+        const queryBuilder = this.corporateRepository.createQueryBuilder('user');
+        queryBuilder.andWhere('(user.name ILIKE :search)', {
+            search: `%${name}%`,
+        });
+        const res = await queryBuilder
+            .getManyAndCount();
+        console.log(res);
+        return res[0];
     }
     async update(id, updateCorporateDto) {
         await this.findOne(id);

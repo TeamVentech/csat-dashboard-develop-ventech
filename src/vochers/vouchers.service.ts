@@ -10,7 +10,7 @@ export class VouchersService {
   constructor(
     @Inject('VOUCHERS_REPOSITORY')
     private readonly vouchersRepository: Repository<Vouchers>,
-  ) {}
+  ) { }
 
   async create(createVouchersDto: CreateVouchersDto) {
     const department = this.vouchersRepository.create(createVouchersDto);
@@ -25,12 +25,12 @@ export class VouchersService {
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString =await filterOptions.search.startsWith(' ')
+        const searchString = await filterOptions.search.startsWith(' ')
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
         queryBuilder.andWhere('(user.serialNumber ILIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substring search
+          search: `%${filterOptions.search}%`, // Use wildcards for substridfng search
         });
 
       }
@@ -50,7 +50,7 @@ export class VouchersService {
     return { data, total };
   }
 
-  async findOne(id: string){
+  async findOne(id: string) {
     const Vouchers = await this.vouchersRepository.findOne({ where: { id: id } });
     if (!Vouchers) {
       throw new NotFoundException(`Department with ID ${id} not found`);
@@ -59,22 +59,67 @@ export class VouchersService {
   }
 
   async importVouchers(data: any[]): Promise<void> {
-    const vouchers = data.map(async (item) => {
-      console.log(item)
-      const res = this.vouchersRepository.create({
-        name: "Vouchers",
-        addedBy: "System",
-        metadata: item,
-        serialNumber:item.Serial_Number
+    for (const item of data) {
+      console.log(item);
+      let existingVoucher = await this.vouchersRepository.findOne({
+        where: { serialNumber: item.Serial_Number },
       });
-      await this.vouchersRepository.save(res);
-    });
+      if (existingVoucher) {
+        // Update existing voucher
+        existingVoucher.metadata = item;
+        existingVoucher.updatedAt = new Date();
+      } else {
+        // Create new voucher
+        existingVoucher = this.vouchersRepository.create({
+          name: "Vouchers",
+          addedBy: "System",
+          metadata: item,
+          serialNumber: item.Serial_Number
+        });
+      }
+
+      await this.vouchersRepository.save(existingVoucher);
+    }
   }
 
+  async GetAvailableVoucher(data) {
+    const list = [];
+    console.log(data);
+  
+    for (const item of data.vouchers) {
+      console.log(item);
+  
+      const variables = item.denominations;
+      const result = await this.vouchersRepository
+        .createQueryBuilder('vouchers')
+        .where("vouchers.metadata->>'status' != :status", { status: 'Sold' })
+        .andWhere("vouchers.metadata->>'Denomination' = :denomination", { denomination: `${variables} JOD` })  
+        .limit(item.Vouchers)
+        .getMany();
+      console.log(result)
+      list.push({ denominations: variables, vouchers: result, Vouchers:item.Vouchers});
+    }
+    for (let i = 0; i < list.length; i++) {
+      if(list[i].vouchers.length !== list[i].Vouchers){
+        return{
+          message:`You Don't have enough denomination :${list[i].denominations}`,
+          success:false,
+        }
+        
+      }
+      
+    }
+    return {
+      message:"success",
+      success:true,
+      data:list
+      
+    };
+  }
 
   // async findType(type: string){
   //   const Vouchers = await this.vouchersRepository.find({ where: { type: type } });
-  //   if (!Vouchers) {
+  //   if (!Vouchers) {dd
   //     throw new NotFoundException(`Department with ID ${type} not found`);
   //   }
   //   return Vouchers;

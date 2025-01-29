@@ -20,7 +20,8 @@ exports.VouchersModule = VouchersModule = __decorate([
     (0, common_1.Module)({
         imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
         controllers: [vouchers_controller_1.VouchersController],
-        providers: [vouchers_service_1.VouchersService, ...vouchers_provider_1.VouchersProvider]
+        providers: [vouchers_service_1.VouchersService, ...vouchers_provider_1.VouchersProvider],
+        exports: [vouchers_service_1.VouchersService],
     })
 ], VouchersModule);
 //# sourceMappingURL=vouchers.module.js.map

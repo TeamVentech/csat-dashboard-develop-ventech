@@ -37,6 +37,7 @@ const cron_service_1 = require("./cron/cron.service");
 const schedule_1 = require("@nestjs/schedule");
 const requestServices_entity_1 = require("./requestServices/entities/requestServices.entity");
 const elasticsearch_module_1 = require("./ElasticSearch/elasticsearch.module");
+const services_module_1 = require("./service/services.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -72,6 +73,7 @@ exports.AppModule = AppModule = __decorate([
             tenants_module_1.TenantsModule,
             vouchers_module_1.VouchersModule,
             elasticsearch_module_1.ElasticSearchModule,
+            services_module_1.ServicesModule,
             schedule_1.ScheduleModule.forRoot(),
             typeorm_1.TypeOrmModule.forFeature([requestServices_entity_1.RequestServices]),
         ],

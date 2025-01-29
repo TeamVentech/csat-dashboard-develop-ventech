@@ -11,6 +11,7 @@ import {
     UseGuards,
     UseInterceptors,
     ClassSerializerInterceptor,
+    BadRequestException,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create.dto';
@@ -49,6 +50,20 @@ export class CustomersController {
             search
         };
         return this.customersService.findAll(page, perPage, filterOptions);
+    }
+
+    @Get('check-existence')
+    @Permissions('Customer::read')
+    async checkExistence(
+      @Query('email') email?: string,
+      @Query('phone_number') phone_number?: string,
+    ) {
+      if (!email && !phone_number) {
+        throw new BadRequestException('You must provide an email or phone number.');
+      }
+  
+      const exists = await this.customersService.doesEmailOrPhoneExist(email, phone_number);
+      return { exists };
     }
 
 

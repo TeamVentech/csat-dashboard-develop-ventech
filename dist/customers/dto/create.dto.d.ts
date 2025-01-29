@@ -5,4 +5,6 @@ export declare class CreateCustomerDto {
     dob?: Date;
     gender?: string;
     age?: string;
+    national_id?: string;
+    passport_number?: string;
 }

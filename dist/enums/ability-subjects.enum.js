@@ -9,6 +9,7 @@ var AbilitySubjects;
     AbilitySubjects["CUSTOMERS"] = "Customer";
     AbilitySubjects["CORPORATE"] = "Corporate";
     AbilitySubjects["SERVICE"] = "Service";
+    AbilitySubjects["SERVICES"] = "Services";
     AbilitySubjects["COMPLANIT"] = "Complaint";
     AbilitySubjects["SUGGESTION"] = "Suggestion";
     AbilitySubjects["COMMENT"] = "Comment";

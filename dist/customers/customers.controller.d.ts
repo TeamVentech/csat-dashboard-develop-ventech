@@ -10,6 +10,9 @@ export declare class CustomersController {
         categories: Customer[];
         total: number;
     }>;
+    checkExistence(email?: string, phone_number?: string): Promise<{
+        exists: Customer;
+    }>;
     findOne(id: string): Promise<Customer>;
     update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer>;
     remove(id: string): Promise<void>;

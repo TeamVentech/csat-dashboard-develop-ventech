@@ -1,8 +1,8 @@
 const  SmsMessage =  {
     "Lost Child": {
       "Open": {
-        "ar": "زبوننا العزيز،\nتم تسجيل حالة فقدان الطفل. فرقنا تقوم بعملية البحث. سنبلغكم بأي جديد.\nنتمنى لكم السلامة",
-        "en": "Dear customer,\nWe would like to inform you that missing child case is open. Our team is on the search. We will keep you updated.\n\"Stay Safe\" from City Mall"
+        "ar": `زبوننا العزيز،\nتم تسجيل حالة فقدان الطفل. فرقنا تقوم بعملية البحث. سنبلغكم بأي جديد.\nنتمنى لكم السلامة`,
+        "en": `Dear customer,\nWe would like to inform you that missing child case is open. Our team is on the search. We will keep you updated.\n\"Stay Safe\" from City Mall`
       },
       "Child Found": {
         "ar": "تم العثور على طفلكم المفقود. يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
@@ -37,6 +37,14 @@ const  SmsMessage =  {
         "en": "The case is closed.\nPlease rate our services by following the below link:\nLINK"
       },
       "Article Not Found": {
+        "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
+        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+      },
+      "In Progress": {
+        "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
+        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+      },
+      "In Progress Day 3": {
         "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
         "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
       }
@@ -105,31 +113,44 @@ const  SmsMessage =  {
         },
         "Item Returned": {
             "ar": "شكراً لك على استخدام خدمة الشاحن المتنقل. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
-            "en": "Thank you for using our Power Bank service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
+            "en": "Thank you for using our Power Bank service. We hope you had an enjoyable experience. Please rate our service by following the below link"
+        },
+        "Wire damaged": {
+            "ar": "نأسف لإبلاغكم بوجود ضرر في سلك الشاحن المتنقل. وفقًا لسياساتنا، سيتم خصم غرامة قدرها 4 د.أ من التأمين",
+            "en": "We regret to inform you that powerbank wire was found damaged. As per our policies, a fine of 4jds will be deducted from security deposit."
+        },
+        "Power bank damaged": {
+            "ar": "نأسف لإبلاغكم بوجود ضرر في الشاحن المتنقل. وفقًا لسياساتنا، سيتم خصم غرامة قدرها 6 د.أ من التأمين",
+            "en": "We regret to inform you that powerbank was found damaged. As per our policies, a fine of 6jds will be deducted from security deposit."
+        },
+        "Wire and powerbank damaged": {
+            "ar": "نأسف لإبلاغكم بوجود ضرر في الشاحن المتنقل والسلك. وفقًا لسياساتنا، سيتم خصم مبلغ التأمين بقيمة 10 د.أ",
+            "en": "We regret to inform you that powerbank and wire was found damaged. As per our policies, security deposit amount of 10jds will be deducted."
         }
+
     },
-    "Wheelchair & Stroller Request": {
-        "Out for Delivery": {
-            "ar": "زبوننا العزيز، شكراً لطلب خدمة توصيل الكرسي المتحرك. مندوب خدمة الزبائن في طريقه إليك.",
-            "en": "Dear Customer, Thank you for requesting our wheelchair delivery service. Our representative is on their way to you."
-        },
-        "In Service": {
-            "ar": "زبوننا العزيز، شكرا لطلب خدمة الكرسي المتحرك. يرجى إعادته لمكتب خدمة الزبائن في الطابق الأرضي قبل الساعة 10م. للمساعدة، اتصل على 0798502319.",
-            "en": "Dear Customer, Thank you for using our wheelchair service. Please return it to the Customer Care Desk on GF before 10pm. For inquiries, call 0798502319."
-        },
-        "Pending Customer": {
-            "ar": "تبقى 30 دقيقة على إغلاق المول. يرجى إعادة الكرسي المتحرك لخدمة الزبائن قبل انتهاء ساعات عمل المول.",
-            "en": "Dear Customer, The mall is closing in 30 minutes. Please return the wheelchair to the Customer Care Desk before mall closing hours."
-        },
-        "En Route for Pickup": {
-            "ar": "شكراً لطلب خدمة استلام الكرسي المتحرك. مندوب خدمة الزبائن في طريقه إليك لاستلامها.",
-            "en": "Thank you for requesting our pick-up service for the wheelchair. Our representative is on their way to you to collect it."
-        },
-        "Item Returned": {
-            "ar": "نشكرك على استخدام خدمة الكرسي المتحرك. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
-            "en": "Thank you for using our wheelchair service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
-        }
-    },
+    "Wheelchair Request": {
+      "Out for Delivery": {
+          "ar": "زبوننا العزيز، شكراً لطلب خدمة توصيل الكرسي المتحرك. مندوب خدمة الزبائن في طريقه إليك.",
+          "en": "Dear Customer, Thank you for requesting our wheelchair delivery service. Our representative is on their way to you."
+      },
+      "In Service": {
+          "ar": "زبوننا العزيز، شكرا لطلب خدمة الكرسي المتحرك. يرجى إعادته لمكتب خدمة الزبائن في الطابق الأرضي قبل الساعة 10م. للمساعدة، اتصل على 0798502319.",
+          "en": "Dear Customer, Thank you for using our wheelchair service. Please return it to the Customer Care Desk on GF before 10pm. For inquiries, call 0798502319."
+      },
+      "Pending Customer": {
+          "ar": "تبقى 30 دقيقة على إغلاق المول. يرجى إعادة الكرسي المتحرك لخدمة الزبائن قبل انتهاء ساعات عمل المول.",
+          "en": "Dear Customer, The mall is closing in 30 minutes. Please return the wheelchair to the Customer Care Desk before mall closing hours."
+      },
+      "En Route for Pickup": {
+          "ar": "شكراً لطلب خدمة استلام الكرسي المتحرك. مندوب خدمة الزبائن في طريقه إليك لاستلامها.",
+          "en": "Thank you for requesting our pick-up service for the wheelchair. Our representative is on their way to you to collect it."
+      },
+      "Item Returned": {
+          "ar": "نشكرك على استخدام خدمة الكرسي المتحرك. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
+          "en": "Thank you for using our wheelchair service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
+      }
+  },
     "Handsfree Request": {
         "En Route for Pickup": {
             "ar": "شكرا لطلب خدمة الأمانات. مندوب خدمة الزبائن في طريقه لاستلام الحقائب.",
