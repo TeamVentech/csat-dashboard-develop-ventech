@@ -12,4 +12,7 @@ export class CreateCategoryDto {
 
   @IsNotEmpty()
   type: string;
+
+  @IsOptional()
+  complaint_type: string;
   }

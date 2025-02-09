@@ -8,23 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppService = void 0;
 const common_1 = require("@nestjs/common");
-const axios_1 = require("axios");
 let AppService = class AppService {
-    async getHello() {
-        const senderId = 'City Mall';
-        const numbers = "+962776850132";
-        const accName = 'CityMall';
-        const accPass = 'G_PAXDujRvrw_KoD';
-        const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-        const response = await axios_1.default.get(smsUrl, {
-            params: {
-                senderid: senderId,
-                numbers: numbers,
-                accname: accName,
-                AccPass: accPass,
-                msg: encodeURIComponent(`زبوننا العزيز، \n تم تسجيل حالة فقدان الطفل. فرقنا تقوم بعملية البحث. سنبلغكم بأي جديد.\nنتمنى لكم السلامة`),
-            },
-        });
+    getHello() {
+        return 'Hello World!';
     }
 };
 exports.AppService = AppService;

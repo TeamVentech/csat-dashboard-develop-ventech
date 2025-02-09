@@ -55,6 +55,10 @@ const SmsMessage = {
         "Closed": {
             "en": "\"Stay safe\" from Citymall.\nPlease rate our service by following the below link:\nLINK",
             "ar": "نتمنى لكم السلامة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط"
+        },
+        "Open": {
+            "en": "\"Stay safe\" from Citymall.\nPlease rate our service by following the below link:\nLINK",
+            "ar": "نتمنى لكم السلامة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط"
         }
     },
     "Suggestion Box": {

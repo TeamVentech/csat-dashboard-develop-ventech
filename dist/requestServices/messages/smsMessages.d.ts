@@ -54,6 +54,10 @@ declare const SmsMessage: {
             en: string;
             ar: string;
         };
+        Open: {
+            en: string;
+            ar: string;
+        };
     };
     "Suggestion Box": {
         Pending: {

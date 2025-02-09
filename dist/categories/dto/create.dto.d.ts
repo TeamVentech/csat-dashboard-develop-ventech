@@ -3,4 +3,5 @@ export declare class CreateCategoryDto {
     description: string;
     species: string;
     type: string;
+    complaint_type: string;
 }

@@ -27,7 +27,7 @@ __decorate([
     __metadata("design:type", String)
 ], Location.prototype, "floor", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ unique: true }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Location.prototype, "tenant", void 0);
 __decorate([
@@ -39,6 +39,7 @@ __decorate([
     __metadata("design:type", Date)
 ], Location.prototype, "updatedAt", void 0);
 exports.Location = Location = __decorate([
-    (0, typeorm_1.Entity)('locations')
+    (0, typeorm_1.Entity)('locations'),
+    (0, typeorm_1.Unique)(['tenant', 'floor'])
 ], Location);
 //# sourceMappingURL=Locations.entity.js.map

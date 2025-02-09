@@ -57,7 +57,7 @@ export class RequestServicesController {
   @Patch(':id')
   @Permissions('Service::update')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  update(@Param('id') id: string, @Body() updateRequestServicesDto: UpdateRequestServicesDto) {
+  update(@Param('id') id: string, @Body() updateRequestServicesDto: any) {
     return this.requestServicesService.update(id, updateRequestServicesDto);
   }
 

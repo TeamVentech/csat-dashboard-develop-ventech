@@ -170,7 +170,7 @@ export class RequestServicesService {
 
   // Update a department by IDsdd
   async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
-    console.log(updateRequestServicesDto.metadata.voucher)
+    console.log(updateRequestServicesDto)
     const data = await this.findOneColumn(id);
     if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
       const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;

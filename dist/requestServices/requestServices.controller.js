@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestServicesController = void 0;
 const common_1 = require("@nestjs/common");
 const requestServices_service_1 = require("./requestServices.service");
-const update_dto_1 = require("./dto/update.dto");
 const transform_interceptor_1 = require("../interceptors/transform.interceptor");
 const passport_1 = require("@nestjs/passport");
 const permissions_guard_1 = require("../guards/permissions.guard");
@@ -101,7 +100,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_dto_1.UpdateRequestServicesDto]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], RequestServicesController.prototype, "update", null);
 __decorate([

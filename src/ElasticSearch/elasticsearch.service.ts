@@ -186,6 +186,7 @@ export class ElasticService {
     async search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
 
+        console.log(query)
         const must: any[] = [];
         if (query?.name) {
             must.push({ match: { "name": query.name } });
@@ -208,7 +209,10 @@ export class ElasticService {
         if (query?.date) {
             must.push({ match: { "createdAt": query.date } });
         }
-
+        if (query.voucherId) {
+            must.push({ "term": { "metadata.voucher.vouchers.VoucherId.keyword": query.voucherId} })
+        }
+        console.log(must)
         const result = await this.elasticsearchService.search({
             index,
             body: {

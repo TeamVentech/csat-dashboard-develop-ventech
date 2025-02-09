@@ -6,6 +6,7 @@ export declare class Category {
     species: string;
     counted: string;
     description: string;
+    complaint_type: string;
     createdAt: Date;
     updatedAt: Date;
 }

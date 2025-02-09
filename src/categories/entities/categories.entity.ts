@@ -22,9 +22,12 @@ export class Category {
 
   @Column({ default: "0" })
   counted: string;
-
+  
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ type: 'text', nullable: true })
+  complaint_type: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

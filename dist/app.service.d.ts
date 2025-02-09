@@ -1,3 +1,3 @@
 export declare class AppService {
-    getHello(): Promise<void>;
+    getHello(): string;
 }

@@ -1,5 +1,4 @@
 import { RequestServicesService } from './requestServices.service';
-import { UpdateRequestServicesDto } from './dto/update.dto';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 export declare class RequestServicesController {
     private readonly requestServicesService;
@@ -12,7 +11,7 @@ export declare class RequestServicesController {
     }>;
     findOne(id: string): Promise<unknown>;
     findType(type: string): Promise<import("./entities/requestServices.entity").RequestServices[]>;
-    update(id: string, updateRequestServicesDto: UpdateRequestServicesDto): Promise<unknown>;
+    update(id: string, updateRequestServicesDto: any): Promise<unknown>;
     rating(id: string, rate: any): Promise<unknown>;
     remove(id: string): Promise<void>;
     elasticSerchQurey(page: number, perPage: number, search?: any): Promise<{
