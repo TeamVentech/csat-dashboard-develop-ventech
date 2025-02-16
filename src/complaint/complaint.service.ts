@@ -5,7 +5,7 @@ import { Complaints } from './entities/complaint.entity';
 import { CreateComplaintServicesDto } from './dto/create.dto';
 import { UpdateComplaintServicesDto } from './dto/update.dto';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
-import { NotificationsGateway } from 'notifications/notifications.gateway';
+// import { NotificationsGateway } from 'notifications/notifications.gateway';
 import { TasksService } from 'userTask/task.service';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 
@@ -16,7 +16,7 @@ export class ComplaintsService {
     private readonly complaintsRepository: Repository<Complaints>,
     private readonly elasticService: ElasticService,
     private readonly taskService: TasksService,
-    private readonly notificationsGateway: NotificationsGateway, // Inject gateway
+    // private readonly notificationsGateway: NotificationsGateway, // Inject gateway
     private readonly touchpointService: TouchPointsService, // Inject gateway
 
   ) { }
@@ -55,7 +55,7 @@ export class ComplaintsService {
     // Iterate over the roles and send notifications
     for (const role of rolesInSections) {
       const message = `A new complaint has been created with ID: ${complaint.complaintId}`;
-      await this.notificationsGateway.sendNotificationToRole(role, message);
+      // await this.notificationsGateway.sendNotificationToRole(role, message);
     }
   }
 
