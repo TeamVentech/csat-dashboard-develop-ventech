@@ -8,6 +8,9 @@ export class CreateTouchPointDto {
   @IsString()
   description: string;
 
+  @IsOptional()
+  workflow: any;
+
   @IsNotEmpty()
   @IsUUID()
   categoryId: string;

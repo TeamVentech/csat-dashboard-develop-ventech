@@ -29,10 +29,11 @@ import { CommentModule } from 'comment/comment.module';
 import { TenantsModule } from 'tenants/tenants.module';
 import { VouchersModule } from 'vochers/vouchers.module';
 import { CronService } from 'cron/cron.service'; // Adjust the path if needed
-import { ScheduleModule } from '@nestjs/schedule';
+// import { ScheduleModule } from '@nestjs/schedule';
 import { RequestServices } from 'requestServices/entities/requestServices.entity';
 import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 import { ServicesModule } from 'service/services.module';
+import { Tasks } from 'userTask/entities/task.entity';
 
 @Module({
   imports: [
@@ -65,8 +66,9 @@ import { ServicesModule } from 'service/services.module';
     TenantsModule,
     VouchersModule,
     ElasticSearchModule,
+    Tasks,
     ServicesModule,
-    ScheduleModule.forRoot(),
+    // ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
   ],
   controllers: [AppController],

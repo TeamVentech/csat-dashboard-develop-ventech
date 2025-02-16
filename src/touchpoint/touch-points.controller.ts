@@ -16,12 +16,17 @@ import { Permissions } from '../decorator/permissions.decorator';
 @UseInterceptors(TransformInterceptor)
 
 export class TouchPointsController {
-  constructor(private readonly touchPointsService: TouchPointsService) {}
+  constructor(private readonly touchpointsService: TouchPointsService) {}
 
   @Post()
   @Permissions('Lookups::write')
   create(@Body() createTouchPointDto: any) {
-    return this.touchPointsService.create(createTouchPointDto);
+    return this.touchpointsService.create(createTouchPointDto);
+  }
+
+  @Get('grouped-by-category')
+  async getTouchpointsGroupedByCategory() {
+    return this.touchpointsService.getTouchpointsGroupedByCategory();
   }
 
   @Get()
@@ -31,7 +36,7 @@ export class TouchPointsController {
     @Query('perPage') perPage: number = 10,
     @Query('filter') filter: string = '',
   ) {
-    return this.touchPointsService.findAll(page, perPage, filter);
+    return this.touchpointsService.findAll(page, perPage, filter);
   }
 
 
@@ -43,54 +48,48 @@ export class TouchPointsController {
     @Query('filter') filter: string = '',
     @Query('type') type: string = '',
   ) {
-    return this.touchPointsService.findAllSearch(page, perPage, filter, type);
+    return this.touchpointsService.findAllSearch(page, perPage, filter, type);
   }
 
   @Get('touchpoint/all')
   findAllCategory(
   ) {
 
-    return this.touchPointsService.findAllCategory();
+    return this.touchpointsService.findAllCategory();
   }
 
   @Get(':id')
   @Permissions('Lookups::read')
   findOne(@Param('id') id: string) {
-    return this.touchPointsService.findOne(id);
+    return this.touchpointsService.findOne(id);
   }
 
   @Get('category/:id')
   @Permissions('Lookups::read')
   findByCategory(@Param('id') id: string) {
-    return this.touchPointsService.findByCategory(id);
+    return this.touchpointsService.findByCategory(id);
   }
 
 
   @Get('/rating/high')
   findHLRating() {
-    return this.touchPointsService.findHighestRated();
+    return this.touchpointsService.findHighestRated();
   }
 
   @Get('/rating/low')
   findLowestRated() {
-    return this.touchPointsService.findLowestRated();
+    return this.touchpointsService.findLowestRated();
   }
-
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateTouchPointDto: UpdateTouchPointDto) {
-  //   return this.touchPointsService.update(id, updateTouchPointDto);
-  // }
 
   @Patch(':id')
   @Permissions('Lookups::update')
-  update(@Param('id') id: string, @Body() updateTouchPointDto: UpdateTouchPointDto) {
-    return this.touchPointsService.updaterochpoint(id, updateTouchPointDto);
+  update(@Param('id') id: string, @Body() updateTouchPointDto: any) {
+    return this.touchpointsService.update_touchpoint(id, updateTouchPointDto);
   }
 
   @Delete(':id')
   @Permissions('Lookups::delete')
   remove(@Param('id') id: string) {
-    return this.touchPointsService.remove(id);
+    return this.touchpointsService.remove(id);
   }
 }

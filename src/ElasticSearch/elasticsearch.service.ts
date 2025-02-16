@@ -209,7 +209,7 @@ export class ElasticService {
         if (query?.date) {
             must.push({ match: { "createdAt": query.date } });
         }
-        if (query.voucherId) {
+        if (query?.voucherId) {
             must.push({ "term": { "metadata.voucher.vouchers.VoucherId.keyword": query.voucherId} })
         }
         console.log(must)
