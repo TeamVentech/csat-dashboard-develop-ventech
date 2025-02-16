@@ -1,1 +1,0 @@
-{"version":3,"file":"customers.provider.js","sourceRoot":"","sources":["../../src/customers/customers.provider.ts"],"names":[],"mappings":";;;AACA,kEAAuD;AAE1C,QAAA,iBAAiB,GAAG;IAC/B;QACE,OAAO,EAAE,sBAAsB;QAC/B,UAAU,EAAE,CAAC,UAAsB,EAAE,EAAE,CACrC,UAAU,CAAC,aAAa,CAAC,2BAAQ,CAAC;QACpC,MAAM,EAAE,CAAC,aAAa,CAAC;KACxB;CACF,CAAC"}

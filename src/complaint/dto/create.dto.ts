@@ -12,19 +12,15 @@ export class CreateComplaintServicesDto {
   @IsString()
   state: string;
 
-  @IsUUID()
   @IsNotEmpty()
-  customerId: string;
+  customer: any;
 
-  @IsUUID()
   @IsNotEmpty()
-  categoryId: string;
+  category: any;
 
-  @IsUUID()
   @IsNotEmpty()
-  touchpointId: string;
+  touchpoint: any;
 
-  
   @IsNotEmpty()
   @IsString()
   addedBy: string; 
@@ -32,4 +28,7 @@ export class CreateComplaintServicesDto {
   @IsNotEmpty()
   @IsString()
   type: string;
+
+  @IsNotEmpty()
+  sections: any;
 }

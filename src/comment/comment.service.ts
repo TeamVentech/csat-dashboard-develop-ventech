@@ -92,16 +92,16 @@ export class CommentService {
     const data = await this.findOne(id);
     await this.commentRepository.update(id, updateCommentDto);
     if (data.status === "Open" && updateCommentDto.status === "Moved To Complaints") {
-      await this.complaintService.create({
-        state: "Open",
-        metadata: updateCommentDto.metadata,
-        name: "Comment Complaint",
-        customerId: updateCommentDto.customerId,
-        touchpointId: updateCommentDto.touchpointId,
-        categoryId: updateCommentDto.categoryId,
-        addedBy: "system",
-        type: "Comment",
-      })
+      // await this.complaintService.create({
+      //   state: "Open",
+      //   metadata: updateCommentDto.metadata,
+      //   name: "Comment Complaint",
+      //   customerId: updateCommentDto.customerId,
+      //   touchpointId: updateCommentDto.touchpointId,
+      //   categoryId: updateCommentDto.categoryId,
+      //   addedBy: "system",
+      //   type: "Comment",
+      // })
     }
     if (data.status === "Open" && updateCommentDto.status === "Moved To Suggestions") {
       await this.suggestionService.create({

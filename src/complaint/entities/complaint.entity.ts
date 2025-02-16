@@ -14,31 +14,26 @@ export class Complaints {
   @Column()
   type: string;
 
-  @Column()
+  @Column({ default:"Pending"})
   state: string;
 
   @Column({ nullable: true })
   addedBy: string;
 
-  @Column({ name: 'customer_id', type: 'uuid' })
-  customerId: string;
+  @Column({ type: 'jsonb' })
+  customer: any;
 
-  @ManyToOne(() => Customer, { eager: true })
-  @JoinColumn({ name: 'customer_id' })
-  customer: Customer;
-
-  @Column({ name: 'category_id', type: 'uuid' })
-  categoryId: string;
-
-  @ManyToOne(() => Category, { eager: true })
-  @JoinColumn({ name: 'category_id' })
-  category: Category;
+  @Column({  type: 'jsonb' })
+  category: any;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 
-  @Column({ name: 'touchpoint_id', type: 'uuid' })
-  touchpointId: string;  
+  @Column({  type: 'jsonb' })
+  touchpoint: any;
+
+  @Column({ type: 'jsonb',nullable: true })
+  sections: any;  
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -46,7 +41,7 @@ export class Complaints {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'service_id', unique: true })
+  @Column({ name: 'complaint_id', unique: true })
   complaintId: string;
 
   @BeforeInsert()
