@@ -16,7 +16,7 @@ const  SmsMessage =  {
     "Found Child": {
       "Awaiting Collection": {
         "ar": "تم العثور على طفلكم المفقود. يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
-        "en": "Dear Customer,\nYour missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID."
+        "en": "Dear Customer,\Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID."
       },
       "Closed": {
         "ar": "تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط\nنتمنى لكم السلامة",

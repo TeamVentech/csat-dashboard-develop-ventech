@@ -20,7 +20,19 @@ export class Touchpoint {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @PrimaryColumn({ name: 'category_id', type: 'uuid' })
+
+  @Column({ type: 'jsonb', default: {
+    "First_Level":"",
+    "Final_Level":"",
+    "GM":"",
+    "CX_Team":"",
+    "Level_1":"",
+    "Level_2":"",
+    "Level_3":"",
+  } })
+  workflow: any;
+
+  @Column({ name: 'category_id', type: 'uuid' })
   categoryId: string;
 
   @ManyToOne(() => Category)

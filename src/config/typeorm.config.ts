@@ -27,12 +27,6 @@ export const configurationCentrize = async () => {
       username: process.env.DB_USER_CENTRIZE,
       password: process.env.DB_PASSWORD_CENTRIZE,
       database: process.env.DB_NAME_CENTRIZE,
-      // logging: true, 
-      pool: {
-        max: 10,
-        min: 2,
-        idleTimeoutMillis: 30000,
-      },
       extra: {
         ssl: {
         },

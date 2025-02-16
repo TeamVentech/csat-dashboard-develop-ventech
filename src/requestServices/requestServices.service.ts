@@ -172,12 +172,6 @@ export class RequestServicesService {
   async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
     console.log(updateRequestServicesDto)
     const data = await this.findOneColumn(id);
-    if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
-      const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
-      const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
-      const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
-      await this.sendSms(numbers, `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
-    }
     if (data.state === 'Open' && updateRequestServicesDto.state === 'Child Found' && updateRequestServicesDto.type === 'Lost Child') {
       const numbers = data?.metadata?.parents?.phone_number
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
@@ -340,10 +334,14 @@ export class RequestServicesService {
         await this.sendSms(numbers, message, numbers)
       }
     }
-
-
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
     await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
+    if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
+      const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
+      const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+      const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
+      await this.sendSms(numbers, `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+    }
     return this.findOne(id);
   }
 
