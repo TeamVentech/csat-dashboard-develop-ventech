@@ -6,10 +6,10 @@ import { DatabaseModule } from 'database/database.module';
 @Module({
     imports: [
         ElasticsearchModule.register({
-            node: 'https://f95c5ef83a9d4821ab25fab2ea1e060f.eastus2.azure.elastic-cloud.com:443', // Replace with your endpoint
+            node: 'https://3d4f936d5cbd4ac88903dff57bb8f34b.eastus2.azure.elastic-cloud.com:443', // Replace with your endpoint
             auth: {
                 username: 'elastic',
-                password: 'E5hE8xBSi3SU6ifAJ7FEkybe',
+                password: 'J85UENG9WZ8jxvc2lRAyT11r',
             },
         }),
         DatabaseModule
