@@ -73,15 +73,12 @@ export class RequestServicesController {
   remove(@Param('id') id: string) {
     return this.requestServicesService.remove(id);
   }
-  @Get('search/query')
+  @Post('search/query')
   @Permissions('Service::read')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  elasticSerchQurey(
-    @Query('page') page: number,
-    @Query('perPage') perPage: number,
-    @Query('search') search?: any,
-  ) {
-    return this.elasticSearchService.search("services", search, page, perPage);
+  elasticSerchQurey(@Body() data: any) {
+    console.log(data)
+    return this.elasticSearchService.search("services", data.search, data.page, data.perPage);
   }
 
 }

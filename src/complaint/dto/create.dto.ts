@@ -10,7 +10,7 @@ export class CreateComplaintServicesDto {
 
   @IsNotEmpty()
   @IsString()
-  state: string;
+  status: string;
 
   @IsNotEmpty()
   customer: any;

@@ -22,9 +22,21 @@ export class ComplaintsService {
   ) { }
 
   async create(createComplaintsDto: CreateComplaintServicesDto) {
-    const data = this.complaintsRepository.create(createComplaintsDto);
+    const payload = {
+      "name" : createComplaintsDto.name,
+      "type" : createComplaintsDto.type,
+      "status" : createComplaintsDto.status,
+      "customerId" : createComplaintsDto.customer.id,
+      "categoryId" : createComplaintsDto.category.id,
+      "touchpointId" : createComplaintsDto.touchpoint.id,
+      "sections" : createComplaintsDto.sections,
+      "metadata" : createComplaintsDto.metadata,
+    }
+    const data = this.complaintsRepository.create(payload);
     const complaint = await this.complaintsRepository.save(data);
-    await this.sendRealTimeNotifications(complaint);
+    complaint.customer = createComplaintsDto.customer
+    complaint.touchpoint = createComplaintsDto.touchpoint
+    complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
     await this.elasticService.indexData('complaints', complaint.id, complaint);
     const assignedTo = [...new Set(touchpoint.workflow.First_Level.map(user => user.role).flat())];
@@ -44,7 +56,6 @@ export class ComplaintsService {
         }
       ]
     }
-    console.log(tasks_payload)
     await this.taskService.create(tasks_payload)
 
   }

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query,
   UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
+  Req,
 
  } from '@nestjs/common';
 import { TasksService } from './task.service';
@@ -46,14 +47,10 @@ export class TasksController {
   remove(@Param('id') id: string) {
     return this.tasksService.remove(id);
   }
-  @Get('search/query')
-  @Permissions('Service::read')
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @Post('search/query')
   elasticSerchQurey(
-    @Query('page') page: number,
-    @Query('perPage') perPage: number,
-    @Query('search') search?: any,
+    @Body() data: any,
   ) {
-    return this.elasticSearchService.search("tasks", search, page, perPage);
+    return this.elasticSearchService.searchTask("tasks", data.search, data.page, data.perPage);
   }
 }

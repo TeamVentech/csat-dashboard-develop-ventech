@@ -1,5 +1,7 @@
 import { Category } from 'categories/entities/categories.entity';
+import { Exclude } from 'class-transformer';
 import { Customer } from 'customers/entities/customers.entity';
+import { Touchpoint } from 'touchpoint/entities/touchpoint.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,22 +17,46 @@ export class Complaints {
   type: string;
 
   @Column({ default:"Pending"})
-  state: string;
+  status: string;
 
   @Column({ nullable: true })
   addedBy: string;
 
-  @Column({ type: 'jsonb' })
-  customer: any;
+  @Exclude()
+  @PrimaryColumn({ name: 'customer_id', type: 'uuid' })
+  customerId: string;
 
-  @Column({  type: 'jsonb' })
-  category: any;
+  @ManyToOne(() => Customer)
+  @JoinColumn({ name: 'customer_id' })
+  customer: Customer;
+
+  // @Column({ type: 'jsonb' })
+  // customer: any;
+
+  // @Column({  type: 'jsonb' })
+  // category: any;
+
+  @Exclude()
+  @PrimaryColumn({ name: 'category_id', type: 'uuid' })
+  categoryId: string;
+
+  @ManyToOne(() => Category)
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 
-  @Column({  type: 'jsonb' })
-  touchpoint: any;
+  // @Column({  type: 'jsonb' })
+  // touchpoint: any;
+
+  @Exclude()
+  @PrimaryColumn({ name: 'touchpoint_id', type: 'uuid' })
+  touchpointId: string;
+
+  @ManyToOne(() => Touchpoint)
+  @JoinColumn({ name: 'touchpoint_id' })
+  touchpoint: Touchpoint;
 
   @Column({ type: 'jsonb',nullable: true })
   sections: any;  

@@ -29,11 +29,10 @@ export class CommentService {
     page = page || 1;
     perPage = perPage || 10;
     const queryBuilder = this.commentRepository.createQueryBuilder('comments')
-      .leftJoinAndSelect('comments.category', 'category') // Include customer relationship
+      .leftJoinAndSelect('comments.category', 'category')
       .leftJoinAndSelect('comments.survey', 'survey')
       .leftJoinAndSelect('comments.customer', 'customer');
 
-    // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
         const searchString = await filterOptions.search.startsWith(' ')
@@ -41,7 +40,7 @@ export class CommentService {
           : filterOptions.search;
         filterOptions.search = searchString
         queryBuilder.andWhere('(customer.name ILIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substrisng search
+          search: `%${filterOptions.search}%`,
         });
 
       }
@@ -70,7 +69,7 @@ export class CommentService {
   async findOne(id: string) {
     const Comment = await this.commentRepository.findOne({
       where: { id: id },
-      relations: ['customer', 'category'], // Fetch customer relationship
+      relations: ['customer', 'category'],
     });
     if (!Comment) {
       throw new NotFoundException(`Department with ID ${id} not found`);
@@ -86,8 +85,6 @@ export class CommentService {
   //   return Comment;
   // }
 
-
-  // Update a department by ID
   async update(id: string, updateCommentDto: UpdateCommentDto) {
     const data = await this.findOne(id);
     await this.commentRepository.update(id, updateCommentDto);

@@ -28,8 +28,8 @@ import { ComplaintsModule } from './complaint/complaint.module';
 import { CommentModule } from 'comment/comment.module';
 import { TenantsModule } from 'tenants/tenants.module';
 import { VouchersModule } from 'vochers/vouchers.module';
-import { CronService } from 'cron/cron.service'; // Adjust the path if needed
-// import { ScheduleModule } from '@nestjs/schedule';
+import { TasksService } from 'cron/cron.service'; // Adjust the path if needed
+import { ScheduleModule } from '@nestjs/schedule';
 import { RequestServices } from 'requestServices/entities/requestServices.entity';
 import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 import { ServicesModule } from 'service/services.module';
@@ -68,10 +68,10 @@ import { Tasks } from 'userTask/entities/task.entity';
     ElasticSearchModule,
     Tasks,
     ServicesModule,
-    // ScheduleModule.forRoot(),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
   ],
   controllers: [AppController],
-  providers: [AppService, CronService],
+  providers: [AppService, TasksService],
 })
 export class AppModule {}

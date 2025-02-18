@@ -22,7 +22,6 @@ export class ComplaintCategoryService {
     perPage = perPage || 10;
     const queryBuilder = this.categoryRepository.createQueryBuilder('user');
 
-    // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
         const searchString =await filterOptions.search.startsWith(' ')
@@ -30,7 +29,7 @@ export class ComplaintCategoryService {
           : filterOptions.search;
         filterOptions.search = searchString
         queryBuilder.andWhere('(user.name ILIKE :search OR user.description ILIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substring search
+          search: `%${filterOptions.search}%`,
         });
 
       }
@@ -71,7 +70,6 @@ export class ComplaintCategoryService {
     return this.findOne(id);
   }
 
-  // Delete a category by ID
   async remove(id: string) {
     const category = await this.findOne(id);
     await this.categoryRepository.remove(category);
