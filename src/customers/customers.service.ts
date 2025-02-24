@@ -73,7 +73,6 @@ export class CustomersService {
     }
 
     const customer = await query.getOne();
-    console.log(customer)
     return customer;
   }
 

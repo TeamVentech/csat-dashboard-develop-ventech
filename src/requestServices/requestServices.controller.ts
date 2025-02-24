@@ -63,7 +63,6 @@ export class RequestServicesController {
 
   @Patch(':id/rating')
   rating(@Param('id') id: string, @Body() rate: any) {
-    console.log('fffffffffffffffff')
     return this.requestServicesService.rating(id, rate);
   }
 
@@ -77,8 +76,12 @@ export class RequestServicesController {
   @Permissions('Service::read')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   elasticSerchQurey(@Body() data: any) {
-    console.log(data)
     return this.elasticSearchService.search("services", data.search, data.page, data.perPage);
   }
-
+  @Post('search/query/customer')
+  @Permissions('Service::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  elasticCustomerSerchQurey(@Body() data: any) {
+    return this.elasticSearchService.customer_search("services", data.search, data.page, data.perPage);
+  }
 }

@@ -62,7 +62,6 @@ export class CorporatesService {
     });
     const res = await queryBuilder
     .getManyAndCount()
-    console.log(res)
     return res[0];
     // return await this.corporat eRepository.find({ where: { name } });
   }

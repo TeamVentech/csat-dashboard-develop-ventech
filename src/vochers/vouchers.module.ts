@@ -7,6 +7,7 @@ import { VouchersProvider } from './vouchers.provider';
 import { DatabaseModule } from '../database/database.module';
 import { RolesModule } from 'roles/roles.module';
 import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
+import { RequestServicesModule } from 'requestServices/requestServices.module';
 
 @Module({
   imports: [DatabaseModule, RolesModule, ElasticSearchModule],

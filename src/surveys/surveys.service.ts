@@ -116,7 +116,6 @@ export class SurveysService {
   // Update a Surveys by ID
   async update(id: string, updateSurveysDto: any) {
     const survey = await this.findOne(id);
-    console.log(updateSurveysDto)
     if(updateSurveysDto.metadata){
       survey.metadata.questions = updateSurveysDto.metadata.questions
     }

@@ -193,7 +193,7 @@ const  SmsMessage =  {
         "Item Returned": {
             "ar": "نشكرك على استخدام خدمة عربة الأطفال. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
             "en": "Thank you for using our stroller service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
-        }
+        },
     },
     "Complaints": {
         "Pending Review (Final Level)": {

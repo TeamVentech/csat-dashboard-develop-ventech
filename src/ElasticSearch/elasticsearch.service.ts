@@ -74,11 +74,46 @@ export class ElasticService {
         }
     }
 
+    async getByComplaintId(index: string, id: string) {
+        try {
+            const result = await this.elasticsearchService.search({
+                index,
+                body: {
+                    query: {
+                        query_string: {
+                            query: id
+                          }
+                    },
+                    sort: [{ createdAt: { order: 'desc' } }], // Sort by createdAt in descending order
+                },
+            });
+
+            const hits = result.hits.hits;
+
+            if (hits.length > 0) {
+                return {
+                    success: true,
+                    message: 'Document found',
+                    data: hits[0]._source, // Return the first (and only) document found
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'Document not found',
+                };
+            }
+        } catch (error) {
+            console.error('Error fetching document:', error);
+            return {
+                success: false,
+                message: 'Error fetching document',
+                error,
+            };
+        }
+    }
+
 
     async updateDocument(index: string, id: string, updateData: any) {
-        console.log(index)
-        console.log(id)
-        console.log(updateData)
         try {
             const result = await this.elasticsearchService.update({
                 index,
@@ -87,7 +122,6 @@ export class ElasticService {
                     doc: updateData,
                 },
             });
-            console.log(result)
         } catch (error) {
             console.log(error)
             return {
@@ -186,7 +220,6 @@ export class ElasticService {
     async search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
 
-        console.log(query)
         const must: any[] = [];
         if (query?.name) {
             must.push({ match: { "name": query.name } });
@@ -198,7 +231,8 @@ export class ElasticService {
             must.push({ match: { "state": query.state } });
         }
         if (query?.customer) {
-            must.push({ match: { "metadata.customer.id": query.customer } });
+            must.push({ match: { "metadata.parents.id": query.customer } });
+            // must.push({ match: { "metadata.parents.id": query.customer } });
         }
         if (query?.location) {
             must.push({ match: { "metadata.location.tenant.keyword": query.location } });
@@ -210,9 +244,8 @@ export class ElasticService {
             must.push({ match: { "createdAt": query.date } });
         }
         if (query?.voucherId) {
-            must.push({ "term": { "metadata.voucher.vouchers.VoucherId.keyword": query.voucherId} })
+            must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId} })
         }
-        console.log(must)
         const result = await this.elasticsearchService.search({
             index,
             body: {
@@ -251,6 +284,45 @@ export class ElasticService {
         };
     }
 
+    async customer_search(index: string, query: any, page: number = 1, pageSize: number = 10) {
+        const from = (page - 1) * pageSize;
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                query: {
+                    query_string: {
+                        query: query.customer
+                      }
+                },
+                sort: [
+                    {
+                        createdAt: {
+                            order: "desc"
+                        }
+                    }
+                ]
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.hits.total === 'number') {
+            totalHits = result.hits.total;
+        } else {
+            totalHits = result.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
     async deleteDocument(index: string, id: string) {
         try {
             const result = await this.elasticsearchService.delete({
@@ -273,7 +345,6 @@ export class ElasticService {
     async searchComplaintTask(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
 
-        console.log(query)
         // const must: any[] = [];
         const must_status: any[] = [];
         // if (query?.name) {
@@ -323,7 +394,6 @@ export class ElasticService {
     async searchTask(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
 
-        console.log(query)
         const must: any[] = [];
         if (query?.role) {
             must.push({ match: { "assignedTo": query.role } });

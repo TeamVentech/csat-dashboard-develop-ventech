@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ComplaintsController } from './complaint.controller';
 import { ComplaintsService } from './complaint.service';
 import { Complaints } from './entities/complaint.entity';
@@ -12,11 +12,11 @@ import { TasksModule } from 'userTask/task.module';
 import { TouchPointsModule } from 'touchpoint/touch-points.module';
 
 @Module({
-  imports: [DatabaseModule, RolesModule, ElasticSearchModule, TasksModule, TouchPointsModule],
+  imports: [DatabaseModule, RolesModule, ElasticSearchModule, forwardRef(() => TasksModule), TouchPointsModule],
   controllers: [ComplaintsController],
   providers: [ComplaintsService, ...ComplaintsProvider],
-  exports: [ComplaintsService],
+  exports: [ComplaintsService]
 
 })
-export class ComplaintsModule { }
+export class ComplaintsModule {}
 

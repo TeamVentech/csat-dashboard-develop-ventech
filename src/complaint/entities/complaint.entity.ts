@@ -1,6 +1,7 @@
 import { Category } from 'categories/entities/categories.entity';
 import { Exclude } from 'class-transformer';
 import { Customer } from 'customers/entities/customers.entity';
+import { Tenant } from 'tenants/entities/tenants.entity';
 import { Touchpoint } from 'touchpoint/entities/touchpoint.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, PrimaryColumn, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,24 +17,32 @@ export class Complaints {
   @Column()
   type: string;
 
-  @Column({ default:"Pending"})
+  @Column({ default:"Open"})
   status: string;
 
   @Column({ nullable: true })
   addedBy: string;
 
   @Exclude()
-  @PrimaryColumn({ name: 'customer_id', type: 'uuid' })
+  @Column({ name: 'customer_id', type: 'uuid', nullable: true })
   customerId: string;
 
   @ManyToOne(() => Customer)
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
+  @Exclude()
+  @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
+  tenantId: string;
+
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenant_id' })
+  tenant: Tenant;
+
   // @Column({ type: 'jsonb' })
   // customer: any;
 
-  // @Column({  type: 'jsonb' })
+  // @Column({  type: 'jsonb' })s
   // category: any;
 
   @Exclude()

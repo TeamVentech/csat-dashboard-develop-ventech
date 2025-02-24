@@ -24,9 +24,9 @@ export class TouchPointsController {
     return this.touchpointsService.create(createTouchPointDto);
   }
 
-  @Get('grouped-by-category')
-  async getTouchpointsGroupedByCategory() {
-    return this.touchpointsService.getTouchpointsGroupedByCategory();
+  @Get('grouped-by-category/:type')
+  async getTouchpointsGroupedByCategory(@Param('type') type: string) {
+    return this.touchpointsService.getTouchpointsGroupedByCategory(type);
   }
 
   @Get()

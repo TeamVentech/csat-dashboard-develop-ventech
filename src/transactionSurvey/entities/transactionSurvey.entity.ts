@@ -39,7 +39,7 @@ export class TransactionSurvey {
   answers: Array<{
     type: string;
     question: Record<string, any>;
-    choices: string;
+    choices: any;
     rate: string;
     answer: any;
   }>;

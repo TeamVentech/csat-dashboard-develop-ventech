@@ -33,6 +33,7 @@ export class SectionsService {
 
 
   async findAllSections() {
+
     return this.sectionRepository.find();
   }
 

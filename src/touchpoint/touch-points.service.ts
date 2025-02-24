@@ -117,13 +117,13 @@ export class TouchPointsService {
     });
   }
 
-  async getTouchpointsGroupedByCategory() {
+  async getTouchpointsGroupedByCategory(type) {
     const touchpoints = await this.touchpointRepository.find({ relations: ['category'] });
-
+    console.log(type)
     const grouped = touchpoints.reduce((acc, touchpoint) => {
       const categoryName = touchpoint.category?.name.en
 
-      if (touchpoint.category.type === "Complaint") {
+      if (touchpoint.category.type === type) {
         if (!acc[categoryName]) {
           acc[categoryName] = [];
         }
@@ -162,9 +162,7 @@ export class TouchPointsService {
   }
 
   async update_touchpoint(id: string, updateTouchPointDto: any) {
-    console.log(id)
-    console.log(updateTouchPointDto)
-    await this.touchpointRepository.update(id, {...updateTouchPointDto});
+    await this.touchpointRepository.update(id, { ...updateTouchPointDto });
   }
   // Delete a touchpoint by ID
   async remove(id: string): Promise<void> {

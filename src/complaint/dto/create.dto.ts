@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateComplaintServicesDto {
   @IsNotEmpty()
@@ -12,8 +12,11 @@ export class CreateComplaintServicesDto {
   @IsString()
   status: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   customer: any;
+
+  @IsOptional()
+  tenant: any;
 
   @IsNotEmpty()
   category: any;
@@ -29,6 +32,6 @@ export class CreateComplaintServicesDto {
   @IsString()
   type: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   sections: any;
 }

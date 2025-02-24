@@ -50,7 +50,7 @@ export class QRCodesService {
     const finalQRCodeData = qrCanvas.toDataURL();
   
     // Return the result with the QR code image in the response
-    return { ...createQRCodeDto, image: finalQRCodeData };
+    return { ...createQRCodeDto, image: finalQRCodeData, identifier };
 }
 
   async findAll(page: number = 1, perPage: number = 10) {

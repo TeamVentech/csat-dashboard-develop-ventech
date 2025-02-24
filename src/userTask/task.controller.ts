@@ -5,7 +5,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query,
   Req,
 
  } from '@nestjs/common';
-import { TasksService } from './task.service';
+import { TasksServices } from './task.service';
 import { CreateTaskDto } from './dto/create.dto';
 import { UpdateTaskServicesDto } from './dto/update.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
@@ -19,16 +19,16 @@ import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 // @UseInterceptors(ClassSerializerInterceptor)
 // @UseInterceptors(TransformInterceptor)
 export class TasksController {
-  constructor(private readonly tasksService: TasksService,
+  constructor(private readonly tasksService: TasksServices,
     private readonly elasticSearchService: ElasticService
 
   ) {}
 
-  @Post()
-  // @Permissions('Task::write')
-  create(@Body() CreateTaskServicesDto: any) {
-    return this.tasksService.create(CreateTaskServicesDto);
-  }
+  // @Post()
+  // // @Permissions('Task::write')
+  // create(@Body() CreateTaskServicesDto: any) {
+  //   return this.tasksService.create(CreateTaskServicesDto);
+  // }
 
   @Get(':id')
   // @Permissions('Service::read')
@@ -36,10 +36,21 @@ export class TasksController {
     return this.tasksService.findOne(id);
   }
 
+  @Get(':id/complaint')
+  // @Permissions('Service::read')
+  getByComplaintId(@Param('id') id: string) {
+    return this.tasksService.getByComplaintId(id);
+  }
+
   @Patch(':id')
   // @Permissions('Service::update')
   update(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto) {
     return this.tasksService.update(id, UpdateTaskServicesDto);
+  }
+
+  @Patch(':id/request_change')
+  updateRequest(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto) {
+    return this.tasksService.updateRequest(id, UpdateTaskServicesDto);
   }
 
   @Delete(':id')

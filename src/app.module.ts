@@ -28,15 +28,29 @@ import { ComplaintsModule } from './complaint/complaint.module';
 import { CommentModule } from 'comment/comment.module';
 import { TenantsModule } from 'tenants/tenants.module';
 import { VouchersModule } from 'vochers/vouchers.module';
-import { TasksService } from 'cron/cron.service'; // Adjust the path if needed
+import { CronsService } from 'cron/cron.service'; // Adjust the path if needed
 import { ScheduleModule } from '@nestjs/schedule';
 import { RequestServices } from 'requestServices/entities/requestServices.entity';
 import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 import { ServicesModule } from 'service/services.module';
 import { Tasks } from 'userTask/entities/task.entity';
+import { TasksServices } from 'userTask/task.service';
+import { CronModule } from 'cron/cron.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [
+    AuthModule,
+    MailerModule.forRoot({
+      transport: {
+        host: process.env.EMAIL_HOST,
+        port: 587,
+        auth: {
+          user: process.env.EMAIL_USERNAME,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      },
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configurationCentrize],
@@ -53,7 +67,6 @@ import { Tasks } from 'userTask/entities/task.entity';
     UsersModule,
     CustomersModule,
     CorporatesModule,
-    AuthModule,
     QrcodeModule,
     TouchPointsModule,
     SurveysModule,
@@ -68,10 +81,11 @@ import { Tasks } from 'userTask/entities/task.entity';
     ElasticSearchModule,
     Tasks,
     ServicesModule,
+    CronModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
   ],
   controllers: [AppController],
-  providers: [AppService, TasksService],
+  providers: [AppService],
 })
 export class AppModule {}

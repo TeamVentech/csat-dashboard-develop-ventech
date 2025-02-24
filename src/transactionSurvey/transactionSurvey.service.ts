@@ -6,6 +6,7 @@ import { CreateTransactionSurveyDto } from './dto/create.dto';
 import { UpdateTransactionSurveyDto } from './dto/update.dto';
 import { Touchpoint } from '../touchpoint/entities/touchpoint.entity';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
+import { ComplaintsService } from 'complaint/complaint.service';
 
 @Injectable()
 export class TransactionSurveyService {
@@ -16,6 +17,7 @@ export class TransactionSurveyService {
     private readonly touchPointRepository: Repository<Touchpoint>,
     private readonly dataSource: DataSource,
     private readonly touchPointsService: TouchPointsService, // Inject TouchPointsSegrvice
+    private readonly complaintsService: ComplaintsService, // Inject TouchPointsSegrvice
   ) { }
 
 
@@ -35,6 +37,32 @@ export class TransactionSurveyService {
     await this.touchPointsService.update(id, createTransactionSurveyDto.rating)
     const transactionSurvey = this.transactionSurveyRepository.create(createTransactionSurveyDto);
     const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey);
+    for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
+      if(createTransactionSurveyDto.answers[i].type === "multiple"){
+        if(createTransactionSurveyDto.answers[i].answer < 3 ){
+          // console.log(savedSurvey)
+          // const complaint_data = {
+          //   status: "Open",
+          //   metadata: {
+          //     additional_information: updateCommentDto.message,
+          //     channel: "survey",
+          //     contact_choices: "",
+          //     time_incident: transactionSurvey.createdAt,
+          //   },
+          //   name: "Survey Complaint",
+          //   customer:data.customer,
+          //   tenant:{},
+          //   category:data.category,
+          //   touchpoint:updateCommentDto.metadata.Touchpoint,
+          //   sections: {},
+          //   addedBy: "system",
+          //   type: updateCommentDto.metadata.ComplaintType,
+    
+          // }
+          // await this.complaintsService.create(complaint_data)
+        }
+      }
+    }
     return savedSurvey;
   }
   async findAlls(): Promise<TransactionSurvey[]> {
@@ -108,7 +136,6 @@ export class TransactionSurveyService {
         }
       });
     }
-    console.log(surveyId)
     queryBuilder.andWhere('transactionSurvey.surveyId = :surveyId', { surveyId });
 
     const [categories, total] = await queryBuilder
@@ -282,7 +309,7 @@ export class TransactionSurveyService {
       .filter((answer) => answer.type === 'rating')
       .map(({ question, answer, choices }) => ({
         question,
-        rating: choices ? parseFloat(answer) / parseFloat(choices) : null,
+        rating: choices ? parseFloat(answer) / 5 : null,
       }));
 
     // Grouping by question

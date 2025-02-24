@@ -9,9 +9,8 @@ class AnswerDto {
   @IsNotEmpty()
   question: any;
 
-  @IsString()
   @IsOptional()
-  choices: string;
+  choices: any;
 
   @IsNotEmpty()
   answer: string | number | boolean;

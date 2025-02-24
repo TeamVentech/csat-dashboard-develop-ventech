@@ -5,9 +5,10 @@ import { TransactionSurveyProvider } from './transactionSurvey.provider';
 import { DatabaseModule } from '../database/database.module';
 import { TouchPointsModule } from 'touchpoint/touch-points.module';
 import { RolesModule } from 'roles/roles.module';
+import { ComplaintsModule } from 'complaint/complaint.module';
 
 @Module({
-  imports: [DatabaseModule, TouchPointsModule, RolesModule],
+  imports: [DatabaseModule, TouchPointsModule, RolesModule, ComplaintsModule],
   controllers: [TransactionSurveyController],
   providers: [TransactionSurveyService, ...TransactionSurveyProvider],
 

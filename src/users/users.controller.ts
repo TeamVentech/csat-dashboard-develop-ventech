@@ -13,16 +13,22 @@ import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
 
 @Controller('users')
-// @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-// @UseInterceptors(ClassSerializerInterceptor)
-// @UseInterceptors(TransformInterceptor)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
+@UseInterceptors(ClassSerializerInterceptor)
+@UseInterceptors(TransformInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @Post()
-  // @Permissions('Admin::write')
+  @Permissions('Admin::write')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Get('by-roles')
+  async getUsersByRoles(@Query('roles') roles: string) {
+    const rolesArray = JSON.parse(roles);
+    return this.usersService.getUsersByRoles(rolesArray);
   }
 
   @Get()

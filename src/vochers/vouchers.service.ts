@@ -1,15 +1,19 @@
-import { HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Vouchers } from './entities/vouchers.entity';
 import { CreateVouchersDto } from './dto/create.dto';
 import { UpdateVouchersDto } from './dto/update.dto';
+import { RequestServices } from 'requestServices/entities/requestServices.entity';
+import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 
 @Injectable()
 export class VouchersService {
   constructor(
     @Inject('VOUCHERS_REPOSITORY')
     private readonly vouchersRepository: Repository<Vouchers>,
+    @Inject('REQUEST_SERVICES_REPOSITORY')
+    private readonly requestServiceRepository: Repository<RequestServices>,
+    private readonly elasticService: ElasticService,
   ) { }
 
   async create(createVouchersDto: CreateVouchersDto) {
@@ -60,7 +64,6 @@ export class VouchersService {
 
   async importVouchers(data: any[]): Promise<void> {
     for (const item of data) {
-      console.log(item);
       let existingVoucher = await this.vouchersRepository.findOne({
         where: { serialNumber: item.Serial_Number },
       });
@@ -84,36 +87,31 @@ export class VouchersService {
 
   async GetAvailableVoucher(data) {
     const list = [];
-    console.log(data);
-  
     for (const item of data.vouchers) {
-      console.log(item);
-  
       const variables = item.denominations;
       const result = await this.vouchersRepository
         .createQueryBuilder('vouchers')
-        .where("vouchers.metadata->>'status' != :status", { status: 'Sold' })
-        .andWhere("vouchers.metadata->>'Denomination' = :denomination", { denomination: `${variables} JOD` })  
+        .where("vouchers.metadata->>'status' NOT IN (:...statuses)", { statuses: ['Sold', 'Extended'] })
+        .andWhere("vouchers.metadata->>'Denomination' = :denomination", { denomination: `${variables} JOD` })
         .limit(item.Vouchers)
         .getMany();
-      console.log(result)
-      list.push({ denominations: variables, vouchers: result, Vouchers:item.Vouchers});
+      list.push({ denominations: variables, vouchers: result, Vouchers: item.Vouchers });
     }
     for (let i = 0; i < list.length; i++) {
-      if(list[i].vouchers.length !== list[i].Vouchers){
-        return{
-          message:`You Don't have enough denomination :${list[i].denominations}`,
-          success:false,
+      if (list[i].vouchers.length !== list[i].Vouchers) {
+        return {
+          message: `You Don't have enough denomination :${list[i].denominations}`,
+          success: false,
         }
-        
+
       }
-      
+
     }
     return {
-      message:"success",
-      success:true,
-      data:list
-      
+      message: "success",
+      success: true,
+      data: list
+
     };
   }
 
@@ -128,9 +126,50 @@ export class VouchersService {
 
   // Update a department by ID
   async update(id: string, updateVouchersDto: UpdateVouchersDto) {
-    await this.findOne(id);
-    await this.vouchersRepository.update(id, updateVouchersDto);
-    return this.findOne(id);
+    if (updateVouchersDto.actions) {
+      const service = await this.requestServiceRepository.findOne({ where: { id: updateVouchersDto.service_id } });
+
+      if (service) {
+        for (const voucherGroup of service.metadata.voucher) {
+          const foundVoucher = voucherGroup.vouchers.find(voucher => voucher.VoucherId === updateVouchersDto.VoucherId);
+          if (foundVoucher) {
+            foundVoucher.metadata = { ...foundVoucher.metadata, ...updateVouchersDto.metadata };
+            // return service;
+            const extanded_vouchers = await this.vouchersRepository.findOne({ where: { id: updateVouchersDto.newVoucher } });
+            if (extanded_vouchers) {
+              extanded_vouchers.state = "Extended"
+              extanded_vouchers.metadata.status = "Extended"
+              extanded_vouchers.metadata.Client_ID = service.metadata.customer.id || service.metadata.Company.id
+              extanded_vouchers.metadata.Type_of_Sale = service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual'
+              extanded_vouchers.metadata.main_voucher = id
+              await this.vouchersRepository.update(updateVouchersDto.newVoucher, extanded_vouchers);
+              await this.requestServiceRepository.update(service.id, service);
+              await this.elasticService.updateDocument('services', service.id, service);
+              delete updateVouchersDto.VoucherId
+              delete updateVouchersDto.actions
+              delete updateVouchersDto.newVoucher
+              delete updateVouchersDto.service_id
+              await this.vouchersRepository.update(id, updateVouchersDto);
+              return true
+
+            }
+
+          }
+        }
+      }
+    }
+    else{
+      await this.vouchersRepository.update(id, updateVouchersDto);
+      return true
+    }
+    // return service
+    // await this.requestServicesRepository.update(id, updateRequestServicesDto);
+    // await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
+
+
+
+    // await this.vouchersRepository.update(id, updateVouchersDto);
+    return null;
   }
 
   async remove(id: string) {

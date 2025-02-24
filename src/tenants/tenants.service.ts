@@ -13,9 +13,7 @@ export class TenantsService {
   ) { }
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
-    console.log(createTenantDto)
     const tenant = this.tenantRepository.create(createTenantDto);
-    console.log(tenant)
     return this.tenantRepository.save(tenant);
   }
 

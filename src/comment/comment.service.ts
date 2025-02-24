@@ -87,38 +87,47 @@ export class CommentService {
 
   async update(id: string, updateCommentDto: UpdateCommentDto) {
     const data = await this.findOne(id);
-    await this.commentRepository.update(id, updateCommentDto);
+    // await this.commentRepository.update(id, updateCommentDto);
     if (data.status === "Open" && updateCommentDto.status === "Moved To Complaints") {
-      // await this.complaintService.create({
-      //   state: "Open",
-      //   metadata: updateCommentDto.metadata,
-      //   name: "Comment Complaint",
-      //   customerId: updateCommentDto.customerId,
-      //   touchpointId: updateCommentDto.touchpointId,
-      //   categoryId: updateCommentDto.categoryId,
-      //   addedBy: "system",
-      //   type: "Comment",
-      // })
+      console.log(JSON.stringify(updateCommentDto))
+      console.log(JSON.stringify(data))
+      await this.complaintService.create({
+        status: "Open",
+        metadata: {
+          additional_information: updateCommentDto.message,
+          channel: "comment",
+          contact_choices: "",
+          time_incident: data.createdAt,
+        },
+        name: "Comment Complaint",
+        customer:data.customer,
+        tenant:{},
+        category:data.category,
+        touchpoint:updateCommentDto.metadata.Touchpoint,
+        sections: {},
+        addedBy: "system",
+        type: updateCommentDto.metadata.ComplaintType,
+      })
     }
     if (data.status === "Open" && updateCommentDto.status === "Moved To Suggestions") {
-      await this.suggestionService.create({
-        state: "Pending",
-        metadata: {
-          customer: data.customer,
-          Signature:"",
-          Department:"",
-          Suggestion: updateCommentDto.message,
-          department: updateCommentDto.metadata.ConcernedDepartment,
-          touchpoint:updateCommentDto.metadata.SuggestionTouchpoint,
-          category:updateCommentDto.metadata.SuggestionCategory
+      // await this.suggestionService.create({
+      //   state: "Pending",
+      //   metadata: {
+      //     customer: data.customer,
+      //     Signature:"",
+      //     Department:"",
+      //     Suggestion: updateCommentDto.message,
+      //     department: updateCommentDto.metadata.ConcernedDepartment,
+      //     touchpoint:updateCommentDto.metadata.SuggestionTouchpoint,
+      //     category:updateCommentDto.metadata.SuggestionCategory
 
-        },
-        name: "Suggestion Box",
-        addedBy: "system",
-        type: "Suggestion Box",
-        rating: null,
-        actions:""
-      })
+      //   },
+      //   name: "Suggestion Box",
+      //   addedBy: "system",
+      //   type: "Suggestion Box",
+      //   rating: null,
+      //   actions:""
+      // })
     }
     return this.findOne(id);
   }

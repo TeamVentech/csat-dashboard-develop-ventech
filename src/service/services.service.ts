@@ -21,7 +21,6 @@ export class ServicesService {
     page = page || 1;
     perPage = perPage || 10;
     const queryBuilder = this.servicesRepository.createQueryBuilder('services');
-    console.log(filterOptions)
     if (filterOptions) {
       if (filterOptions.search) {
         queryBuilder.andWhere('(services.status LIKE :search)', {
@@ -79,8 +78,6 @@ export class ServicesService {
     return Services;
   }
   async findOneByTypeStatus(type: string, status: string) {
-    console.log(type)
-    console.log(status)
     const Services = await this.servicesRepository.findOne({ where: { type, status } });
     if (!Services) {
       console.log(`Service with Type ${type} & ${status} not found`);

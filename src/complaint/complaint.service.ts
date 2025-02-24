@@ -6,7 +6,7 @@ import { CreateComplaintServicesDto } from './dto/create.dto';
 import { UpdateComplaintServicesDto } from './dto/update.dto';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 // import { NotificationsGateway } from 'notifications/notifications.gateway';
-import { TasksService } from 'userTask/task.service';
+import { TasksServices } from 'userTask/task.service';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ComplaintsService {
     @Inject('COMPLAINT_SERVICES_REPOSITORY')
     private readonly complaintsRepository: Repository<Complaints>,
     private readonly elasticService: ElasticService,
-    private readonly taskService: TasksService,
+    private readonly taskService: TasksServices,
     // private readonly notificationsGateway: NotificationsGateway, // Inject gateway
     private readonly touchpointService: TouchPointsService, // Inject gateway
 
@@ -23,40 +23,39 @@ export class ComplaintsService {
 
   async create(createComplaintsDto: CreateComplaintServicesDto) {
     const payload = {
-      "name" : createComplaintsDto.name,
-      "type" : createComplaintsDto.type,
-      "status" : createComplaintsDto.status,
-      "customerId" : createComplaintsDto.customer.id,
-      "categoryId" : createComplaintsDto.category.id,
-      "touchpointId" : createComplaintsDto.touchpoint.id,
-      "sections" : createComplaintsDto.sections,
-      "metadata" : createComplaintsDto.metadata,
+      "name": createComplaintsDto.name,
+      "type": createComplaintsDto.type,
+      "status": createComplaintsDto.status,
+      "customerId": createComplaintsDto?.customer?.id,
+      "tenantId": createComplaintsDto?.tenant?.id,
+      "categoryId": createComplaintsDto.category.id,
+      "touchpointId": createComplaintsDto.touchpoint.id,
+      "sections": createComplaintsDto.sections,
+      "metadata": createComplaintsDto.metadata,
     }
     const data = this.complaintsRepository.create(payload);
     const complaint = await this.complaintsRepository.save(data);
-    complaint.customer = createComplaintsDto.customer
+    if (createComplaintsDto.type === "Tenants Complaints") {
+      complaint.tenant = createComplaintsDto.tenant
+    }
+    else {
+      complaint.customer = createComplaintsDto.customer
+    }
     complaint.touchpoint = createComplaintsDto.touchpoint
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
     await this.elasticService.indexData('complaints', complaint.id, complaint);
-    const assignedTo = [...new Set(touchpoint.workflow.First_Level.map(user => user.role).flat())];
-    console.log(assignedTo);
+    const assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
     const tasks_payload = {
       "taskId": complaint.id,
       "name": complaint.type,
-      "type": "First Level",
+      "type": "CX Team",
       "assignedTo": assignedTo,
-      "status": "PENDING",
+      "status": "Open",
       "complaintId": complaint.complaintId,
-      "actions": [
-        {
-          "actors": "",
-          "actions": "",
-          "status": ""
-        }
-      ]
+      "actions": [{}]
     }
-    await this.taskService.create(tasks_payload)
+    await this.taskService.create(tasks_payload, complaint)
 
   }
 

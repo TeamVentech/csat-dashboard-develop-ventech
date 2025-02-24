@@ -11,6 +11,7 @@ import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 import { VouchersService } from 'vochers/vouchers.service';
 import { ServicesService } from 'service/services.service';
 import { CustomersService } from 'customers/customers.service';
+import { json } from 'stream/consumers';
 
 @Injectable()
 export class RequestServicesService {
@@ -49,11 +50,12 @@ export class RequestServicesService {
         for (let i = 0; i < data.length; i++) {
           for (let j = 0; j < data[i].vouchers.length; j++) {
             const update_data = data[i].vouchers[j]
-            update_data.metadata.Client_ID = createRequestServicesDto.metadata.customer.id
+            update_data.metadata.Client_ID = createRequestServicesDto.metadata.customer.id || createRequestServicesDto.metadata.Company.id
             update_data.state = "Sold"
             update_data.metadata.status = "Sold"
-            update_data.metadata.Date_of_Sale = new Date()
-            update_data.metadata.Type_of_Sale = createRequestServicesDto.type === "Corporate Voucher Sale" ? "Company" : "Individual"
+            update_data.metadata.date_sale = new Date()
+            update_data.metadata.expired_date = createRequestServicesDto.metadata.Expiry_date
+            update_data.metadata.type_sale = createRequestServicesDto.type === "Corporate Voucher Sale" ? "Company" : "Individual"
             await this.vouchersService.update(update_data.id, update_data)
           }
         }
@@ -71,16 +73,16 @@ export class RequestServicesService {
           }
         }
       }
-      if (createRequestServicesDto.name === 'Suggestion Box' || createRequestServicesDto.name === 'Incident Reporting' || createRequestServicesDto.name === 'Lost Item Management' || createRequestServicesDto.type === 'Individual Voucher Sale' ) {
-          const customers = createRequestServicesDto.metadata.customer
-          const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
-          if (customer) {
-            await this.customerService.update(customer.id, { ...customers })
-          }
-          else {
-            delete createRequestServicesDto?.metadata?.customer?.id;
-            await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
-          }
+      if (createRequestServicesDto.name === 'Suggestion Box' || createRequestServicesDto.name === 'Incident Reporting' || createRequestServicesDto.name === 'Lost Item Management' || createRequestServicesDto.type === 'Individual Voucher Sale') {
+        const customers = createRequestServicesDto.metadata.customer
+        const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
+        if (customer) {
+          await this.customerService.update(customer.id, { ...customers })
+        }
+        else {
+          delete createRequestServicesDto?.metadata?.customer?.id;
+          await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
+        }
       }
       if (createRequestServicesDto.name === 'Added-Value Services') {
         if (createRequestServicesDto.type !== "Handsfree Request") {
@@ -170,7 +172,6 @@ export class RequestServicesService {
 
   // Update a department by IDsdd
   async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
-    console.log(updateRequestServicesDto)
     const data = await this.findOneColumn(id);
     if (data.state === 'Open' && updateRequestServicesDto.state === 'Child Found' && updateRequestServicesDto.type === 'Lost Child') {
       const numbers = data?.metadata?.parents?.phone_number
@@ -196,9 +197,7 @@ export class RequestServicesService {
     }
     if (updateRequestServicesDto?.actions === "Awaiting Collection") {
       const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number
-      console.log(numbers)
       const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
-      console.log(message)
       await this.sendSms(numbers, message, numbers)
     }
     if (updateRequestServicesDto?.actions === "in_progress_item") {
@@ -215,9 +214,7 @@ export class RequestServicesService {
     }
     if (updateRequestServicesDto?.actions === "Refunded") {
       const numbers = data?.metadata?.customer?.phone_number || data?.metadata?.Company?.phone_number
-      console.log(numbers)
       const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
-      console.log(message)
       await this.sendSms(numbers, message, numbers)
     }
     if (updateRequestServicesDto?.actions === "In Service" || updateRequestServicesDto?.actions === "Bags Collected") {
@@ -335,6 +332,7 @@ export class RequestServicesService {
       }
     }
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
+    console.log(JSON.stringify(updateRequestServicesDto))
     await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
     if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
       const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
