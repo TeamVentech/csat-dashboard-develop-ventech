@@ -8,6 +8,8 @@ import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 // import { NotificationsGateway } from 'notifications/notifications.gateway';
 import { TasksServices } from 'userTask/task.service';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
+import { UsersService } from 'users/users.service';
+import { EmailService } from 'email/email.service';
 
 @Injectable()
 export class ComplaintsService {
@@ -16,6 +18,8 @@ export class ComplaintsService {
     private readonly complaintsRepository: Repository<Complaints>,
     private readonly elasticService: ElasticService,
     private readonly taskService: TasksServices,
+    private readonly userService: UsersService,
+    private readonly emailService: EmailService,
     // private readonly notificationsGateway: NotificationsGateway, // Inject gateway
     private readonly touchpointService: TouchPointsService, // Inject gateway
 
@@ -53,8 +57,11 @@ export class ComplaintsService {
       "assignedTo": assignedTo,
       "status": "Open",
       "complaintId": complaint.complaintId,
-      "actions": [{}]
+      "actions": {}
     }
+    const users = await this.userService.getUsersByRoles(assignedTo)
+    const email_user =  [...new Set(users.map(user => user.email).flat())]
+    // await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`http://localhost:5173/complaint/${complaint.id}/details`)
     await this.taskService.create(tasks_payload, complaint)
 
   }
@@ -126,6 +133,7 @@ export class ComplaintsService {
     }
     return Complaints;
   }
+
 
 
   // Update a complaint by ID

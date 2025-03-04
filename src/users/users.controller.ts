@@ -2,7 +2,8 @@ import {
   Controller, Get, Post, Body, Patch, Param, Delete, Query,
   UseGuards,
   UseInterceptors,
-  ClassSerializerInterceptor
+  ClassSerializerInterceptor,
+  UploadedFile
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create.dto';
@@ -11,18 +12,30 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 @UseInterceptors(TransformInterceptor)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService  ) {
+    
+   }
 
   @Post()
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
   @Permissions('Admin::write')
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  create(@Body() createUserDto: CreateUserDto,  @UploadedFile() file: Express.Multer.File) {
+    return this.usersService.create(createUserDto, file);
+  }
+
+  @Post('upload/:id')
+  async uploadAvatar(@Param('id') id: string, @Body() url: string) {
+    if (!url) {
+      throw new Error('url is required');
+    }
+    return this.usersService.updateUserAvatar(id, url);
   }
 
   @Get('by-roles')
@@ -56,8 +69,9 @@ export class UsersController {
 
   @Patch(':id')
   @Permissions('Admin::update')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto,  @UploadedFile() file: Express.Multer.File) {
+    return this.usersService.update(id, updateUserDto, file);
   }
 
   @Delete(':id')

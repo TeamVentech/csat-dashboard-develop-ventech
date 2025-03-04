@@ -17,6 +17,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ nullable: true })
+  avatar: string; // Store Azure Blob URL
+
   @Column()
   password: string;
 

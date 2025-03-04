@@ -37,6 +37,8 @@ import { Tasks } from 'userTask/entities/task.entity';
 import { TasksServices } from 'userTask/task.service';
 import { CronModule } from 'cron/cron.module';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { EmailModule } from 'email/email.module';
+import { FilesAzureModule } from 'azure-storage/azure-storage.module';
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     TypeOrmModule.forRoot(TypeOrmConfigCentrize),
     CategoriesModule,
     SubCategoriesModule,
+    EmailModule,
     DepartmentsModule,
     RolesModule,
     UsersModule,
@@ -69,6 +72,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     CorporatesModule,
     QrcodeModule,
     TouchPointsModule,
+    FilesAzureModule,
     SurveysModule,
     LocationsModule,
     SectionsModule,

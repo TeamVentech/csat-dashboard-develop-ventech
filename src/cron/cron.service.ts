@@ -7,16 +7,18 @@ import { Repository } from 'typeorm';
 import * as moment from 'moment';
 import { TasksServices } from 'userTask/task.service';
 import { Tasks } from 'userTask/entities/task.entity';
+import { ComplaintsService } from 'complaint/complaint.service';
 
 @Injectable()
 export class CronsService {
   constructor(
     private readonly tasksService: TasksServices, // Ensure the service name is correct
+    private readonly complaintService: ComplaintsService, // Ensure the service name is correct
     private readonly elasticService: ElasticService,
   ) { }
 
 
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async handleCron() {
     const status = "Closed";
     const page = 1;
@@ -27,29 +29,23 @@ export class CronsService {
         const taskDate = moment(task.createdAt);
         const now = moment();
         const hoursDifference = now.diff(taskDate, 'hours');
+        let level = null
         if (hoursDifference >= 48 && hoursDifference < 72 && task.type === "First Level") {
-          console.log(task.id)
-          const assignedTo = [...new Set(task.complaints.touchpoint.workflow.Level_1.map(user => user.name).flat())];
-          task.type = "Escalation 1"
-          task.assignedTo = assignedTo
-          const res = await this.tasksService.updateEscalation(task.id, task);
-          console.log(res)
+          level =  "Escalated (Level 1)"
         }
         if (hoursDifference >= 72 && hoursDifference < 120 && task.type === "Final Level") {
-          console.log(task.id)
-          const assignedTo = [...new Set(task.complaints.touchpoint.workflow.Level_2.map(user => user.name).flat())];
-          task.type = "Escalation 2"
-          task.assignedTo = assignedTo
-          const res = await this.tasksService.updateEscalation(task.id, task);
-          console.log(res)
+          level =  "Escalated (Level 2)"
         }
-        if (hoursDifference >= 120 && task.type === "Escalation 2") {
-          console.log(task.id)
-          const assignedTo = [...new Set(task.complaints.touchpoint.workflow.Level_3.map(user => user.name).flat())];
-          task.type = "Escalation 3"
-          task.assignedTo = assignedTo
-          await this.tasksService.updateEscalation(task.id, task);
+        if (hoursDifference >= 120 && task.type === "Escalated 2") {
+          level =  "Escalated (Level 3)"
         }
+        if(level){
+          task.type =  level
+          await this.tasksService.update(task.id, task)
+        }
+        // else{
+        //   console.log(hoursDifference)
+        // }
       } else {
         console.log(`Complaint ID: ${task.id}, createdAt not found`);
       }

@@ -67,6 +67,15 @@ export class CategoriesService {
     return category;
   }
 
+
+  async findByComplaintType(type: string){
+    const category = await this.categoryRepository.find({ where: { complaint_type: type } });
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${type} not found`);
+    }
+    return category;
+  }
+
   async findAllCategory() {
     return this.categoryRepository.find();
   }

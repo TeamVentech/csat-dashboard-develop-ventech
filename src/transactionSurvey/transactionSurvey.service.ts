@@ -7,6 +7,7 @@ import { UpdateTransactionSurveyDto } from './dto/update.dto';
 import { Touchpoint } from '../touchpoint/entities/touchpoint.entity';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 import { ComplaintsService } from 'complaint/complaint.service';
+import { CustomersService } from 'customers/customers.service';
 
 @Injectable()
 export class TransactionSurveyService {
@@ -18,6 +19,7 @@ export class TransactionSurveyService {
     private readonly dataSource: DataSource,
     private readonly touchPointsService: TouchPointsService, // Inject TouchPointsSegrvice
     private readonly complaintsService: ComplaintsService, // Inject TouchPointsSegrvice
+    private readonly customerService: CustomersService, // Inject TouchPointsSegrvice
   ) { }
 
 
@@ -35,31 +37,39 @@ export class TransactionSurveyService {
     createTransactionSurveyDto.rating = final_rate.toFixed(1).toString()
     const id = createTransactionSurveyDto.touchPointId
     await this.touchPointsService.update(id, createTransactionSurveyDto.rating)
-    const transactionSurvey = this.transactionSurveyRepository.create(createTransactionSurveyDto);
+    const transactionSurvey =  this.transactionSurveyRepository.create(createTransactionSurveyDto);
     const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey);
     for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
       if(createTransactionSurveyDto.answers[i].type === "multiple"){
         if(createTransactionSurveyDto.answers[i].answer < 3 ){
-          // console.log(savedSurvey)
-          // const complaint_data = {
-          //   status: "Open",
-          //   metadata: {
-          //     additional_information: updateCommentDto.message,
-          //     channel: "survey",
-          //     contact_choices: "",
-          //     time_incident: transactionSurvey.createdAt,
-          //   },
-          //   name: "Survey Complaint",
-          //   customer:data.customer,
-          //   tenant:{},
-          //   category:data.category,
-          //   touchpoint:updateCommentDto.metadata.Touchpoint,
-          //   sections: {},
-          //   addedBy: "system",
-          //   type: updateCommentDto.metadata.ComplaintType,
+          const touchpoint =  await this.touchPointsService.findOne(createTransactionSurveyDto.touchpointId)
+          const customer = await this.customerService.findOne(createTransactionSurveyDto.customerId)          // console.log(savedSurvey)
+          const category = touchpoint.category
+          delete touchpoint.category
+          const complaint_data = {
+            status: "Open",
+            metadata: {
+              additional_information: '',
+              answer: createTransactionSurveyDto.answers[i].answer,
+              answer_lable: createTransactionSurveyDto.answers[i].choices[createTransactionSurveyDto.answers[i].answer],
+              channel: "survey",
+              contact_choices: "",
+              time_incident: savedSurvey[0]?.createdAt,
+              survey_id: savedSurvey[0]?.id,
+              question: savedSurvey[0]?.id,
+            },
+            name: "Survey Complaint",
+            customer: customer,
+            tenant:{},
+            category:category,
+            touchpoint: touchpoint,
+            sections: {},
+            addedBy: "system",
+            type: "Survey Complaint",
     
-          // }
-          // await this.complaintsService.create(complaint_data)
+          }
+          console.log(complaint_data)
+          await this.complaintsService.create(complaint_data)
         }
       }
     }

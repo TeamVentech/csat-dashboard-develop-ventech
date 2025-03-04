@@ -212,6 +212,12 @@ export class RequestServicesService {
       const message = SmsMessage[updateRequestServicesDto.type]["In Progress Day 3"][language]
       await this.sendSms(numbers, message, numbers)
     }
+    if (updateRequestServicesDto?.actions === "refunded_voucher") {
+      const numbers = data?.metadata?.customer?.phone_number || data?.metadata?.Company?.phone_number
+      const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+      const message = SmsMessage[updateRequestServicesDto.type]["Refunded"][language]
+      await this.sendSms(numbers, `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+    }
     if (updateRequestServicesDto?.actions === "Refunded") {
       const numbers = data?.metadata?.customer?.phone_number || data?.metadata?.Company?.phone_number
       const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
@@ -331,14 +337,46 @@ export class RequestServicesService {
         await this.sendSms(numbers, message, numbers)
       }
     }
+    if (updateRequestServicesDto.type === "Handsfree Request") {
+      // if (updateRequestServicesDto?.actions === "out_for_delivery") {
+      //   const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+      //   const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+      //   const message = SmsMessage[updateRequestServicesDto.type]["Out for Delivery"][language]
+      //   await this.sendSms(numbers, message, numbers)
+      // }
+      if (updateRequestServicesDto?.actions === "En_Route_Pickup") {
+        const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+        const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+        const message = SmsMessage[updateRequestServicesDto.type]["En Route for Pickup"][language]
+        await this.sendSms(numbers, message, numbers)
+      }
+      if (updateRequestServicesDto?.actions === "bags_collected") {
+        const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+        const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+        const message = SmsMessage[updateRequestServicesDto.type]["Bags Collected"][language]
+        await this.sendSms(numbers, message, numbers)
+      }
+      if (updateRequestServicesDto?.actions === "bags_returned") {
+        const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+        const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+        const message = SmsMessage[updateRequestServicesDto.type]["Bags Returned"][language]
+        await this.sendSms(numbers, message, numbers)
+      }
+      if (updateRequestServicesDto?.actions === "outForDelvery") {
+        const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+        const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+        const message = SmsMessage[updateRequestServicesDto.type]["Out for Delivery"][language]
+        await this.sendSms(numbers, message, numbers)
+      }
+    }
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
     console.log(JSON.stringify(updateRequestServicesDto))
     await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
     if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
-      const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number;
+      const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number || updateRequestServicesDto?.metadata?.parents?.phone_number;
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
       const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
-      await this.sendSms(numbers, `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+      await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
     }
     return this.findOne(id);
   }

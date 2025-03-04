@@ -10,9 +10,11 @@ import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 // import { NotificationsGateway } from 'notifications/notifications.gateway';
 import { TasksModule } from 'userTask/task.module';
 import { TouchPointsModule } from 'touchpoint/touch-points.module';
+import { UsersModule } from 'users/users.module';
+import { EmailModule } from 'email/email.module';
 
 @Module({
-  imports: [DatabaseModule, RolesModule, ElasticSearchModule, forwardRef(() => TasksModule), TouchPointsModule],
+  imports: [DatabaseModule, RolesModule, ElasticSearchModule, forwardRef(() => TasksModule), TouchPointsModule, UsersModule, EmailModule],
   controllers: [ComplaintsController],
   providers: [ComplaintsService, ...ComplaintsProvider],
   exports: [ComplaintsService]

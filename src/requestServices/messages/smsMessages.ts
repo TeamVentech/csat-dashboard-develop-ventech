@@ -10,7 +10,7 @@ const  SmsMessage =  {
       },
       "Closed": {
         "ar": " تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط\nنتمنى سلامتكم ",
-        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\nLINK\n\"Stay Safe\" from City Mall"
+        "en": "We would like to inform you that the case is closed.\n\"Stay Safe\" from City Mall\nPlease rate our service by following the below link:\nLINK"
       }
     },
     "Found Child": {
@@ -20,7 +20,7 @@ const  SmsMessage =  {
       },
       "Closed": {
         "ar": "تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط\nنتمنى لكم السلامة",
-        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\nLINK\n\"Stay Safe\" from City Mall"
+        "en": "We would like to inform you that the case is closed.\n\"Stay Safe\" from City Mall\nPlease rate our service by following the below link:\n"
       }
     },
     "Lost Item": {
@@ -34,28 +34,28 @@ const  SmsMessage =  {
       },
       "Article Found": {
         "ar": "تم إغلاق الحالة\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "The case is closed.\nPlease rate our services by following the below link:\nLINK"
+        "en": "The case is closed.\nPlease rate our services by following the below link:\n"
       },
       "Article Not Found": {
         "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
       },
       "In Progress": {
         "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
       },
       "In Progress Day 3": {
         "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\nLINK"
+        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
       }
     },
     "Incident Reporting": {
       "Closed": {
-        "en": "\"Stay safe\" from Citymall.\nPlease rate our service by following the below link:\nLINK",
+        "en": "\"Stay safe\" from Citymall.\nPlease rate our service by following the below link:\n",
         "ar": "نتمنى لكم السلامة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط"
       },
       "Open": {
-        "en": "\"Stay safe\" from Citymall.\nPlease rate our service by following the below link:\nLINK",
+        "en": "\"Stay safe\" from Citymall.\nPlease rate our service by following the below link:\n",
         "ar": "نتمنى لكم السلامة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط"
       }
     },
@@ -66,36 +66,43 @@ const  SmsMessage =  {
       },
       "Closed": {
         "ar": "تمت معالجة اقتراحكم\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Your suggestion has been processed.\nPlease rate our service by following the below link:\nLINK"
+        "en": "Your suggestion has been processed.\nPlease rate our service by following the below link:\n"
       }
     },
     "Individual Voucher Sale": {
       "Sold": {
         "ar": "شكراً لك. نتمنى لك الاستمتاع بقسائم الإهداء!\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Thank you. Enjoy your gift vouchers!\nPlease rate our service by following the below link:\nLINK"
+        "en": "Thank you. Enjoy your gift vouchers!\nPlease rate our service by following the below link:\n"
       },
       "Extended": {
         "ar": "تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: تاريخ الصلاحية\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "We would like to inform you that your extension request is approved. The new expiry date is dd/mm/yyyy\nPlease rate our service by following the below link:\nLINK"
+        "en": "We would like to inform you that your extension request is approved. The new expiry date is dd/mm/yyyy\nPlease rate our service by following the below link:\n"
       },
       "Extension Rejected": {
         "ar": "نعتذر، لم يتم الموافقة على طلب تمديد الصلاحية. شكرا لتفهمكم.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "We regret to inform you that we cannot approve your extension request. Thank you for your understanding.\nPlease rate our service by following the link:\nLINK"
-        
+        "en": "We regret to inform you that we cannot approve your extension request. Thank you for your understanding.\nPlease rate our service by following the link:\n"
+      },
+      "Refunded": {
+        "ar": "تمت الموافقة على طلب إرجاع قسيمة الإهداء ومعالجته.. زبوننا العزيز،\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
+        "en": "Dear customer,\n We would like to inform you that your refund request is approved and processed.\nPlease rate our service by following the link:\n"
       }
     },
     "Corporate Voucher Sale": {
       "Sold": {
         "ar": "شكراً لك. نتمنى لك الاستمتاع بقسائم الإهداء!\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Thank you. Enjoy your gift vouchers!\nPlease rate our service by following the below link:\nLINK"
+        "en": "Thank you. Enjoy your gift vouchers!\nPlease rate our service by following the below link:\n"
       },
       "Extended": {
         "ar": "تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: تاريخ الصلاحية\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "We would like to inform you that your extension request is approved. The new expiry date is dd/mm/yyyy\nPlease rate our service by following the below link:\nLINK"
+        "en": "We would like to inform you that your extension request is approved. The new expiry date is dd/mm/yyyy\nPlease rate our service by following the below link:\n"
       },
       "Extension Rejected": {
         "ar": "نعتذر، لم يتم الموافقة على طلب تمديد الصلاحية. شكرا لتفهمكم.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "We regret to inform you that we cannot approve your extension request. Thank you for your understanding.\nPlease rate our service by following the link:\nLINK"
+        "en": "We regret to inform you that we cannot approve your extension request. Thank you for your understanding.\nPlease rate our service by following the link:\n"
+      },
+      "Refunded": {
+        "ar": "تمت الموافقة على طلب إرجاع قسيمة الإهداء ومعالجته.. زبوننا العزيز،\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
+        "en": "Dear customer,\n We would like to inform you that your refund request is approved and processed.\nPlease rate our service by following the link:\n"
       }
     },
     "Power Bank Request": {
@@ -152,7 +159,7 @@ const  SmsMessage =  {
       },
       "Item Returned": {
           "ar": "نشكرك على استخدام خدمة الكرسي المتحرك. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
-          "en": "Thank you for using our wheelchair service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
+          "en": "Thank you for using our wheelchair service. We hope you had an enjoyable experience. Please rate our service by following the below link:\n "
       }
   },
     "Handsfree Request": {
@@ -170,7 +177,7 @@ const  SmsMessage =  {
         },
         "Bags Returned": {
             "ar": "شكراً لك على استخدام خدمة الأمانات. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
-            "en": "Thank you for using our Handsfree service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
+            "en": "Thank you for using our Handsfree service. We hope you had an enjoyable experience. Please rate our service by following the below link: "
         }
     },
     "Stroller Request": {
@@ -192,7 +199,7 @@ const  SmsMessage =  {
         },
         "Item Returned": {
             "ar": "نشكرك على استخدام خدمة عربة الأطفال. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط: الرابط",
-            "en": "Thank you for using our stroller service. We hope you had an enjoyable experience. Please rate our service by following the below link: LINK"
+            "en": "Thank you for using our stroller service. We hope you had an enjoyable experience. Please rate our service by following the below link: "
         },
     },
     "Complaints": {
@@ -202,7 +209,7 @@ const  SmsMessage =  {
         },
         "Closed": {
             "ar": "زبوننا العزيز، تم إغلاق شكوتكم. يرجى تقييم الخدمة من خلال الرابط: الرابط.",
-            "en": "Dear Customer, We would like to inform you that your complaint has been resolved. Please rate our service by following the below link: LINK"
+            "en": "Dear Customer, We would like to inform you that your complaint has been resolved. Please rate our service by following the below link: "
         }
     }
    }

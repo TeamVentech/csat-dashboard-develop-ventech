@@ -84,4 +84,11 @@ export class RequestServicesController {
   elasticCustomerSerchQurey(@Body() data: any) {
     return this.elasticSearchService.customer_search("services", data.search, data.page, data.perPage);
   }
+
+  @Get('search/query/count')
+  @Permissions('Service::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  getRecordsCount() {
+    return this.elasticSearchService.getRecordsCount() as any;
+  }
 }

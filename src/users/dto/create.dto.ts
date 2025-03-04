@@ -1,3 +1,4 @@
+import { File } from 'buffer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateUserDto {
@@ -25,4 +26,8 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(15)
   phoneNumber: string;
+
+  @IsOptional()
+  avatar: string;
+
 }

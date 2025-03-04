@@ -4,19 +4,42 @@ import { Repository, In } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create.dto';
 import { UpdateUserDto } from './dto/update.dto';
+import { FilesAzureService } from 'azure-storage/azure-storage.service';
 @Injectable()
 export class UsersService {
   constructor(
     @Inject('USER_REPOSITORY')
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly filesAzureService: FilesAzureService, // Inject TouchPointsSegrvice
+
   ) {}
 
-  // Create a new user
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.userRepository.create(createUserDto);
+  // Create a new user 
+  async create(createUserDto: CreateUserDto, file): Promise<User> {
+    let avatarUrl = null;
+  
+    // Upload file to Azure if avatar exists
+    if (file) {
+      avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
+    }
+  
+    const user = this.userRepository.create({
+      ...createUserDto,
+      avatar: avatarUrl, // Store the uploaded file URL in the avatar field
+    });
+  
     return this.userRepository.save(user);
   }
-
+  
+  async updateUserAvatar(id: string, file: any) {
+    // Upload the file to Azure and get the file URL
+    const avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
+  
+    await this.userRepository.update(id, { avatar: avatarUrl });
+  
+    return { message: 'Avatar updated successfully', avatar: avatarUrl };
+  }
+  
   // Get all users with pagination and filtering
   async findAll(page, perPage, filterOptions) {
     page = page || 1;
@@ -63,13 +86,21 @@ export class UsersService {
   }
 
   // Update a user by ID
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto, file): Promise<User> {
+    let avatarUrl = null;
+  
+    console.log('112')
+
+    if (file) {
+      console.log('11')
+      updateUserDto.avatar = await this.filesAzureService.uploadFile(file, "users"); 
+    }
     await this.findOne(id); // Check if the user exists
     await this.userRepository.update(id, updateUserDto);
     return this.findOne(id); // Return the updated user
   }
 
-  async getUsersByRoles(roles: string[]): Promise<User[]> {
+  async getUsersByRoles(roles: any): Promise<User[]> {
     return this.userRepository.find({ where: { role: In(roles) } });
   }
   // Delete a user by ID

@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-
+import * as moment from 'moment';
+interface ServiceRecord {
+    type?: string;
+    metadata?: {
+      date?: string;
+    };
+  }
 @Injectable()
 export class ElasticService {
     constructor(private readonly elasticsearchService: ElasticsearchService) { }
@@ -228,7 +234,10 @@ export class ElasticService {
             must.push({ match: { "type.keyword": query.type } });
         }
         if (query?.state) {
-            must.push({ match: { "state": query.state } });
+            must.push({ match: { "state.keyword": query.state } });
+        }
+        if (query?.status) {
+            must.push({ match: { "state.keyword": query.status } });
         }
         if (query?.customer) {
             must.push({ match: { "metadata.parents.id": query.customer } });
@@ -436,5 +445,39 @@ export class ElasticService {
         };
     }
 
-
+    async getRecordsCount() {
+        const response = await this.elasticsearchService.search<ServiceRecord>({
+          index: 'services',
+          size: 1000, // Adjust based on your data size
+        });
+    
+        const hits = response.hits.hits.map((hit) => hit._source as ServiceRecord);
+    
+        const today = moment().format('YYYY-MM-DD'); // Get today's date
+    
+        const counts: Record<string, { total: number; new: number }> = {};
+    
+        for (const record of hits) {
+          if (!record) continue; // Ensure record exists
+    
+          const type = record.type || 'Unknown';
+          const recordDate = record.metadata?.date ? moment(record.metadata.date).format('YYYY-MM-DD') : '';
+    
+          // Initialize if not present
+          if (!counts[type]) {
+            counts[type] = { total: 0, new: 0 };
+          }
+    
+          // Count total records by type
+          counts[type].total++;
+    
+          // Count new records (created today)
+          if (recordDate === today) {
+            counts[type].new++;
+          }
+        }
+    
+        return counts;
+      } 
+    
 }
