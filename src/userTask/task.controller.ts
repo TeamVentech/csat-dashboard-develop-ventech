@@ -3,6 +3,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query,
   UseInterceptors,
   ClassSerializerInterceptor,
   Req,
+  UploadedFile,
 
  } from '@nestjs/common';
 import { TasksServices } from './task.service';
@@ -13,6 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('task')
 // @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -44,8 +46,11 @@ export class TasksController {
 
   @Patch(':id')
   // @Permissions('Service::update')
-  update(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto) {
-    return this.tasksService.update(id, UpdateTaskServicesDto);
+    @UseInterceptors(FileInterceptor('file')) // Intercept file upload
+
+  update(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto, @UploadedFile() file: Express.Multer.File) {
+    console.log(file)
+    return this.tasksService.update(id, UpdateTaskServicesDto, file);
   }
 
   @Patch(':id/request_change')
@@ -63,5 +68,12 @@ export class TasksController {
     @Body() data: any,
   ) {
     return this.elasticSearchService.searchTask("tasks", data.search, data.page, data.perPage);
+  }
+
+  @Post('search/query/count')
+  elasticSerchCountQurey(
+    @Body() data: any,
+  ) {
+    return this.elasticSearchService.searchTaskCount("tasks", data.search);
   }
 }

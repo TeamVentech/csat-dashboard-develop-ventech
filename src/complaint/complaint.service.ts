@@ -10,6 +10,7 @@ import { TasksServices } from 'userTask/task.service';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 import { UsersService } from 'users/users.service';
 import { EmailService } from 'email/email.service';
+import { SurveysService } from 'surveys/surveys.service';
 
 @Injectable()
 export class ComplaintsService {
@@ -19,6 +20,7 @@ export class ComplaintsService {
     private readonly elasticService: ElasticService,
     private readonly taskService: TasksServices,
     private readonly userService: UsersService,
+    private readonly SurveyService: SurveysService,
     private readonly emailService: EmailService,
     // private readonly notificationsGateway: NotificationsGateway, // Inject gateway
     private readonly touchpointService: TouchPointsService, // Inject gateway
@@ -26,6 +28,12 @@ export class ComplaintsService {
   ) { }
 
   async create(createComplaintsDto: CreateComplaintServicesDto) {
+    if(createComplaintsDto.type === "Survey Complaint"){
+      const survey = await this.SurveyService.findOne(createComplaintsDto.metadata.survey_id)
+      const question =  survey.metadata.questions.filter(user => user.id === createComplaintsDto.metadata.question_id)
+      createComplaintsDto.metadata.question_label = question[0].question
+      createComplaintsDto.metadata.answer_label = question[0].choices[createComplaintsDto.metadata.answer]
+    }
     const payload = {
       "name": createComplaintsDto.name,
       "type": createComplaintsDto.type,
@@ -49,7 +57,11 @@ export class ComplaintsService {
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
     await this.elasticService.indexData('complaints', complaint.id, complaint);
-    const assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
+    let assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
+    if(createComplaintsDto.type === "Survey Complaint"){
+      assignedTo = ["SUPER_ADMIN"]
+      // assignedTo = ["CX Section Head"]
+    }
     const tasks_payload = {
       "taskId": complaint.id,
       "name": complaint.type,

@@ -20,7 +20,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/credential-provider-node": "^3.758.0",
+    "@aws-sdk/credential-providers": "^3.758.0",
+    "@aws-sdk/signature-v4": "^3.370.0",
+    "@aws-sdk/types": "^3.734.0",
     "@azure/storage-blob": "^12.26.0",
+    "@elastic/elasticsearch": "^8.17.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.0.9",
     "@nestjs/config": "^4.0.0",
@@ -34,6 +39,8 @@
     "@nestjs/schedule": "^5.0.1",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.0.9",
+    "@opensearch-project/opensearch": "^3.4.0",
+    "aws-elasticsearch-connector": "^9.2.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",

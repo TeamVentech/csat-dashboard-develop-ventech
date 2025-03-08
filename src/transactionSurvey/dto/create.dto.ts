@@ -7,10 +7,7 @@ class AnswerDto {
   type: string;
 
   @IsNotEmpty()
-  question: any;
-
-  @IsOptional()
-  choices: any;
+  id: string ;
 
   @IsNotEmpty()
   answer: string | number | boolean;

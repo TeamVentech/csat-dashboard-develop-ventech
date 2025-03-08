@@ -65,14 +65,13 @@ export class ComplaintsController {
   remove(@Param('id') id: string) {
     return this.complaintsService.remove(id);
   }
-  @Get('search/query')
+  @Post('search/query')
   @Permissions('Service::read')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   elasticSerchQurey(
-    @Query('page') page: number,
-    @Query('perPage') perPage: number,
-    @Query('search') search?: any,
+    @Body() data: any,
   ) {
-    return this.elasticSearchService.search("complaints", search, page, perPage);
+    console.log(data)
+    return this.elasticSearchService.search("complaints", data.query, data.page, data.perPage);
   }
 }

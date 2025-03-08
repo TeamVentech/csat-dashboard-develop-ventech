@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import * as moment from 'moment';
 interface ServiceRecord {
     type?: string;
@@ -9,8 +10,9 @@ interface ServiceRecord {
   }
 @Injectable()
 export class ElasticService {
-    constructor(private readonly elasticsearchService: ElasticsearchService) { }
-
+    constructor(
+        private readonly elasticsearchService: ElasticsearchService
+      ) {}
     async indexData(index: string, id: string, data: any) {
         return await this.elasticsearchService.index({
             index,
@@ -225,7 +227,8 @@ export class ElasticService {
 
     async search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
-
+        console.log(query)
+        
         const must: any[] = [];
         if (query?.name) {
             must.push({ match: { "name": query.name } });
@@ -237,7 +240,7 @@ export class ElasticService {
             must.push({ match: { "state.keyword": query.state } });
         }
         if (query?.status) {
-            must.push({ match: { "state.keyword": query.status } });
+            must.push({ match: { "status.keyword": query.status } });
         }
         if (query?.customer) {
             must.push({ match: { "metadata.parents.id": query.customer } });
@@ -407,6 +410,9 @@ export class ElasticService {
         if (query?.role) {
             must.push({ match: { "assignedTo": query.role } });
         }
+        if(query?.type){
+            must.push({ match: { "name.keyword": query.type } });
+        }
         const result = await this.elasticsearchService.search({
             index,
             body: {
@@ -480,4 +486,49 @@ export class ElasticService {
         return counts;
       } 
     
+      async searchTaskCount(index: string, query: any) {
+          const must: any[] = [];
+          if (query?.role) {
+              must.push({ match: { "assignedTo": query.role } });
+          }
+      
+          const result: SearchResponse<any> = await this.elasticsearchService.search({
+            index,
+            body: {
+                size: 0, // Don't return actual documents
+                track_total_hits: true, // Ensure total count is accurate
+                query: {
+                    bool: {
+                        must: must.length > 0 ? must : [{ match_all: {} }]
+                    },
+                },
+                aggs: {
+                    name_count: {
+                        terms: {
+                            field: "name.keyword", // Ensure 'name' is a keyword field
+                            size: 10000 // Adjust based on expected unique names
+                        }
+                    }
+                }
+            },
+        });
+    
+        // Extract aggregated counts
+        const nameCounts =
+            (result.aggregations?.name_count as { buckets: { key: string; doc_count: number }[] })
+                ?.buckets?.map(bucket => ({
+                    name: bucket.key,
+                    count: bucket.doc_count
+                })) || [];
+    
+        // Get the total count from search result metadata
+        const totalCount = result.hits.total ? (typeof result.hits.total === "number" ? result.hits.total : result.hits.total.value) : 0;
+    
+        return {
+            totalCount,
+            nameCounts
+        };
+        
+      }
+
 }

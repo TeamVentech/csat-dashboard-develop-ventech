@@ -13,6 +13,7 @@ import emailjs from "emailjs-com";
 import { AppService } from 'app.service';
 import { MailtrapClient } from 'mailtrap';
 import { EmailService } from 'email/email.service';
+import { FilesAzureService } from 'azure-storage/azure-storage.service';
 
 @Injectable()
 export class TasksServices {
@@ -31,6 +32,8 @@ export class TasksServices {
 		private readonly touchPointsService: TouchPointsService,
 		private readonly usersService: UsersService,
 		private readonly emailService: EmailService,
+		private readonly filesAzureService: FilesAzureService, // Inject TouchPointsSegrvice
+		
 	) { 
 		this.client = new MailtrapClient({
 			token: '59a71cdda41f91268fbbdf3f1c8ebc64',
@@ -107,9 +110,101 @@ export class TasksServices {
 	}
 
 	// Update a task by ID
-	async update(id: string, updateTasksDto: UpdateTaskServicesDto) {
+	async update(id: string, updateTasksDto: UpdateTaskServicesDto, file) {
 		const task_data = await this.findOne(id)
 		const data = updateTasksDto.complaints
+		// if()
+
+		if (updateTasksDto.action_role === 'CX_Team') {
+			if (updateTasksDto.actions["Confirm"].status === "Approve") {
+				const assignedTo = [...new Set(data.touchpoint.workflow.First_Level.map(user => user.name).flat())];
+				updateTasksDto.type = "First Level"
+				updateTasksDto.complaints.status = "Pending (First Level)"
+				updateTasksDto.status = "Pending (First Level)"
+				// updateTasksDto.actions[0].status = "Pending (First Level)"
+				const complaint_update = updateTasksDto.complaints
+				delete complaint_update.category
+				delete complaint_update.customer
+				delete complaint_update.touchpoint
+				await this.complaintsRepository.update(
+					{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
+					complaint_update
+				);
+				await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
+				updateTasksDto.assignedTo = assignedTo
+			}
+			else {
+				updateTasksDto.type = "Disapprove"
+				const assignedTo = [...new Set(data.touchpoint.workflow.GM.map(user => user.name).flat())];
+				updateTasksDto.complaints.status = "Disapprove"
+				updateTasksDto.status = "Disapprove"
+				const complaint_update = updateTasksDto.complaints
+				delete complaint_update.category
+				delete complaint_update.customer
+				delete complaint_update.touchpoint
+				await this.complaintsRepository.update(
+					{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
+					complaint_update
+				);
+				await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
+				updateTasksDto.assignedTo = assignedTo
+			}
+		}
+
+		if (updateTasksDto.action_role === 'first_role') {
+			const assignedTo = [...new Set(data.touchpoint.workflow.Final_Level.map(user => user.name).flat())];
+			updateTasksDto.type = "Final Level"
+			updateTasksDto.status = "Pending Review (Final Level)"
+			updateTasksDto.complaints.status = "Pending Review (Final Level)"
+			if(file){
+				updateTasksDto.actions['firstLevel'].Attach = await this.filesAzureService.uploadFile(file, "complaint"); 
+			}
+			updateTasksDto.assignedTo = assignedTo
+			const complaint_update = updateTasksDto.complaints
+			delete complaint_update.category
+			delete complaint_update.customer
+			delete complaint_update.touchpoint
+			await this.complaintsRepository.update(
+				{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
+				complaint_update
+			);
+			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
+		}
+
+		if (updateTasksDto.action_role === 'final_role') {
+			const assignedTo = [...new Set(data.touchpoint.workflow.CX_Team.map(user => user.name).flat())];
+			updateTasksDto.type = "CX Check Team"
+			updateTasksDto.status = "Pending (CX Team)"
+			updateTasksDto.complaints.status = "Pending (CX Team)"
+			updateTasksDto.assignedTo = assignedTo
+			const complaint_update = updateTasksDto.complaints
+			delete complaint_update.category
+			delete complaint_update.customer
+			delete complaint_update.touchpoint
+			await this.complaintsRepository.update(
+				{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
+				complaint_update
+			);
+			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
+		}
+
+		if (updateTasksDto.action_role === 'resend_role') {
+			const assignedTo = [...new Set(data.touchpoint.workflow.Final_Level.map(user => user.name).flat())];
+			updateTasksDto.type = "Final Level"
+			updateTasksDto.status = "Pending Review (Final Level)"
+			updateTasksDto.complaints.status = "Pending Review (Final Level)"
+			updateTasksDto.assignedTo = assignedTo
+			const complaint_update = updateTasksDto.complaints
+			delete complaint_update.category
+			delete complaint_update.customer
+			delete complaint_update.touchpoint
+			await this.complaintsRepository.update(
+				{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
+				complaint_update
+			);
+			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
+		}
+
 		if(updateTasksDto.type === "Escalated (Level 1)"){
 			const assignedTo = [...new Set(data.touchpoint.workflow.Level_1.map(user => user.name).flat())];
 			updateTasksDto.type = "Escalated 1"
@@ -161,91 +256,7 @@ export class TasksServices {
 			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
 
 		}
-		if (updateTasksDto.action_role === 'first_role') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.Final_Level.map(user => user.name).flat())];
-			updateTasksDto.type = "Final Level"
-			updateTasksDto.status = "Pending Review (Final Level)"
-			updateTasksDto.complaints.status = "Pending Review (Final Level)"
-			updateTasksDto.assignedTo = assignedTo
-			const complaint_update = updateTasksDto.complaints
-			delete complaint_update.category
-			delete complaint_update.customer
-			delete complaint_update.touchpoint
-			await this.complaintsRepository.update(
-				{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
-				complaint_update
-			);
-			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
-		}
-		if (updateTasksDto.action_role === 'resend_role') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.Final_Level.map(user => user.name).flat())];
-			updateTasksDto.type = "Final Level"
-			updateTasksDto.status = "Pending Review (Final Level)"
-			updateTasksDto.complaints.status = "Pending Review (Final Level)"
-			updateTasksDto.assignedTo = assignedTo
-			const complaint_update = updateTasksDto.complaints
-			delete complaint_update.category
-			delete complaint_update.customer
-			delete complaint_update.touchpoint
-			await this.complaintsRepository.update(
-				{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
-				complaint_update
-			);
-			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
-		}
 
-		if (updateTasksDto.action_role === 'final_role') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.CX_Team.map(user => user.name).flat())];
-			updateTasksDto.type = "CX Check Team"
-			updateTasksDto.status = "Pending (CX Team)"
-			updateTasksDto.complaints.status = "Pending (CX Team)"
-			updateTasksDto.assignedTo = assignedTo
-			const complaint_update = updateTasksDto.complaints
-			delete complaint_update.category
-			delete complaint_update.customer
-			delete complaint_update.touchpoint
-			await this.complaintsRepository.update(
-				{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
-				complaint_update
-			);
-			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
-		}
-
-		if (updateTasksDto.action_role === 'CX_Team') {
-			if (updateTasksDto.actions["Confirm"].status === "Approve") {
-				const assignedTo = [...new Set(data.touchpoint.workflow.First_Level.map(user => user.name).flat())];
-				updateTasksDto.type = "First Level"
-				updateTasksDto.complaints.status = "Pending (First Level)"
-				updateTasksDto.status = "Pending (First Level)"
-				// updateTasksDto.actions[0].status = "Pending (First Level)"
-				const complaint_update = updateTasksDto.complaints
-				delete complaint_update.category
-				delete complaint_update.customer
-				delete complaint_update.touchpoint
-				await this.complaintsRepository.update(
-					{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
-					complaint_update
-				);
-				await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
-				updateTasksDto.assignedTo = assignedTo
-			}
-			else {
-				updateTasksDto.type = "Disapprove"
-				const assignedTo = [...new Set(data.touchpoint.workflow.GM.map(user => user.name).flat())];
-				updateTasksDto.complaints.status = "Disapprove"
-				updateTasksDto.status = "Disapprove"
-				const complaint_update = updateTasksDto.complaints
-				delete complaint_update.category
-				delete complaint_update.customer
-				delete complaint_update.touchpoint
-				await this.complaintsRepository.update(
-					{ id: complaint_update.id, customerId: complaint_update.customerId, categoryId: complaint_update.categoryId, touchpointId: complaint_update.touchpointId },
-					complaint_update
-				);
-				await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
-				updateTasksDto.assignedTo = assignedTo
-			}
-		}
 
 		if (updateTasksDto.action_role === 'CX_Check_Team') {
 			const assignedTo = [...new Set(data.touchpoint.workflow.CX_Team.map(user => user.name).flat())];

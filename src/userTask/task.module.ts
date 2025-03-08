@@ -12,10 +12,11 @@ import { ComplaintsModule } from 'complaint/complaint.module';
 import { UsersModule } from 'users/users.module';
 import { AppModule } from 'app.module';
 import { EmailModule } from 'email/email.module';
+import { FilesAzureModule } from 'azure-storage/azure-storage.module';
 // import { ComplaintsModule } from 'complaint/complaint.module';
 
 @Module({
-  imports: [DatabaseModule, RolesModule, ElasticSearchModule, TouchPointsModule, UsersModule, EmailModule],
+  imports: [DatabaseModule, RolesModule, ElasticSearchModule, FilesAzureModule , TouchPointsModule, UsersModule, EmailModule],
   controllers: [TasksController],
   providers: [TasksServices, ...TasksProvider],
   exports: [TasksServices],

@@ -8,4 +8,7 @@ export class UpdateTaskServicesDto extends PartialType(CreateTaskDto) {
 
     @IsOptional()
     complaints: any;
+
+    @IsOptional()
+    complaint_type: any;
 }

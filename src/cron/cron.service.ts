@@ -41,7 +41,7 @@ export class CronsService {
         }
         if(level){
           task.type =  level
-          await this.tasksService.update(task.id, task)
+          await this.tasksService.update(task.id, task, null)
         }
         // else{
         //   console.log(hoursDifference)

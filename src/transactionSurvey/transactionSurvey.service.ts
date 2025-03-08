@@ -27,9 +27,9 @@ export class TransactionSurveyService {
     var count = 0
     var rateVar = 0
     for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
-      if (createTransactionSurveyDto.answers[i].type === "rating") {
+      if (createTransactionSurveyDto.answers[i].type === "multiple") {
         count++
-        const rate = Number(createTransactionSurveyDto.answers[i].answer) / Number(createTransactionSurveyDto.answers[i].choices);
+        const rate = Number(createTransactionSurveyDto.answers[i].answer) / 5;
         rateVar = rateVar + rate
       }
     }
@@ -51,12 +51,11 @@ export class TransactionSurveyService {
             metadata: {
               additional_information: '',
               answer: createTransactionSurveyDto.answers[i].answer,
-              answer_lable: createTransactionSurveyDto.answers[i].choices[createTransactionSurveyDto.answers[i].answer],
               channel: "survey",
               contact_choices: "",
               time_incident: savedSurvey[0]?.createdAt,
-              survey_id: savedSurvey[0]?.id,
-              question: savedSurvey[0]?.id,
+              survey_id: createTransactionSurveyDto.surveyId,
+              question_id: createTransactionSurveyDto.answers[i].id,
             },
             name: "Survey Complaint",
             customer: customer,
@@ -68,7 +67,6 @@ export class TransactionSurveyService {
             type: "Survey Complaint",
     
           }
-          console.log(complaint_data)
           await this.complaintsService.create(complaint_data)
         }
       }

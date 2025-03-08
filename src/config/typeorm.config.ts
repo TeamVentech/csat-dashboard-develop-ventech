@@ -14,7 +14,9 @@ export const TypeOrmConfigCentrize: TypeOrmModuleOptions = {
   // logging: true,
   extra: {
     ssl: {
+      rejectUnauthorized: false, // This disables certificate validation
     },
+  
   },
 
 };
@@ -29,7 +31,9 @@ export const configurationCentrize = async () => {
       database: process.env.DB_NAME_CENTRIZE,
       extra: {
         ssl: {
+          rejectUnauthorized: false, // This disables certificate validation
         },
+      
       },
     },
   };

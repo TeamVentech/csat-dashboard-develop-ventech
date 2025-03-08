@@ -10,7 +10,8 @@ import { RolesModule } from 'roles/roles.module';
 @Module({
   imports: [DatabaseModule,RolesModule],
   controllers: [SurveysController],
-  providers: [SurveysService, ...SurveysProvider]
+  providers: [SurveysService, ...SurveysProvider],
+  exports:[SurveysService]
 })
 export class SurveysModule {}
 
