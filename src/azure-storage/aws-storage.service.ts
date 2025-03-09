@@ -13,8 +13,8 @@ export class FilesS3Service {
     this.s3 = new S3Client({
       region: process.env.AWS_REGION,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY,
-        secretAccessKey: process.env.AWS_SECRET_KEY,
+        accessKeyId: process.env.TEST_KEY,
+        secretAccessKey: process.env.SECRET_KEY,
       },
     });
 
