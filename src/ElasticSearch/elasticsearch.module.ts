@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { ElasticService } from './elasticsearch.service';
+import { Client } from '@elastic/elasticsearch';
  
 @Module({
   imports: [
@@ -9,11 +10,12 @@ import { ElasticService } from './elasticsearch.service';
     ElasticsearchModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        node: "https://search-csat-elastic-domain-pivjdjn2nbt7kbqhiwuhjgti2m.us-west-2.es.amazonaws.com",
+        node: process.env.AWS_SEARCH_NODE,
         auth: {
-          username: "admin",
-          password: "Csat-dev-1234",
-        }
+                username: process.env.AWS_SEARCH_USERNAME,
+                password: process.env.AWS_SEARCH_PASSWORD
+        },
+        
       }),
       inject: [ConfigService],
     }),

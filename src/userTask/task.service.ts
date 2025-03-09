@@ -13,7 +13,7 @@ import emailjs from "emailjs-com";
 import { AppService } from 'app.service';
 import { MailtrapClient } from 'mailtrap';
 import { EmailService } from 'email/email.service';
-import { FilesAzureService } from 'azure-storage/azure-storage.service';
+import { FilesS3Service } from 'azure-storage/aws-storage.service';
 
 @Injectable()
 export class TasksServices {
@@ -32,7 +32,7 @@ export class TasksServices {
 		private readonly touchPointsService: TouchPointsService,
 		private readonly usersService: UsersService,
 		private readonly emailService: EmailService,
-		private readonly filesAzureService: FilesAzureService, // Inject TouchPointsSegrvice
+		private readonly filesAzureService: FilesS3Service, // Inject TouchPointsSegrvice
 		
 	) { 
 		this.client = new MailtrapClient({

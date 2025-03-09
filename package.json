@@ -20,12 +20,14 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/credential-provider-node": "^3.758.0",
     "@aws-sdk/credential-providers": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@aws-sdk/signature-v4": "^3.370.0",
     "@aws-sdk/types": "^3.734.0",
     "@azure/storage-blob": "^12.26.0",
-    "@elastic/elasticsearch": "^8.17.1",
+    "@elastic/elasticsearch": "^7.13.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.0.9",
     "@nestjs/config": "^4.0.0",

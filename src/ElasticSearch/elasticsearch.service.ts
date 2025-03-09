@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import * as moment from 'moment';
+import { Client } from '@elastic/elasticsearch';
 interface ServiceRecord {
     type?: string;
     metadata?: {
@@ -18,6 +18,7 @@ export class ElasticService {
             index,
             id,
             body: data,
+            
         });
     }
 
@@ -32,7 +33,7 @@ export class ElasticService {
                 size: 400,
             });
 
-            const hits = result.hits.hits.map((hit) => hit._source);
+            const hits = result.body.hits.hits.map((hit) => hit._source);
 
             return {
                 data: hits,
@@ -58,7 +59,7 @@ export class ElasticService {
                 },
             });
 
-            const hits = result.hits.hits;
+            const hits = result.body.hits.hits;
 
             if (hits.length > 0) {
                 return {
@@ -96,7 +97,7 @@ export class ElasticService {
                 },
             });
 
-            const hits = result.hits.hits;
+            const hits = result.body.hits.hits;
 
             if (hits.length > 0) {
                 return {
@@ -164,13 +165,13 @@ export class ElasticService {
                     size: 10000 // Maximum number of documents
                 }
             });
-            const hits = result.hits.hits.map((hit: any) => hit._source);
+            const hits = result.body.hits.hits.map((hit: any) => hit._source);
             let totalHits: number;
 
-            if (typeof result.hits.total === 'number') {
-                totalHits = result.hits.total;
+            if (typeof result.body.hits.total === 'number') {
+                totalHits = result.body.hits.total;
             } else {
-                totalHits = result.hits.total.value;
+                totalHits = result.body.hits.total.value;
             }
             return {
                 success: true,
@@ -202,13 +203,13 @@ export class ElasticService {
                     size: 10000 // Maximum number of documents
                 }
             });
-            const hits = result.hits.hits.map((hit: any) => hit._source);
+            const hits = result.body.hits.hits.map((hit: any) => hit._source);
             let totalHits: number;
 
-            if (typeof result.hits.total === 'number') {
-                totalHits = result.hits.total;
+            if (typeof result.body.hits.total === 'number') {
+                totalHits = result.body.hits.total;
             } else {
-                totalHits = result.hits.total.value;
+                totalHits = result.body.hits.total.value;
             }
             return {
                 success: true,
@@ -279,14 +280,14 @@ export class ElasticService {
         });
         let totalHits: number;
 
-        if (typeof result.hits.total === 'number') {
-            totalHits = result.hits.total;
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
         } else {
-            totalHits = result.hits.total.value;
+            totalHits = result.body.hits.total.value;
         }
 
         const totalPages = Math.ceil(totalHits / pageSize);
-        const sources = result.hits.hits.map((hit) => hit._source);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
         return {
             totalHits,
             totalPages,
@@ -319,14 +320,14 @@ export class ElasticService {
         });
         let totalHits: number;
 
-        if (typeof result.hits.total === 'number') {
-            totalHits = result.hits.total;
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
         } else {
-            totalHits = result.hits.total.value;
+            totalHits = result.body.hits.total.value;
         }
 
         const totalPages = Math.ceil(totalHits / pageSize);
-        const sources = result.hits.hits.map((hit) => hit._source);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
         return {
             totalHits,
             totalPages,
@@ -386,14 +387,14 @@ export class ElasticService {
         });
         let totalHits: number;
 
-        if (typeof result.hits.total === 'number') {
-            totalHits = result.hits.total;
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
         } else {
-            totalHits = result.hits.total.value;
+            totalHits = result.body.hits.total.value;
         }
 
         const totalPages = Math.ceil(totalHits / pageSize);
-        const sources = result.hits.hits.map((hit) => hit._source);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
         return {
             totalHits,
             totalPages,
@@ -434,14 +435,14 @@ export class ElasticService {
         });
         let totalHits: number;
 
-        if (typeof result.hits.total === 'number') {
-            totalHits = result.hits.total;
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
         } else {
-            totalHits = result.hits.total.value;
+            totalHits = result.body.hits.total.value;
         }
 
         const totalPages = Math.ceil(totalHits / pageSize);
-        const sources = result.hits.hits.map((hit) => hit._source);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
         return {
             totalHits,
             totalPages,
@@ -452,12 +453,12 @@ export class ElasticService {
     }
 
     async getRecordsCount() {
-        const response = await this.elasticsearchService.search<ServiceRecord>({
+        const response = await this.elasticsearchService.search({
           index: 'services',
           size: 1000, // Adjust based on your data size
         });
     
-        const hits = response.hits.hits.map((hit) => hit._source as ServiceRecord);
+        const hits = response.body.hits.hits.map((hit) => hit._source as ServiceRecord);
     
         const today = moment().format('YYYY-MM-DD'); // Get today's date
     
@@ -492,7 +493,7 @@ export class ElasticService {
               must.push({ match: { "assignedTo": query.role } });
           }
       
-          const result: SearchResponse<any> = await this.elasticsearchService.search({
+          const result= await this.elasticsearchService.search({
             index,
             body: {
                 size: 0, // Don't return actual documents
@@ -515,14 +516,14 @@ export class ElasticService {
     
         // Extract aggregated counts
         const nameCounts =
-            (result.aggregations?.name_count as { buckets: { key: string; doc_count: number }[] })
+            (result.body.aggregations?.name_count as { buckets: { key: string; doc_count: number }[] })
                 ?.buckets?.map(bucket => ({
                     name: bucket.key,
                     count: bucket.doc_count
                 })) || [];
     
         // Get the total count from search result metadata
-        const totalCount = result.hits.total ? (typeof result.hits.total === "number" ? result.hits.total : result.hits.total.value) : 0;
+        const totalCount = result.body.hits.total ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value) : 0;
     
         return {
             totalCount,
