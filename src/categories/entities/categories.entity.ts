@@ -1,14 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
 
 @Entity('categories')
+@Unique(['name', 'type'])
 export class Category {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'jsonb', nullable: true, unique: true })
+  @Column({ type: 'jsonb', nullable: true })
   name: any;
 
-  @Column({ type: 'varchar', length: 255, default: "parking" })
+  @Column({ type: 'varchar', length: 255})
   type: string;
 
   @Column({ default: "0" })

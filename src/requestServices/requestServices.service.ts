@@ -28,19 +28,6 @@ export class RequestServicesService {
   async create(createRequestServicesDto: CreateRequestServicesDto) {
     try {
       const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.phone_number;
-      if (createRequestServicesDto.type === 'Found Child') {
-        if (createRequestServicesDto.metadata.parents.phone_number) {
-          const numbers = createRequestServicesDto?.metadata?.parents?.phone_number
-          const message = createRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العملاء]." : "Dear Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child."
-          await this.sendSms(numbers, message, numbers)
-          createRequestServicesDto.state = "Awaiting Collection"
-        }
-      }
-      else if (createRequestServicesDto.name !== 'Gift Voucher Sales' && createRequestServicesDto.name !== 'Added-Value Services') {
-        const language = createRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
-        const message = SmsMessage[createRequestServicesDto.type][createRequestServicesDto.state][language]
-        await this.sendSms(numbers, message, numbers)
-      }
       if (createRequestServicesDto.name === 'Gift Voucher Sales') {
         const data = createRequestServicesDto.metadata.voucher
         const Service = this.requestServicesRepository.create(createRequestServicesDto);
@@ -60,48 +47,64 @@ export class RequestServicesService {
           }
         }
       }
-      if (createRequestServicesDto.name === 'Lost Children Management') {
-        if (createRequestServicesDto.type === "Lost Child") {
-          const customers = createRequestServicesDto.metadata.parents
-          const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
-          if (customer) {
-            await this.customerService.update(customer.id, { ...customers })
-          }
-          else {
-            delete createRequestServicesDto?.metadata?.parents?.id;
-            await this.customerService.create({ ...createRequestServicesDto.metadata.parents })
+      else{
+        if (createRequestServicesDto.type === 'Found Child') {
+          if (createRequestServicesDto.metadata.parents.phone_number) {
+            const numbers = createRequestServicesDto?.metadata?.parents?.phone_number
+            const message = createRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العملاء]." : "Dear Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child."
+            await this.sendSms(numbers, message, numbers)
+            createRequestServicesDto.state = "Awaiting Collection"
           }
         }
-      }
-      if (createRequestServicesDto.name === 'Suggestion Box' || createRequestServicesDto.name === 'Incident Reporting' || createRequestServicesDto.name === 'Lost Item Management' || createRequestServicesDto.type === 'Individual Voucher Sale') {
-        const customers = createRequestServicesDto.metadata.customer
-        const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
-        if (customer) {
-          await this.customerService.update(customer.id, { ...customers })
+        else if (createRequestServicesDto.name !== 'Gift Voucher Sales' && createRequestServicesDto.name !== 'Added-Value Services') {
+          const language = createRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+          const message = SmsMessage[createRequestServicesDto.type][createRequestServicesDto.state][language]
+          await this.sendSms(numbers, message, numbers)
         }
-        else {
-          delete createRequestServicesDto?.metadata?.customer?.id;
-          await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
+        if (createRequestServicesDto.name === 'Lost Children Management') {
+          if (createRequestServicesDto.type === "Lost Child") {
+            const customers = createRequestServicesDto.metadata.parents
+            const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
+            if (customer) {
+              await this.customerService.update(customer.id, { ...customers })
+            }
+            else {
+              delete createRequestServicesDto?.metadata?.parents?.id;
+              await this.customerService.create({ ...createRequestServicesDto.metadata.parents })
+            }
+          }
         }
-      }
-      if (createRequestServicesDto.name === 'Added-Value Services') {
-        if (createRequestServicesDto.type !== "Handsfree Request") {
+        if (createRequestServicesDto.name === 'Suggestion Box' || createRequestServicesDto.name === 'Incident Reporting' || createRequestServicesDto.name === 'Lost Item Management' || createRequestServicesDto.type === 'Individual Voucher Sale') {
           const customers = createRequestServicesDto.metadata.customer
           const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
           if (customer) {
             await this.customerService.update(customer.id, { ...customers })
           }
           else {
-            delete createRequestServicesDto.metadata.customer.id;
+            delete createRequestServicesDto?.metadata?.customer?.id;
             await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
           }
-          const RequestServices = createRequestServicesDto.metadata.service
-          await this.servicesService.update(RequestServices.id, { status: "OCCUPIED" });
         }
+        if (createRequestServicesDto.name === 'Added-Value Services') {
+          if (createRequestServicesDto.type !== "Handsfree Request") {
+            const customers = createRequestServicesDto.metadata.customer
+            const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
+            if (customer) {
+              await this.customerService.update(customer.id, { ...customers })
+            }
+            else {
+              delete createRequestServicesDto.metadata.customer.id;
+              await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
+            }
+            const RequestServices = createRequestServicesDto.metadata.service
+            await this.servicesService.update(RequestServices.id, { status: "OCCUPIED" });
+          }
+        }
+        const Service = this.requestServicesRepository.create(createRequestServicesDto);
+        var savedService = await this.requestServicesRepository.save(Service);
+        await this.elasticService.indexData('services', Service.id, Service);
+  
       }
-      const Service = this.requestServicesRepository.create(createRequestServicesDto);
-      var savedService = await this.requestServicesRepository.save(Service);
-      await this.elasticService.indexData('services', Service.id, Service);
 
     } catch (error) {
       console.error('Error sending SMS :', error.message);

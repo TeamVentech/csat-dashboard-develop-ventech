@@ -23,6 +23,7 @@ export class CategoriesController {
   @Post()
   @Permissions('Survey::write')
   async create(@Body() createCategoryDto: CreateCategoryDto) {
+
     return this.categoriesService.create(createCategoryDto);
   }
 

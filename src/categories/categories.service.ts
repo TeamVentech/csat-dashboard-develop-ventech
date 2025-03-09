@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Category } from './entities/categories.entity';
 import { CreateCategoryDto } from './dto/create.dto';
 import { UpdateCategoryDto } from './dto/update.dto';
@@ -15,6 +15,7 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto) {
     const category = plainToInstance(Category, createCategoryDto);
     return this.categoryRepository.save(category);
+  
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -59,17 +60,28 @@ export class CategoriesService {
     return category;
   }
 
-  async findByType(type: string){
-    const category = await this.categoryRepository.find({ where: { type: type } });
-    if (!category) {
-      throw new NotFoundException(`Category with ID ${type} not found`);
+  async findByType(type: string) {
+    console.log(type)
+    let searchTypes = [type];
+  
+    if (type === 'Complaint') {
+      searchTypes = ['Mall Complaint', 'Shops Complaint', 'Tenant Complaint'];
     }
-    return category;
+  
+    const categories = await this.categoryRepository.find({
+      where: { type: In(searchTypes) },
+    });
+  
+    if (!categories.length) {
+      throw new NotFoundException(`No categories found for type ${type}`);
+    }
+  
+    return categories;
   }
-
+  
 
   async findByComplaintType(type: string){
-    const category = await this.categoryRepository.find({ where: { complaint_type: type } });
+    const category = await this.categoryRepository.find({ where: {  type } });
     if (!category) {
       throw new NotFoundException(`Category with ID ${type} not found`);
     }
