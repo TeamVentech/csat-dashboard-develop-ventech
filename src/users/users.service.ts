@@ -4,13 +4,13 @@ import { Repository, In } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create.dto';
 import { UpdateUserDto } from './dto/update.dto';
-import { FilesAzureService } from 'azure-storage/azure-storage.service';
+import {  FilesS3Service } from 'azure-storage/aws-storage.service';
 @Injectable()
 export class UsersService {
   constructor(
     @Inject('USER_REPOSITORY')
     private readonly userRepository: Repository<User>,
-    private readonly filesAzureService: FilesAzureService, // Inject TouchPointsSegrvice
+    private readonly filesAzureService: FilesS3Service, // Inject TouchPointsSegrvice
 
   ) {}
 

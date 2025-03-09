@@ -38,7 +38,7 @@ import { TasksServices } from 'userTask/task.service';
 import { CronModule } from 'cron/cron.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from 'email/email.module';
-import { FilesAzureModule } from 'azure-storage/azure-storage.module';
+import {  FilesS3Module } from 'azure-storage/aws-storage.module';
 
 @Module({
   imports: [
@@ -72,7 +72,7 @@ import { FilesAzureModule } from 'azure-storage/azure-storage.module';
     CorporatesModule,
     QrcodeModule,
     TouchPointsModule,
-    FilesAzureModule,
+    FilesS3Module,
     SurveysModule,
     LocationsModule,
     SectionsModule,

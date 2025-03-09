@@ -16,7 +16,7 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3001
   await app.listen( PORT);
 }
 bootstrap();
