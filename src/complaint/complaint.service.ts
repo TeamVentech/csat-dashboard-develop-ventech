@@ -59,9 +59,10 @@ export class ComplaintsService {
     await this.elasticService.indexData('complaints', complaint.id, complaint);
     let assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
     if(createComplaintsDto.type === "Survey Complaint"){
-      assignedTo = ["SUPER_ADMIN"]
+      assignedTo = ["Super_Admin"]
       // assignedTo = ["CX Section Head"]
     }
+    console.log(assignedTo)
     const tasks_payload = {
       "taskId": complaint.id,
       "name": complaint.type,

@@ -67,15 +67,13 @@ export class TasksController {
   elasticSerchQurey(
     @Body() data: any,
   ) {
-    return ;
-    // return this.elasticSearchService.searchTask("tasks", data.search, data.page, data.perPage);
+    return this.elasticSearchService.searchTask("tasks", data.search, data.page, data.perPage);
   }
 
   @Post('search/query/count')
   elasticSerchCountQurey(
     @Body() data: any,
   ) {
-    return ;
-    // return this.elasticSearchService.searchTaskCount("tasks", data.search);
+    return this.elasticSearchService.searchTaskCount("tasks", data.search);
   }
 }
