@@ -193,6 +193,9 @@ export class TasksServices {
 			updateTasksDto.type = "Final Level"
 			updateTasksDto.status = "Pending Review (Final Level)"
 			updateTasksDto.complaints.status = "Pending Review (Final Level)"
+			if(file){
+				updateTasksDto.actions['firstResend'].Attach = await this.filesAzureService.uploadFile(file, "complaint"); 
+			}
 			updateTasksDto.assignedTo = assignedTo
 			const complaint_update = updateTasksDto.complaints
 			delete complaint_update.category
@@ -296,12 +299,12 @@ export class TasksServices {
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
 		const email_user =  [...new Set(users.map(user => user.email).flat())]
-		// await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", data.id,  "System", "1",`http://localhost:5173/complaint/${data.id}/details`)
+		await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", data.id,  "System", "1",`http://localhost:5173/complaint/${data.id}/details`)
 
 		return this.findOne(id);
 	}
 
-	async updateRequest(id: string, updateTasksDto: UpdateTaskServicesDto) {
+	async updateRequest(id: string, updateTasksDto: UpdateTaskServicesDto, file) {
 		// const task_data = await this.findOne(id)
 		const data = updateTasksDto.complaints
 		const assignedTo = [...new Set(data.touchpoint.workflow.First_Level.map(user => user.name).flat())];
@@ -309,6 +312,9 @@ export class TasksServices {
 		updateTasksDto.assignedTo = assignedTo
 		updateTasksDto.complaints.status = "Re-sent"
 		updateTasksDto.status = "Re-sent"
+		if(file){
+			updateTasksDto.actions['firstResend'].Attach = await this.filesAzureService.uploadFile(file, "complaint"); 
+		}
 		const complaint_update = updateTasksDto.complaints
 		delete complaint_update.category
 		delete complaint_update.customer
@@ -326,7 +332,7 @@ export class TasksServices {
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
 		const email_user =  [...new Set(users.map(user => user.email).flat())]
-		// await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`http://localhost:5173/complaint/${complaint_update.id}/details`)
+		await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`http://localhost:5173/complaint/${complaint_update.id}/details`)
 	
 		return this.findOne(id);
 	}

@@ -1,22 +1,22 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateTenantDto {
-  @IsString()
+  @IsOptional()
   name: string;
 
-  @IsString()
+  @IsOptional()
   contact_name: string;
 
-  @IsString()
+  @IsOptional()
   email: string;
 
-  @IsString()
+  @IsOptional()
   phone_number: string;
 
-  @IsString()
+  @IsOptional()
   manager_account: string;
 
-  @IsString()
+  @IsOptional()
   manager_email: string;
 }

@@ -17,18 +17,18 @@ export class TouchPointsService {
   ) { }
 
   async create(createTouchPointDto: any) {
-
-        const category = await this.categoryRepository.findOne({ where: { id: createTouchPointDto.categoryId } });
-        if (!category) {
-          throw new NotFoundException(`Category with ID ${createTouchPointDto.categoryId} not found`);
-        }
-        const subCategory = this.touchpointRepository.create({
-          ...createTouchPointDto,
-          category,
-        });
-        return this.touchpointRepository.save(subCategory);
     
-        
+    
+      const category = await this.categoryRepository.findOne({ where: { id: createTouchPointDto.categoryId } });
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${createTouchPointDto.categoryId} not found`);
+      }
+      const subCategory = this.touchpointRepository.create({
+        ...createTouchPointDto,
+        category,
+      });
+      return this.touchpointRepository.save(subCategory);
+
       
   }
 
@@ -123,13 +123,11 @@ export class TouchPointsService {
 
   async getTouchpointsGroupedByCategory(type) {
     const touchpoints = await this.touchpointRepository.find({ relations: ['category'] });
-    console.log(type)
-    const searchTypes = ['Mall Complaint', 'Shops Complaint', 'Tenant Complaint'];
-
+  
     const grouped = touchpoints.reduce((acc, touchpoint) => {
-      const categoryName = touchpoint.category?.name.en
-
-      if (searchTypes.includes(touchpoint.category.type)) {
+      if (touchpoint.category?.type === type) {
+        const categoryName = touchpoint.category.name.en;
+  
         if (!acc[categoryName]) {
           acc[categoryName] = [];
         }
@@ -137,11 +135,13 @@ export class TouchPointsService {
       }
       return acc;
     }, {} as Record<string, Touchpoint[]>);
+  
     return Object.entries(grouped).map(([category, touchpoints]) => ({
       category,
       touchpoint: touchpoints,
     }));
   }
+  
 
 
 

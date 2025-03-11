@@ -488,20 +488,24 @@ export class ElasticService {
       } 
     
       async searchTaskCount(index: string, query: any) {
-          const must: any[] = [];
-          if (query?.role) {
-              must.push({ match: { "assignedTo": query.role } });
-          }
-      
-          const result= await this.elasticsearchService.search({
+        const must: any[] = [];
+    
+        if (query?.role) {
+            must.push({ match: { "assignedTo": query.role } });
+        }
+    
+        const result = await this.elasticsearchService.search({
             index,
             body: {
                 size: 0, // Don't return actual documents
                 track_total_hits: true, // Ensure total count is accurate
                 query: {
                     bool: {
-                        must: must.length > 0 ? must : [{ match_all: {} }]
-                    },
+                        must: must.length > 0 ? must : [{ match_all: {} }],
+                        must_not: [
+                            { match: { "status": "Closed" } } // Exclude closed tasks
+                        ]
+                    }
                 },
                 aggs: {
                     name_count: {
@@ -511,7 +515,7 @@ export class ElasticService {
                         }
                     }
                 }
-            },
+            }
         });
     
         // Extract aggregated counts
@@ -523,13 +527,14 @@ export class ElasticService {
                 })) || [];
     
         // Get the total count from search result metadata
-        const totalCount = result.body.hits.total ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value) : 0;
+        const totalCount = result.body.hits.total 
+            ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value) 
+            : 0;
     
         return {
             totalCount,
             nameCounts
         };
-        
-      }
-
+    }
+    
 }

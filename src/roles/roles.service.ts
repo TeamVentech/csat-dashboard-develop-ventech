@@ -14,8 +14,7 @@ export class RolesService {
 
   async create(createRoleDto: CreateRoleDto){
     const role = this.roleRepository.create(createRoleDto);
-    const res =  this.roleRepository.save(role);
-    return res
+    return this.roleRepository.save(role);
   }
 
   async findAll(page: number, perPage: number) {

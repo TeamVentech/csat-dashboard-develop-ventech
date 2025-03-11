@@ -41,12 +41,12 @@ const  SmsMessage =  {
         "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
       },
       "In Progress": {
-        "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
+        "ar": "زبوننا العزيز،\nلم يتم العثور على المفقود بعد. سنبلغكم بأي جديد.",
+        "en": "Dear Customer,\ We would like to inform you that the item has not been found yet. We will keep you updated."
       },
       "In Progress Day 3": {
-        "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
-        "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
+        "ar": "زبوننا العزيز،\n لم يتم العثور على المفقود بعد.\n سنبلغكم عند العثور عليه.",
+        "en": "Dear Customer,\n  We would like to inform you that the item has not been found yet.\n We will inform you when it is found."
       }
     },
     "Incident Reporting": {

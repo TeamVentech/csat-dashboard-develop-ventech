@@ -203,11 +203,19 @@ export class RequestServicesService {
       const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
       await this.sendSms(numbers, message, numbers)
     }
-    if (updateRequestServicesDto?.actions === "in_progress_item") {
+
+    if (updateRequestServicesDto?.actions === "in_progress_item" || updateRequestServicesDto?.actions === "ArticleFound") {
       const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
-      const message = SmsMessage[updateRequestServicesDto.type]["In Progress"][language]
-      await this.sendSms(numbers, message, numbers)
+      if(updateRequestServicesDto?.actions === "ArticleFound"){
+        const message = SmsMessage[updateRequestServicesDto.type]["Article Found"][language]
+        await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+      }
+      else{
+        const message = SmsMessage[updateRequestServicesDto.type]["In Progress"][language]
+        await this.sendSms(numbers, message, numbers)
+  
+      }
     }
     if (updateRequestServicesDto?.actions === "in_progress_item_3") {
       const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number

@@ -54,8 +54,9 @@ export class TasksController {
   }
 
   @Patch(':id/request_change')
-  updateRequest(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto) {
-    return this.tasksService.updateRequest(id, UpdateTaskServicesDto);
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
+  updateRequest(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto,  @UploadedFile() file: Express.Multer.File) {
+    return this.tasksService.updateRequest(id, UpdateTaskServicesDto, file);
   }
 
   @Delete(':id')
