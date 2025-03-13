@@ -506,8 +506,17 @@ export class ElasticService {
     
         const today = moment().format('YYYY-MM-DD'); // Get today's date
     
-        const counts: Record<string, { total: number; new: number }> = {};
-    
+        const counts: Record<string, { total: number; new: number; active: number }> = {};
+        
+        const excludedStates = new Set([
+            'Closed',
+            'Article Found',
+            'Article Not Found',
+            'Item Returned',
+            'Item Not Returned',
+            'Bags Returned'
+        ]);
+        
         for (const record of hits) {
           if (!record) continue; // Ensure record exists
     
@@ -516,7 +525,7 @@ export class ElasticService {
     
           // Initialize if not present
           if (!counts[type]) {
-            counts[type] = { total: 0, new: 0 };
+            counts[type] = { total: 0, new: 0, active: 0 };
           }
     
           // Count total records by type
@@ -526,6 +535,12 @@ export class ElasticService {
           if (recordDate === today) {
             counts[type].new++;
           }
+         
+          // Count active cases (state is NOT in the excluded list)
+          if (!excludedStates.has(record.state)) {
+            counts[type].active++;
+          } 
+            
         }
     
         return counts;
