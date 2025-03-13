@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Res } from '@nestjs/common';
+import { Body, Controller, Get, Res, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
+// import { ApiKeyGuard } from 'guards/api-key.guard';
 
 @Controller()
 export class AppController {
@@ -16,6 +17,7 @@ export class AppController {
 	}
 
 	@Get()
+	// @UseGuards(ApiKeyGuard)
 	getHello(): string {
 		return this.appService.getHello();
 	}

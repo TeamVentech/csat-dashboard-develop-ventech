@@ -75,10 +75,21 @@ export class VouchersController {
 
   @Patch(':id')
   @Permissions('Stock::update')
-
   update(@Param('id') id: string, @Body() updateVouchersDto: UpdateVouchersDto) {
     return this.vouchersService.update(id, updateVouchersDto);
   }
+
+  @Patch(':id/extend/:service_id')
+  @Permissions('Stock::update')
+  extend(@Param('id') id: string, @Param('service_id') service_id: string, @Body() data: any) {
+    return this.vouchersService.extend(id, service_id, data);
+  }
+
+  // @Patch(':id/refund')
+  // @Permissions('Stock::update')
+  // updateRefunded(@Param('id') id: string) {
+  //   return this.vouchersService.updateRefuned(id);
+  // }
 
   @Delete(':id')
   @Permissions('Stock::delete')

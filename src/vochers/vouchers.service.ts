@@ -89,6 +89,7 @@ export class VouchersService {
     const list = [];
     for (const item of data.vouchers) {
       const variables = item.denominations;
+      console.log(item)
       const result = await this.vouchersRepository
         .createQueryBuilder('vouchers')
         .where("vouchers.metadata->>'status' NOT IN (:...statuses)", { statuses: ['Sold', 'Extended'] })
@@ -130,6 +131,7 @@ export class VouchersService {
       const service = await this.requestServiceRepository.findOne({ where: { id: updateVouchersDto.service_id } });
 
       if (service) {
+        console.log(JSON.stringify(service))
         for (const voucherGroup of service.metadata.voucher) {
           const foundVoucher = voucherGroup.vouchers.find(voucher => voucher.VoucherId === updateVouchersDto.VoucherId);
           if (foundVoucher) {
@@ -158,7 +160,7 @@ export class VouchersService {
         }
       }
     }
-    else{
+    else {
       await this.vouchersRepository.update(id, updateVouchersDto);
       return true
     }
@@ -172,6 +174,72 @@ export class VouchersService {
     return null;
   }
 
+
+  async extend(id: string, service_id: string, data: any) {
+
+    try {
+      const service = await this.requestServiceRepository.findOne({ where: { id: service_id } })
+      const voucher_data = await this.vouchersRepository.findOne({ where: { id } })
+      if (service) {
+        const createdAt = new Date(service.createdAt);
+        const now = new Date();
+        const diffTime = now.getTime() - createdAt.getTime();
+        const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365);
+        if (diffYears > 1) {
+          throw new Error("The transaction is older than one year.");
+        }
+        console.log(JSON.stringify(voucher_data))
+        if (voucher_data.metadata.status === "Extended") {
+          throw new Error("The voucher has already been extended.");
+        }
+        console.log(JSON.stringify(service))
+        const extended_voucher = await this.GetAvailableVoucher({ "vouchers": [{ "Vouchers": 1, "denominations": parseInt(voucher_data.metadata.Denomination), "serialNumbers": ["4408398"] }] })
+        console.log(parseInt(voucher_data.metadata.Denomination))
+        console.log(JSON.stringify(extended_voucher))
+        if (!extended_voucher.data[0]) {
+          throw new Error("You Don't have enough denomination");
+        }
+        voucher_data.metadata.extanded = true
+        voucher_data.metadata.status = "Extended"
+        voucher_data.metadata.status = "Extended"
+        let specificDate = new Date(service.metadata.Expiry_date);
+        specificDate.setDate(specificDate.getDate() + 14); // Add 14 days
+        voucher_data.metadata.extanded_expired_date = specificDate.toISOString()
+        voucher_data.metadata.extendedBy = data.extendedBy
+        voucher_data.metadata.newVoucher = extended_voucher.data[0].vouchers[0].id
+        voucher_data.metadata.newVoucherSerialNumber = extended_voucher.data[0].vouchers[0].serialNumber
+        await this.vouchersRepository.update(voucher_data.id, voucher_data);
+  
+        // -------------------------------------------------------------------------------------
+  
+        extended_voucher.data[0].vouchers[0].state = "Extended"
+        extended_voucher.data[0].vouchers[0].metadata.status = "Extended"
+        extended_voucher.data[0].vouchers[0].metadata.Client_ID = service.metadata.customer.id || service.metadata.Company.id
+        extended_voucher.data[0].vouchers[0].metadata.Type_of_Sale = service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual'
+        extended_voucher.data[0].vouchers[0].metadata.main_voucher = id
+        await this.vouchersRepository.update(extended_voucher.data[0].vouchers[0].id, extended_voucher.data[0].vouchers[0]);
+        for (let j = 0; j < service.metadata.voucher.length; j++) {
+          const element = service.metadata.voucher[j];
+          for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
+            if(service.metadata.voucher[j].vouchers[i].id === id){
+              service.metadata.voucher[j].vouchers[i] = {...voucher_data, extendedBy:data.extendedBy}
+            }
+          }
+        }
+        await this.requestServiceRepository.update(service.id, service);
+        await this.elasticService.updateDocument('services', service.id, service);
+      }
+    } catch (error) {
+      throw new Error(error);
+    }
+    return null;
+  }
+
+  // async updateRefunded(id: string) {
+  // if (updateVouchersDto.actions) {
+  // const service = await this.requestServiceRepository.findOne({ where: { id: updateVouchersDto.service_id } });
+  // }
+  // }
   async remove(id: string) {
     const Vouchers = await this.findOne(id);
     await this.vouchersRepository.remove(Vouchers);

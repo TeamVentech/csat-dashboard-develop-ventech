@@ -55,6 +55,11 @@ export class CorporatesService {
     return Corporate;
   }
 
+  async findAllCorporate(){
+    const Corporate = await this.corporateRepository.find();
+    return Corporate;
+  }
+
   async find(name: string) {
     const queryBuilder = this.corporateRepository.createQueryBuilder('user');
     queryBuilder.andWhere('(user.name ILIKE :search)', {

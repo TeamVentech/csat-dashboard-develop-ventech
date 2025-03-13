@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 export class CreateVouchersDto {
   @IsNotEmpty()
@@ -8,7 +8,7 @@ export class CreateVouchersDto {
   @IsNotEmpty()
   metadata: any;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   state: string;
 

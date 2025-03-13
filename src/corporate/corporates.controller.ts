@@ -60,6 +60,11 @@ export class CorporatesController {
     }
 
 
+    @Get('report/all')
+    @Permissions('Corporate::read')
+    findAllCorporate( ) {
+        return this.corporatesService.findAllCorporate();
+    }
     // Get a corporate by ID
     @Get(':id')
     @Permissions('Corporate::read')

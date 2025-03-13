@@ -87,18 +87,19 @@ export class RequestServicesService {
         }
         if (createRequestServicesDto.name === 'Added-Value Services') {
           if (createRequestServicesDto.type !== "Handsfree Request") {
-            const customers = createRequestServicesDto.metadata.customer
-            const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
-            if (customer) {
-              await this.customerService.update(customer.id, { ...customers })
-            }
-            else {
-              delete createRequestServicesDto.metadata.customer.id;
-              await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
-            }
             const RequestServices = createRequestServicesDto.metadata.service
             await this.servicesService.update(RequestServices.id, { status: "OCCUPIED" });
           }
+          const customers = createRequestServicesDto.metadata.customer
+          const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
+          if (customer) {
+            await this.customerService.update(customer.id, { ...customers })
+          }
+          else {
+            delete createRequestServicesDto.metadata.customer.id;
+            await this.customerService.create({ ...createRequestServicesDto.metadata.customer })
+          }
+          
         }
         const Service = this.requestServicesRepository.create(createRequestServicesDto);
         var savedService = await this.requestServicesRepository.save(Service);

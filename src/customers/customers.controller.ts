@@ -52,6 +52,13 @@ export class CustomersController {
         return this.customersService.findAll(page, perPage, filterOptions);
     }
 
+    @Get('report/all')
+    @Permissions('Customer::read')
+    findAllCustomer( ) {
+
+        return this.customersService.findAllCustomers();
+    }
+
     @Get('check-existence')
     @Permissions('Customer::read')
     async checkExistence(

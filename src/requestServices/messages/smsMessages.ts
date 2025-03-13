@@ -78,6 +78,10 @@ const  SmsMessage =  {
         "ar": "تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: تاريخ الصلاحية\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
         "en": "We would like to inform you that your extension request is approved. The new expiry date is dd/mm/yyyy\nPlease rate our service by following the below link:\n"
       },
+      "Note Extented": {
+        "ar": "ستنتهي صلاحية قسيمة الإهداء خلال 3 أيام. \nاستخدمها قريباً يرجى تجاهل الرسالة في حال قمت باستخدامها. \nنتمنى لكم تسوّق سعيد",
+        "en": "Your gift voucher expires in (3) days. Don't forget to use it soon.\n If you have used it already, please disregard this text.\n Happy Shopping"
+      },
       "Extension Rejected": {
         "ar": "نعتذر، لم يتم الموافقة على طلب تمديد الصلاحية. شكرا لتفهمكم.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط",
         "en": "We regret to inform you that we cannot approve your extension request. Thank you for your understanding.\nPlease rate our service by following the link:\n"

@@ -54,6 +54,12 @@ export class CustomersService {
 
     return { categories, total };
   }
+
+  async findAllCustomers(){
+    const customer = await this.customerRepository.find();
+    return customer;
+  }
+
   async findOne(id: string): Promise<Customer> {
     const customer = await this.customerRepository.findOne({ where: { id } });
     if (!customer) {

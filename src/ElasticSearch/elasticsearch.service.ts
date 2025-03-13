@@ -297,6 +297,50 @@ export class ElasticService {
         };
     }
 
+    async searchExtendedVoucher(index: string, page: number = 1, pageSize: number = 300) {
+        const from = (page - 1) * pageSize;
+        
+        const must: any[] = [];
+        must.push({ "match": { "metadata.voucher.vouchers.metadata.status": 'Extended'} })
+        
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                query: {
+                    bool: {
+                        must: must.length > 0 ? must : [{ match_all: {} }]
+                    },
+                },
+                sort: [
+                    {
+                        createdAt: {
+                            order: "desc"
+                        }
+                    }
+                ]
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
+        } else {
+            totalHits = result.body.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
+
     async customer_search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
         const result = await this.elasticsearchService.search({
