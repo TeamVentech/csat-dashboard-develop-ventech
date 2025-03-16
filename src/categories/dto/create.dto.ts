@@ -14,5 +14,8 @@ export class CreateCategoryDto {
   type: string;
 
   @IsOptional()
+  avatar: string;
+
+  @IsOptional()
   complaint_type: string;
   }

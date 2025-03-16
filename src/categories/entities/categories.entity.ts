@@ -9,7 +9,7 @@ export class Category {
   @Column({ type: 'jsonb', nullable: true })
   name: any;
 
-  @Column({ type: 'varchar', length: 255})
+  @Column({ type: 'varchar', length: 255 })
   type: string;
 
   @Column({ default: "0" })
@@ -23,6 +23,9 @@ export class Category {
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ nullable: true })
+  avatar: string;
 
   @Column({ type: 'text', nullable: true })
   complaint_type: string;

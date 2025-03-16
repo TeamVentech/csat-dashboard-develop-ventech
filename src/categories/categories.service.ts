@@ -4,16 +4,30 @@ import { Category } from './entities/categories.entity';
 import { CreateCategoryDto } from './dto/create.dto';
 import { UpdateCategoryDto } from './dto/update.dto';
 import { plainToInstance } from 'class-transformer';
+import { FilesS3Service } from 'azure-storage/aws-storage.service';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @Inject('CATEGORY_REPOSITORY')
     private categoryRepository: Repository<Category>,
+        private readonly filesAzureService: FilesS3Service, // Inject TouchPointsSegrvice
+  
   ) {}
 
-  async create(createCategoryDto: CreateCategoryDto) {
-    const category = plainToInstance(Category, createCategoryDto);
+  async create(createCategoryDto: CreateCategoryDto, file) {
+    let avatarUrl = null;
+  
+    // Upload file to Azure if avatar exists
+    if (file) {
+      avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
+    }
+  
+    const category = this.categoryRepository.create({
+      ...createCategoryDto,
+      avatar: avatarUrl,
+    });
+    // const category = plainToInstance(Category, createCategoryDto);
     return this.categoryRepository.save(category);
   
   }
@@ -35,7 +49,8 @@ export class CategoriesService {
         });
 
       }
-
+      queryBuilder.orderBy('user.updatedAt', 'DESC');
+      
       Object.keys(filterOptions).forEach(key => {
         if (key !== 'search' && filterOptions[key]) {
           queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });

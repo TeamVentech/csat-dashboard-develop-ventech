@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Vouchers } from './entities/vouchers.entity';
 import { CreateVouchersDto } from './dto/create.dto';
@@ -38,6 +38,7 @@ export class VouchersService {
         });
 
       }
+      queryBuilder.orderBy('user.updatedAt', 'DESC');
 
       Object.keys(filterOptions).forEach(key => {
         if (key !== 'search' && filterOptions[key]) {
@@ -175,64 +176,111 @@ export class VouchersService {
   }
 
 
-  async extend(id: string, service_id: string, data: any) {
 
+  async extend(id: string, service_id: string, data: any) {
     try {
-      const service = await this.requestServiceRepository.findOne({ where: { id: service_id } })
-      const voucher_data = await this.vouchersRepository.findOne({ where: { id } })
-      if (service) {
-        const createdAt = new Date(service.createdAt);
-        const now = new Date();
-        const diffTime = now.getTime() - createdAt.getTime();
-        const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365);
-        if (diffYears > 1) {
-          throw new Error("The transaction is older than one year.");
-        }
-        console.log(JSON.stringify(voucher_data))
-        if (voucher_data.metadata.status === "Extended") {
-          throw new Error("The voucher has already been extended.");
-        }
-        console.log(JSON.stringify(service))
-        const extended_voucher = await this.GetAvailableVoucher({ "vouchers": [{ "Vouchers": 1, "denominations": parseInt(voucher_data.metadata.Denomination), "serialNumbers": ["4408398"] }] })
-        console.log(parseInt(voucher_data.metadata.Denomination))
-        console.log(JSON.stringify(extended_voucher))
-        if (!extended_voucher.data[0]) {
-          throw new Error("You Don't have enough denomination");
-        }
-        voucher_data.metadata.extanded = true
-        voucher_data.metadata.status = "Extended"
-        voucher_data.metadata.status = "Extended"
-        let specificDate = new Date(service.metadata.Expiry_date);
-        specificDate.setDate(specificDate.getDate() + 14); // Add 14 days
-        voucher_data.metadata.extanded_expired_date = specificDate.toISOString()
-        voucher_data.metadata.extendedBy = data.extendedBy
-        voucher_data.metadata.newVoucher = extended_voucher.data[0].vouchers[0].id
-        voucher_data.metadata.newVoucherSerialNumber = extended_voucher.data[0].vouchers[0].serialNumber
-        await this.vouchersRepository.update(voucher_data.id, voucher_data);
-  
-        // -------------------------------------------------------------------------------------
-  
-        extended_voucher.data[0].vouchers[0].state = "Extended"
-        extended_voucher.data[0].vouchers[0].metadata.status = "Extended"
-        extended_voucher.data[0].vouchers[0].metadata.Client_ID = service.metadata.customer.id || service.metadata.Company.id
-        extended_voucher.data[0].vouchers[0].metadata.Type_of_Sale = service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual'
-        extended_voucher.data[0].vouchers[0].metadata.main_voucher = id
-        await this.vouchersRepository.update(extended_voucher.data[0].vouchers[0].id, extended_voucher.data[0].vouchers[0]);
-        for (let j = 0; j < service.metadata.voucher.length; j++) {
-          const element = service.metadata.voucher[j];
-          for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
-            if(service.metadata.voucher[j].vouchers[i].id === id){
-              service.metadata.voucher[j].vouchers[i] = {...voucher_data, extendedBy:data.extendedBy}
-            }
+      const service = await this.requestServiceRepository.findOne({ where: { id: service_id } });
+      if (!service) {
+        throw new HttpException("Service not found", HttpStatus.NOT_FOUND);
+      }
+      const voucher_data = await this.vouchersRepository.findOne({ where: { id } });
+      if (!voucher_data) {
+        throw new HttpException("Voucher not found", HttpStatus.NOT_FOUND);
+      }
+      const createdAt = new Date(service.createdAt);
+      const now = new Date();
+      const diffTime = now.getTime() - createdAt.getTime();
+      const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365);
+      if (diffYears > 1) {
+        throw new HttpException("The transaction is older than one year.", HttpStatus.BAD_REQUEST);
+      }
+      if (voucher_data.metadata.status === "Extended") {
+        throw new HttpException("The voucher has already been extended.", HttpStatus.CONFLICT);
+      }
+      const extended_voucher = await this.GetAvailableVoucher({ 
+        "vouchers": [{ "Vouchers": 1, "denominations": parseInt(voucher_data.metadata.Denomination), "serialNumbers": ["4408398"] }] 
+      });
+      if (!extended_voucher.data[0]) {
+        throw new HttpException("You don't have enough denomination", HttpStatus.BAD_REQUEST);
+      }
+      voucher_data.metadata.extanded = true;
+      voucher_data.metadata.status = "Extended";
+      let specificDate = new Date(service.metadata.Expiry_date);
+      specificDate.setDate(specificDate.getDate() + 14);
+      voucher_data.metadata.extanded_expired_date = specificDate.toISOString();
+      voucher_data.metadata.extendedBy = data.extendedBy;
+      voucher_data.metadata.newVoucher = extended_voucher.data[0].vouchers[0].id;
+      voucher_data.metadata.newVoucherSerialNumber = extended_voucher.data[0].vouchers[0].serialNumber;
+      await this.vouchersRepository.update(voucher_data.id, voucher_data);
+      extended_voucher.data[0].vouchers[0].state = "Extended";
+      extended_voucher.data[0].vouchers[0].metadata.status = "Extended";
+      extended_voucher.data[0].vouchers[0].metadata.Client_ID = service.metadata.customer.id || service.metadata.Company.id;
+      extended_voucher.data[0].vouchers[0].metadata.Type_of_Sale = service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual';
+      extended_voucher.data[0].vouchers[0].metadata.main_voucher = voucher_data.serialNumber;
+      extended_voucher.data[0].vouchers[0].metadata.expired_date = specificDate  
+      await this.vouchersRepository.update(extended_voucher.data[0].vouchers[0].id, extended_voucher.data[0].vouchers[0]);
+      for (let j = 0; j < service.metadata.voucher.length; j++) {
+        for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
+          if (service.metadata.voucher[j].vouchers[i].id === id) {
+            service.metadata.voucher[j].vouchers[i] = { ...voucher_data, extendedBy: data.extendedBy };
           }
         }
-        await this.requestServiceRepository.update(service.id, service);
-        await this.elasticService.updateDocument('services', service.id, service);
       }
+      await this.requestServiceRepository.update(service.id, service);
+      await this.elasticService.updateDocument('services', service.id, service);
+      const updated_data  = await this.elasticService.getById('services', service.id)
+      return { message: "Voucher extended successfully", status: HttpStatus.OK, data: updated_data };
     } catch (error) {
-      throw new Error(error);
+      if (error instanceof HttpException) {
+        throw error; // NestJS will automatically return the correct status and message
+      }
+      throw new HttpException(error.message || "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    return null;
+  }
+  
+
+  async refund(id: string, service_id: string, data: any) {
+    try {
+      const service = await this.requestServiceRepository.findOne({ where: { id: service_id } });
+      if (!service) {
+        throw new HttpException("Service not found", HttpStatus.NOT_FOUND);
+      }
+      const voucher_data = await this.vouchersRepository.findOne({ where: { id } });
+      if (!voucher_data) {
+        throw new HttpException("Voucher not found", HttpStatus.NOT_FOUND);
+      }
+      if (voucher_data.metadata.status === "Refunded") {
+        throw new HttpException("The voucher has already been refunded.", HttpStatus.CONFLICT);
+      }
+      voucher_data.metadata.status = "Refunded";
+      voucher_data.state = "Refunded";
+      delete voucher_data.metadata.type_sale
+      delete voucher_data.metadata.Client_ID
+      delete voucher_data.metadata.date_sale
+      delete voucher_data.metadata.expired_date
+      await this.vouchersRepository.update(voucher_data.id, voucher_data);
+      for (let j = 0; j < service.metadata.voucher.length; j++) {
+        for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
+          if (service.metadata.voucher[j].vouchers[i].id === id) {
+            voucher_data.metadata.status = "Refunded"
+            voucher_data.state = "Refunded"
+            const denominations = parseInt(voucher_data.metadata.Denomination)
+            service.metadata.value -= denominations
+            service.metadata.voucher[j].Vouchers -= 1
+            service.metadata.voucher[j].vouchers[i] = { ...voucher_data, refundedBy: data.refundedBy };
+          }
+        }
+      }
+      await this.requestServiceRepository.update(service.id, service);
+      await this.elasticService.updateDocument('services', service.id, service);
+      const updated_data  = await this.elasticService.getById('services', service.id)
+      return { message: "Voucher extended successfully", status: HttpStatus.OK, data: updated_data };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error; // NestJS will automatically return the correct status and message
+      }
+      throw new HttpException(error.message || "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   // async updateRefunded(id: string) {

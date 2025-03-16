@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as dotenv from 'dotenv';
+import * as moment from 'moment-timezone';
 
 dotenv.config();
 
@@ -16,6 +17,9 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  moment.tz.setDefault('Asia/Amman');
+
 const PORT = process.env.PORT || 3001
   await app.listen( PORT);
 }

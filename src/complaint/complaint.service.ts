@@ -56,7 +56,7 @@ export class ComplaintsService {
     complaint.touchpoint = createComplaintsDto.touchpoint
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
-    await this.elasticService.indexData('complaints', complaint.id, complaint);
+    const complaint_response = await this.elasticService.indexData('complaints', complaint.id, complaint);
     let assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
     if(createComplaintsDto.type === "Survey Complaint"){
       assignedTo = ["Super_Admin"]
@@ -76,7 +76,7 @@ export class ComplaintsService {
     const email_user =  [...new Set(users.map(user => user.email).flat())]
     await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`http://localhost:5173/complaint/${complaint.id}/details`)
     await this.taskService.create(tasks_payload, complaint)
-
+    return complaint_response
   }
 
   private async sendRealTimeNotifications(complaint: Complaints) {

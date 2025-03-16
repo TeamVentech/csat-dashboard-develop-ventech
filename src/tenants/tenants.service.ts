@@ -39,6 +39,7 @@ export class TenantsService {
         }
       });
     }
+    queryBuilder.orderBy('user.updatedAt', 'DESC');
 
     const [categories, total] = await queryBuilder
       .skip((page - 1) * perPage)

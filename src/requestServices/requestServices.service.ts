@@ -12,6 +12,7 @@ import { VouchersService } from 'vochers/vouchers.service';
 import { ServicesService } from 'service/services.service';
 import { CustomersService } from 'customers/customers.service';
 import { json } from 'stream/consumers';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class RequestServicesService {
@@ -87,8 +88,27 @@ export class RequestServicesService {
         }
         if (createRequestServicesDto.name === 'Added-Value Services') {
           if (createRequestServicesDto.type !== "Handsfree Request") {
-            const RequestServices = createRequestServicesDto.metadata.service
-            await this.servicesService.update(RequestServices.id, { status: "OCCUPIED" });
+            let VoucherType= null
+            let Service_data= null
+            if (createRequestServicesDto.type === "Wheelchair & Stroller Request") {
+              VoucherType = createRequestServicesDto.metadata.type
+          }
+          if (createRequestServicesDto.type === "Power Bank Request") {
+              VoucherType = "Power Bank"
+          }
+            Service_data = await this.servicesService.findOneByTypeStatus(VoucherType, "AVAILABLE")
+            if(!Service_data){
+              const payload = {
+                type: VoucherType,
+                status: "AVAILABLE",
+                addedBy: "system",
+                numbers: 1,
+              }             
+              Service_data = await this.servicesService.create(payload)
+            }
+            console.log(JSON.stringify(Service_data))
+            createRequestServicesDto.metadata.service = Service_data
+            await this.servicesService.update(Service_data.id, { status: "OCCUPIED" });
           }
           const customers = createRequestServicesDto.metadata.customer
           const customer = await this.customerService.doesEmailOrPhoneExist(customers.email, customers.phone_number)
@@ -103,8 +123,8 @@ export class RequestServicesService {
         }
         const Service = this.requestServicesRepository.create(createRequestServicesDto);
         var savedService = await this.requestServicesRepository.save(Service);
-        await this.elasticService.indexData('services', Service.id, Service);
-  
+        const transformedData = instanceToPlain(Service);
+        await this.elasticService.indexData('services', Service.id, transformedData);
       }
 
     } catch (error) {
@@ -381,16 +401,16 @@ export class RequestServicesService {
         await this.sendSms(numbers, message, numbers)
       }
     }
-    await this.requestServicesRepository.update(id, updateRequestServicesDto);
-    console.log(JSON.stringify(updateRequestServicesDto))
-    await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
     if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
       const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number || updateRequestServicesDto?.metadata?.parents?.phone_number;
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
       const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
       await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
     }
-    return this.findOne(id);
+    await this.requestServicesRepository.update(id, updateRequestServicesDto);
+    const transformedData = instanceToPlain(updateRequestServicesDto);
+    await this.elasticService.updateDocument('services', id, transformedData);
+    return this.requestServicesRepository.findOne({ where: { id } })
   }
 
 

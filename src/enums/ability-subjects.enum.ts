@@ -16,4 +16,8 @@ export enum AbilitySubjects {
     LOOKUOS = 'Lookups',
     ADMIN = 'Admin',
     ROLES = 'Roles',
+    COMPLAINT_WORKFLOW = 'Complaints workflow',
+    TASKS = 'Tasks',
+    GIFT_VOCHER_STOCKS = 'Gift Voucher Stocks',
+    VAS_STOCKS = 'VAS Stocks',
   }

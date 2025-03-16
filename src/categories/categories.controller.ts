@@ -3,6 +3,7 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   UseGuards,
+  UploadedFile,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create.dto';
@@ -11,6 +12,7 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('categories')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -21,10 +23,11 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
   @Permissions('Survey::write')
-  async create(@Body() createCategoryDto: CreateCategoryDto) {
+  async create(@Body() createCategoryDto: CreateCategoryDto,  @UploadedFile() file: Express.Multer.File) {
 
-    return this.categoriesService.create(createCategoryDto);
+    return this.categoriesService.create(createCategoryDto, file);
   }
 
   @Get()

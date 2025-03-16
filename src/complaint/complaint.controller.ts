@@ -74,4 +74,15 @@ export class ComplaintsController {
     console.log(data)
     return this.elasticSearchService.search("complaints", data.query, data.page, data.perPage);
   }
+
+  @Get('customers/:id/complaint')
+  async getCustomerSurvey(
+    @Param('id') id: string,
+    @Query('page') page: number,
+    @Query('perPage') perPage: number,
+
+  ) {
+    return this.elasticSearchService.getCustomerSurvey("complaints",id, page, perPage);
+  }
+
 }

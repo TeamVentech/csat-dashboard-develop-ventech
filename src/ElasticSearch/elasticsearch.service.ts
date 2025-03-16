@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import * as moment from 'moment';
 import { Client } from '@elastic/elasticsearch';
+import { classToPlain } from 'class-transformer';
 interface ServiceRecord {
     type?: string;
     metadata?: {
@@ -18,7 +19,8 @@ export class ElasticService {
             index,
             id,
             body: data,
-            
+            refresh: true
+
         });
     }
 
@@ -124,19 +126,28 @@ export class ElasticService {
 
     async updateDocument(index: string, id: string, updateData: any) {
         try {
+            const transformedData = classToPlain(updateData);
+            if (!transformedData || typeof transformedData !== 'object') {
+                throw new Error('Invalid transformed data: Ensure it is a properly defined object');
+            }
             const result = await this.elasticsearchService.update({
                 index,
                 id,
                 body: {
-                    doc: updateData,
+                    doc: transformedData,
                 },
             });
+            return {
+                success: true,
+                message: 'Document updated successfully',
+                result,
+            };
         } catch (error) {
-            console.log(error)
+            console.error('Error updating document:', error);
             return {
                 success: false,
                 message: 'Error updating document',
-                error,
+                error: error.message || error,
             };
         }
     }
@@ -340,7 +351,47 @@ export class ElasticService {
             results: sources,
         };
     }
+    
 
+    async getCustomerSurvey(index: string, id: string, page: number = 1, pageSize: number = 10) {
+        const from = (page - 1) * pageSize;
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                query: {
+                    query_string: {
+                        query: id
+                      }
+                },
+                sort: [
+                    {
+                        createdAt: {
+                            order: "desc"
+                        }
+                    }
+                ]
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
+        } else {
+            totalHits = result.body.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
     async customer_search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
         const result = await this.elasticsearchService.search({
@@ -385,6 +436,7 @@ export class ElasticService {
             const result = await this.elasticsearchService.delete({
                 index,
                 id,
+                refresh: true
             });
 
             return {
