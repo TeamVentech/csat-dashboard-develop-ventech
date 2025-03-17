@@ -22,7 +22,9 @@ export class UsersService {
     if (file) {
       avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
     }
-  
+    if(createUserDto.username){
+      createUserDto.username = createUserDto.username.toLowerCase()
+    }
     const user = this.userRepository.create({
       ...createUserDto,
       avatar: avatarUrl, // Store the uploaded file URL in the avatar field
@@ -88,16 +90,14 @@ export class UsersService {
   // Update a user by ID
   async update(id: string, updateUserDto: UpdateUserDto, file): Promise<User> {
     let avatarUrl = null;
-  
-    console.log('112')
-
     if (file) {
-      console.log('11')
       updateUserDto.avatar = await this.filesAzureService.uploadFile(file, "users"); 
     }
-    await this.findOne(id); // Check if the user exists
+    if(updateUserDto.username){
+      updateUserDto.username = updateUserDto.username.toLowerCase()
+    }
     await this.userRepository.update(id, updateUserDto);
-    return this.findOne(id); // Return the updated user
+    return this.findOne(id);
   }
 
   async getUsersByRoles(roles: any): Promise<User[]> {

@@ -93,7 +93,7 @@ export class VouchersService {
       console.log(item)
       const result = await this.vouchersRepository
         .createQueryBuilder('vouchers')
-        .where("vouchers.metadata->>'status' NOT IN (:...statuses)", { statuses: ['Sold', 'Extended'] })
+        .where('vouchers.state NOT IN (:...statuses)', { statuses: ['Sold', 'Extended'] })
         .andWhere("vouchers.metadata->>'Denomination' = :denomination", { denomination: `${variables} JOD` })
         .limit(item.Vouchers)
         .getMany();

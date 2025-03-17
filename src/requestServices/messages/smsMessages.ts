@@ -10,17 +10,17 @@ const  SmsMessage =  {
       },
       "Closed": {
         "ar": " تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط\nنتمنى سلامتكم ",
-        "en": "We would like to inform you that the case is closed.\n\"Stay Safe\" from City Mall\nPlease rate our service by following the below link:\nLINK"
+        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\n"
       }
     },
     "Found Child": {
       "Awaiting Collection": {
         "ar": "تم العثور على طفلكم المفقود. يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
-        "en": "Dear Customer,\Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID."
+        "en": "Dear Customer,\Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID:\n"
       },
       "Closed": {
         "ar": "تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط\nنتمنى لكم السلامة",
-        "en": "We would like to inform you that the case is closed.\n\"Stay Safe\" from City Mall\nPlease rate our service by following the below link:\n"
+        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\n"
       }
     },
     "Lost Item": {

@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customers.entity';
@@ -13,14 +13,19 @@ export class CustomersService {
   ) { }
 
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    if (createCustomerDto.dob) {
-      const currentYear = new Date().getFullYear();
-      const DobYear = new Date(createCustomerDto.dob).getFullYear();
-      createCustomerDto.age = (currentYear - DobYear).toString()
-
+    try {
+      if (createCustomerDto.dob) {
+        const currentYear = new Date().getFullYear();
+        const DobYear = new Date(createCustomerDto.dob).getFullYear();
+        createCustomerDto.age = (currentYear - DobYear).toString()
+  
+      }
+      const customer = this.customerRepository.create(createCustomerDto);
+      return this.customerRepository.save(customer);
+  
+    } catch (error) {
+        throw new HttpException(error, HttpStatus.NOT_FOUND);
     }
-    const customer = this.customerRepository.create(createCustomerDto);
-    return this.customerRepository.save(customer);
   }
 
   async findAll(page, perPage, filterOptions) {

@@ -30,4 +30,8 @@ export class CreateUserDto {
   @IsOptional()
   avatar: string;
 
+  
+  @IsOptional()
+  message: string;
+
 }

@@ -52,7 +52,7 @@ export class RequestServicesService {
         if (createRequestServicesDto.type === 'Found Child') {
           if (createRequestServicesDto.metadata.parents.phone_number) {
             const numbers = createRequestServicesDto?.metadata?.parents?.phone_number
-            const message = createRequestServicesDto.metadata.isArabic ? "عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العملاء]." : "Dear Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child."
+            const message = createRequestServicesDto.metadata.isArabic ? "تم العثور على طفلكم المفقود.\n يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم." : "Dear Customer,\n Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID."
             await this.sendSms(numbers, message, numbers)
             createRequestServicesDto.state = "Awaiting Collection"
           }
@@ -405,7 +405,12 @@ export class RequestServicesService {
       const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number || updateRequestServicesDto?.metadata?.parents?.phone_number;
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
       const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
-      await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+      if(updateRequestServicesDto.type === 'Child Found' || updateRequestServicesDto.type === 'Lost Child'){
+        await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/ratin\n "Stay Safe" from City Mall`, numbers)
+      }
+      else{
+        await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+      }
     }
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
     const transformedData = instanceToPlain(updateRequestServicesDto);

@@ -49,9 +49,7 @@ export class LocationsController {
   }
 
   @Get('locations/all')
-  findAllCategory(
-  ) {
-
+  findAllLocation() {
     return this.LocationsService.findAllLocation();
   }
 
