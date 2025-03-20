@@ -43,7 +43,7 @@ export class TransactionSurveyService {
       if(createTransactionSurveyDto.answers[i].type === "multiple"){
         if(createTransactionSurveyDto.answers[i].answer < 3 ){
           const touchpoint =  await this.touchPointsService.findOne(createTransactionSurveyDto.touchpointId)
-          const customer = await this.customerService.findOne(createTransactionSurveyDto.customerId)          // console.log(savedSurvey)
+          const customer = await this.customerService.findOne(createTransactionSurveyDto.customerId)
           const category = touchpoint.category
           delete touchpoint.category
           const complaint_data = {

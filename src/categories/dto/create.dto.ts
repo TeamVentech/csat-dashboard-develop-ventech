@@ -2,6 +2,12 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsNotEmpty()
+  name_ar: any;
+
+  @IsNotEmpty()
+  name_en: any;
+
+  @IsOptional()
   name: any;
 
   @IsOptional()

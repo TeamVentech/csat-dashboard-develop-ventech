@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RequestServices } from './entities/requestServices.entity';
@@ -13,6 +13,7 @@ import { ServicesService } from 'service/services.service';
 import { CustomersService } from 'customers/customers.service';
 import { json } from 'stream/consumers';
 import { instanceToPlain } from 'class-transformer';
+import * as moment from 'moment';
 
 @Injectable()
 export class RequestServicesService {
@@ -30,23 +31,20 @@ export class RequestServicesService {
     try {
       const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.phone_number;
       if (createRequestServicesDto.name === 'Gift Voucher Sales') {
-        const data = createRequestServicesDto.metadata.voucher
+        for (let i = 0; i < createRequestServicesDto.metadata.voucher.length; i++) {
+          for (let j = 0; j < createRequestServicesDto.metadata.voucher[i].vouchers.length; j++) {
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.Client_ID = createRequestServicesDto.metadata.customer.id || createRequestServicesDto.metadata.Company.id
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].state = "Sold"
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.status = "Sold"
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.date_sale = new Date()
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.expired_date = createRequestServicesDto.metadata.Expiry_date
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.type_sale = createRequestServicesDto.type === "Corporate Voucher Sale" ? "Company" : "Individual"
+            await this.vouchersService.update(createRequestServicesDto.metadata.voucher[i].vouchers[j].id, createRequestServicesDto.metadata.voucher[i].vouchers[j])
+          }
+        }
         const Service = this.requestServicesRepository.create(createRequestServicesDto);
         var savedService = await this.requestServicesRepository.save(Service);
         await this.elasticService.indexData('services', Service.id, Service);
-
-        for (let i = 0; i < data.length; i++) {
-          for (let j = 0; j < data[i].vouchers.length; j++) {
-            const update_data = data[i].vouchers[j]
-            update_data.metadata.Client_ID = createRequestServicesDto.metadata.customer.id || createRequestServicesDto.metadata.Company.id
-            update_data.state = "Sold"
-            update_data.metadata.status = "Sold"
-            update_data.metadata.date_sale = new Date()
-            update_data.metadata.expired_date = createRequestServicesDto.metadata.Expiry_date
-            update_data.metadata.type_sale = createRequestServicesDto.type === "Corporate Voucher Sale" ? "Company" : "Individual"
-            await this.vouchersService.update(update_data.id, update_data)
-          }
-        }
       }
       else{
         if (createRequestServicesDto.type === 'Found Child') {
@@ -57,7 +55,7 @@ export class RequestServicesService {
             createRequestServicesDto.state = "Awaiting Collection"
           }
         }
-        else if (createRequestServicesDto.name !== 'Gift Voucher Sales' && createRequestServicesDto.name !== 'Added-Value Services') {
+        else if (createRequestServicesDto.name !== 'Gift Voucher Sales' && createRequestServicesDto.name !== 'Incident Reporting' && createRequestServicesDto.name !== 'Added-Value Services') {
           const language = createRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
           const message = SmsMessage[createRequestServicesDto.type][createRequestServicesDto.state][language]
           await this.sendSms(numbers, message, numbers)
@@ -106,7 +104,6 @@ export class RequestServicesService {
               }             
               Service_data = await this.servicesService.create(payload)
             }
-            console.log(JSON.stringify(Service_data))
             createRequestServicesDto.metadata.service = Service_data
             await this.servicesService.update(Service_data.id, { status: "OCCUPIED" });
           }
@@ -219,6 +216,24 @@ export class RequestServicesService {
       const message = updateRequestServicesDto.metadata.isArabic ? "السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا" : "The item is damaged. As per policy, a payment of 20 JDs is required"
       await this.sendSms(numbers, message, numbers)
     }
+  
+    if (updateRequestServicesDto?.actions === "Awaiting Collection Child") {
+      const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number
+      const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+      updateRequestServicesDto.state = "Awaiting Collection"
+      const message = SmsMessage[updateRequestServicesDto.type]["Awaiting Collection"][language]
+      await this.sendSms(numbers, message, numbers)
+    }
+
+    if (updateRequestServicesDto?.actions === "Awaiting Collection Itme") {
+      console.log(updateRequestServicesDto.actions)
+      const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+      const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+      updateRequestServicesDto.state = "Awaiting Collection"
+      const message = SmsMessage[updateRequestServicesDto.type]["Awaiting Collection"][language]
+      await this.sendSms(numbers, message, numbers)
+    }
+
     if (updateRequestServicesDto?.actions === "Awaiting Collection") {
       const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number
       const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
@@ -402,6 +417,18 @@ export class RequestServicesService {
       }
     }
     if ((data.state !== 'Closed' && updateRequestServicesDto.state === 'Closed')) {
+      if (data.type === 'Incident Reporting' && data.state === 'Pending Internal') {
+        const now = moment();
+        const createdAt = moment(data.createdAt);
+        const hoursDifference = now.diff(createdAt, 'hours');
+        if (hoursDifference < 24 || !updateRequestServicesDto.metadata?.callCompleted) {
+          throw new HttpException(
+            'Cannot close incident case. Must wait 24 hours and mark call as completed.',
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+
       const numbers = data?.metadata?.parents?.phone_number || data?.metadata?.customer?.phone_number || data?.metadata?.Company?.constact?.phone_number || updateRequestServicesDto?.metadata?.parents?.phone_number;
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
       const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
@@ -412,9 +439,9 @@ export class RequestServicesService {
         await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
       }
     }
+    console.log(JSON.stringify(updateRequestServicesDto))
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
-    const transformedData = instanceToPlain(updateRequestServicesDto);
-    await this.elasticService.updateDocument('services', id, transformedData);
+    await this.elasticService.updateDocument('services', id, updateRequestServicesDto);
     return this.requestServicesRepository.findOne({ where: { id } })
   }
 
@@ -450,5 +477,4 @@ export class RequestServicesService {
       },
     });
   }
-
 }

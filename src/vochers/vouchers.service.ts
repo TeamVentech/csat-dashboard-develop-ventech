@@ -5,6 +5,8 @@ import { CreateVouchersDto } from './dto/create.dto';
 import { UpdateVouchersDto } from './dto/update.dto';
 import { RequestServices } from 'requestServices/entities/requestServices.entity';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
+import axios from 'axios';
+import SmsMessage from 'requestServices/messages/smsMessages';
 
 @Injectable()
 export class VouchersService {
@@ -33,8 +35,8 @@ export class VouchersService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.serialNumber ILIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substridfng search
+        queryBuilder.andWhere("(user.serialNumber ILIKE :search OR (\"user\".metadata->>'Client_ID')::text ILIKE :search)", {
+          search: `%${filterOptions.search}%`,
         });
 
       }
@@ -90,7 +92,6 @@ export class VouchersService {
     const list = [];
     for (const item of data.vouchers) {
       const variables = item.denominations;
-      console.log(item)
       const result = await this.vouchersRepository
         .createQueryBuilder('vouchers')
         .where('vouchers.state NOT IN (:...statuses)', { statuses: ['Sold', 'Extended'] })
@@ -126,13 +127,11 @@ export class VouchersService {
   // }
 
 
-  // Update a department by ID
   async update(id: string, updateVouchersDto: UpdateVouchersDto) {
     if (updateVouchersDto.actions) {
       const service = await this.requestServiceRepository.findOne({ where: { id: updateVouchersDto.service_id } });
 
       if (service) {
-        console.log(JSON.stringify(service))
         for (const voucherGroup of service.metadata.voucher) {
           const foundVoucher = voucherGroup.vouchers.find(voucher => voucher.VoucherId === updateVouchersDto.VoucherId);
           if (foundVoucher) {
@@ -264,6 +263,7 @@ export class VouchersService {
           if (service.metadata.voucher[j].vouchers[i].id === id) {
             voucher_data.metadata.status = "Refunded"
             voucher_data.state = "Refunded"
+            voucher_data.metadata.refunded_date = new Date()
             const denominations = parseInt(voucher_data.metadata.Denomination)
             service.metadata.value -= denominations
             service.metadata.voucher[j].Vouchers -= 1
@@ -274,6 +274,12 @@ export class VouchersService {
       await this.requestServiceRepository.update(service.id, service);
       await this.elasticService.updateDocument('services', service.id, service);
       const updated_data  = await this.elasticService.getById('services', service.id)
+      if(service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number){
+        const numbers = service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number
+        const language = service?.metadata?.IsArabic ? "ar" : "en"
+        const message = SmsMessage["Individual Voucher Sale"]["Refunded"][language]
+        await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+      }
       return { message: "Voucher extended successfully", status: HttpStatus.OK, data: updated_data };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -291,5 +297,23 @@ export class VouchersService {
   async remove(id: string) {
     const Vouchers = await this.findOne(id);
     await this.vouchersRepository.remove(Vouchers);
+  }
+  async sendSms(data: any, message: any, number: string) {
+    const senderId = 'City Mall';
+    const numbers = number
+    const accName = 'CityMall';
+    const accPass = 'G_PAXDujRvrw_KoD';
+
+    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
+    const response = await axios.get(smsUrl, {
+      params: {
+        senderid: senderId,
+        numbers: numbers,
+        accname: accName,
+        AccPass: accPass,
+        msg: encodeURIComponent(message)
+
+      },
+    });
   }
 }

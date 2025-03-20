@@ -17,12 +17,15 @@ export class CategoriesService {
 
   async create(createCategoryDto: CreateCategoryDto, file) {
     let avatarUrl = null;
-  
+    createCategoryDto.name = {
+      "ar":createCategoryDto.name_ar,
+      "en":createCategoryDto.name_en
+    }
     // Upload file to Azure if avatar exists
     if (file) {
       avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
     }
-  
+    
     const category = this.categoryRepository.create({
       ...createCategoryDto,
       avatar: avatarUrl,

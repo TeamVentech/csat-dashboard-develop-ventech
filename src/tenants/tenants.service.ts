@@ -19,7 +19,7 @@ export class TenantsService {
 
   async findAll(page, perPage, filterOptions) {
     page = page || 1;
-    perPage = perPage || 10;
+    perPage = perPage || 100;
     const queryBuilder = this.tenantRepository.createQueryBuilder('user');
 
     // Apply filters based on filterOptions

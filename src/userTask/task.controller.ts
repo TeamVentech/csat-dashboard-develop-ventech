@@ -49,7 +49,6 @@ export class TasksController {
     @UseInterceptors(FileInterceptor('file')) // Intercept file upload
 
   update(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto, @UploadedFile() file: Express.Multer.File) {
-    console.log(file)
     return this.tasksService.update(id, UpdateTaskServicesDto, file);
   }
 

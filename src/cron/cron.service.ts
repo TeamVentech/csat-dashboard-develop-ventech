@@ -74,7 +74,6 @@ export class CronsService {
             const now_date = new Date();
             const extended_expired_date = new Date(element.metadata.extanded_expired_date);
             if (now_date > extended_expired_date) {
-              console.log("1")
               data[i].metadata.voucher[j].vouchers[z].metadata.status = "Expired";
               data[i].metadata.voucher[j].vouchers[z].status = "Expired";
               await this.vouchersService.update(element.id, element)
@@ -83,9 +82,7 @@ export class CronsService {
             else {
               const timeDiff = extended_expired_date.getTime() - now_date.getTime(); 
               const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-              console.log(12)
               if (daysLeft === 3) {
-                console.log(2)
                 const numbers = data[i].metadata.customer.phone_number || data[i].metadata.Company.phone_number;
                 const language = data[i]?.metadata?.IsArabic ? "ar" : "en"
                 const message = SmsMessage[data.type]["Note Extented"][language]          
@@ -96,7 +93,6 @@ export class CronsService {
         }        
       }
       if(updated){
-        console.log(123)
         await this.requestServicesService.update(data[i].id , data[i])
         await this.elasticService.updateDocument("services", data[i].id, data[i])  
       }

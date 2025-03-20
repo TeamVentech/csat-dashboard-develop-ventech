@@ -6,21 +6,28 @@ import { classToPlain } from 'class-transformer';
 interface ServiceRecord {
     type?: string;
     metadata?: {
-      date?: string;
+        date?: string;
     };
-  }
+}
 @Injectable()
 export class ElasticService {
     constructor(
         private readonly elasticsearchService: ElasticsearchService
-      ) {}
+    ) { }
     async indexData(index: string, id: string, data: any) {
+        // Handle empty date fields in metadata
+        if (data.metadata) {
+            Object.keys(data.metadata).forEach(key => {
+                if (data.metadata[key] === '' && key.toLowerCase().includes('date')) {
+                    data.metadata[key] = null;
+                }
+            });
+        }
         return await this.elasticsearchService.index({
             index,
             id,
             body: data,
             refresh: true
-
         });
     }
 
@@ -93,7 +100,7 @@ export class ElasticService {
                     query: {
                         query_string: {
                             query: id
-                          }
+                        }
                     },
                     sort: [{ createdAt: { order: 'desc' } }], // Sort by createdAt in descending order
                 },
@@ -130,12 +137,23 @@ export class ElasticService {
             if (!transformedData || typeof transformedData !== 'object') {
                 throw new Error('Invalid transformed data: Ensure it is a properly defined object');
             }
+
+            // Handle empty date fields in metadata
+            if (transformedData.metadata) {
+                Object.keys(transformedData.metadata).forEach(key => {
+                    if (transformedData.metadata[key] === '' && key.toLowerCase().includes('date')) {
+                        transformedData.metadata[key] = null;
+                    }
+                });
+            }
+
             const result = await this.elasticsearchService.update({
                 index,
                 id,
                 body: {
                     doc: transformedData,
                 },
+                refresh: true
             });
             return {
                 success: true,
@@ -239,8 +257,6 @@ export class ElasticService {
 
     async search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
-        console.log(query)
-        
         const must: any[] = [];
         if (query?.name) {
             must.push({ match: { "name": query.name } });
@@ -258,6 +274,23 @@ export class ElasticService {
             must.push({ match: { "metadata.parents.id": query.customer } });
             // must.push({ match: { "metadata.parents.id": query.customer } });
         }
+        if (query?.complaintDate) {
+            const dateStr = query.complaintDate;
+            let parsedDate = moment(dateStr, ['YYYY-MM-DD', 'MM/DD/YYYY']).tz('Asia/Amman');
+            if (parsedDate.isValid()) {
+                const startDate = parsedDate.startOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                const endDate = parsedDate.endOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                must.push({
+                    range: {
+                        createdAt: {
+                            gte: startDate,
+                            lte: endDate
+                        }
+                    }
+                });
+            }
+        }
+
         if (query?.location) {
             must.push({ match: { "metadata.location.tenant.keyword": query.location } });
         }
@@ -268,7 +301,7 @@ export class ElasticService {
             must.push({ match: { "createdAt": query.date } });
         }
         if (query?.voucherId) {
-            must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId} })
+            must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId } })
         }
         const result = await this.elasticsearchService.search({
             index,
@@ -310,10 +343,10 @@ export class ElasticService {
 
     async searchExtendedVoucher(index: string, page: number = 1, pageSize: number = 300) {
         const from = (page - 1) * pageSize;
-        
+
         const must: any[] = [];
-        must.push({ "match": { "metadata.voucher.vouchers.metadata.status": 'Extended'} })
-        
+        must.push({ "match": { "metadata.voucher.vouchers.metadata.status": 'Extended' } })
+
         const result = await this.elasticsearchService.search({
             index,
             body: {
@@ -351,7 +384,7 @@ export class ElasticService {
             results: sources,
         };
     }
-    
+
 
     async getCustomerSurvey(index: string, id: string, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
@@ -361,7 +394,7 @@ export class ElasticService {
                 query: {
                     query_string: {
                         query: id
-                      }
+                    }
                 },
                 sort: [
                     {
@@ -400,7 +433,7 @@ export class ElasticService {
                 query: {
                     query_string: {
                         query: query.customer
-                      }
+                    }
                 },
                 sort: [
                     {
@@ -507,8 +540,28 @@ export class ElasticService {
         if (query?.role) {
             must.push({ match: { "assignedTo": query.role } });
         }
-        if(query?.type){
+        if (query?.type) {
             must.push({ match: { "name.keyword": query.type } });
+        }
+        if (query?.status) {
+            must.push({ match: { "status.keyword": query.status } });
+        }
+
+        if (query?.tasksDate) {
+            const dateStr = query.tasksDate;
+            let parsedDate = moment(dateStr, ['YYYY-MM-DD', 'MM/DD/YYYY']).tz('Asia/Amman');
+            if (parsedDate.isValid()) {
+                const startDate = parsedDate.startOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                const endDate = parsedDate.endOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                must.push({
+                    range: {
+                        createdAt: {
+                            gte: startDate,
+                            lte: endDate
+                        }
+                    }
+                });
+            }
         }
         const result = await this.elasticsearchService.search({
             index,
@@ -550,46 +603,50 @@ export class ElasticService {
 
     async getRecordsCount() {
         const response = await this.elasticsearchService.search({
-          index: 'services',
-          size: 1000, // Adjust based on your data size
+            index: 'services',
+            size: 1000, // Adjust based on your data size
         });
-    
+
         const hits = response.body.hits.hits.map((hit) => hit._source as ServiceRecord);
-    
+
         const today = moment().format('YYYY-MM-DD'); // Get today's date
-    
+
         const counts: Record<string, { total: number; new: number }> = {};
-    
+
         for (const record of hits) {
-          if (!record) continue; // Ensure record exists
-    
-          const type = record.type || 'Unknown';
-          const recordDate = record.metadata?.date ? moment(record.metadata.date).format('YYYY-MM-DD') : '';
-    
-          // Initialize if not present
-          if (!counts[type]) {
-            counts[type] = { total: 0, new: 0 };
-          }
-    
-          // Count total records by type
-          counts[type].total++;
-    
-          // Count new records (created today)
-          if (recordDate === today) {
-            counts[type].new++;
-          }
+            if (!record) continue; // Ensure record exists
+
+            const type = record.type || 'Unknown';
+            const recordDate = record.metadata?.date ? moment(record.metadata.date).format('YYYY-MM-DD') : '';
+
+            // Initialize if not present
+            if (!counts[type]) {
+                counts[type] = { total: 0, new: 0 };
+            }
+
+            // Count total records by type
+            counts[type].total++;
+
+            // Count new records (created today)
+            if (recordDate === today) {
+                counts[type].new++;
+            }
         }
-    
+
         return counts;
-      } 
-    
-      async searchTaskCount(index: string, query: any) {
+    }
+
+    async searchTaskCount(index: string, query: any) {
         const must: any[] = [];
-    
+
         if (query?.role) {
             must.push({ match: { "assignedTo": query.role } });
         }
-    
+
+        if (query?.role) {
+            must.push({ match: { "status": query.role } });
+        }
+
         const result = await this.elasticsearchService.search({
             index,
             body: {
@@ -613,7 +670,7 @@ export class ElasticService {
                 }
             }
         });
-    
+
         // Extract aggregated counts
         const nameCounts =
             (result.body.aggregations?.name_count as { buckets: { key: string; doc_count: number }[] })
@@ -621,16 +678,16 @@ export class ElasticService {
                     name: bucket.key,
                     count: bucket.doc_count
                 })) || [];
-    
+
         // Get the total count from search result metadata
-        const totalCount = result.body.hits.total 
-            ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value) 
+        const totalCount = result.body.hits.total
+            ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value)
             : 0;
-    
+
         return {
             totalCount,
             nameCounts
         };
     }
-    
+
 }
