@@ -643,10 +643,7 @@ export class ElasticService {
             must.push({ match: { "assignedTo": query.role } });
         }
 
-        if (query?.role) {
-            must.push({ match: { "status": query.role } });
-        }
-
+        console.log(query)
         const result = await this.elasticsearchService.search({
             index,
             body: {
