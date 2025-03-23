@@ -88,8 +88,13 @@ export class CategoriesService {
   
     const categories = await this.categoryRepository.find({
       where: { type: In(searchTypes) },
-    });
-  
+      select: {
+        id: true,
+        name: true,
+        type: true,
+      },
+
+    });  
     if (!categories.length) {
       throw new NotFoundException(`No categories found for type ${type}`);
     }

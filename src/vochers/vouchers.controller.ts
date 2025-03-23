@@ -9,6 +9,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query,
 import { VouchersService } from './vouchers.service';
 import { CreateVouchersDto } from './dto/create.dto';
 import { UpdateVouchersDto } from './dto/update.dto';
+import { UpdateVoucherNameCategoryDto } from './dto/update-name-category.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
@@ -97,10 +98,22 @@ export class VouchersController {
   //   return this.vouchersService.updateRefuned(id);
   // }
 
+  @Patch(':id/update-details')
+  @Permissions('Stock::update')
+  updateNameCategory(@Param('id') id: string, @Body() updateDto: UpdateVoucherNameCategoryDto) {
+    return this.vouchersService.updateNameCategory(id, updateDto);
+  }
+
   @Delete(':id')
   @Permissions('Stock::delete')
 
   remove(@Param('id') id: string) {
     return this.vouchersService.remove(id);
+  }
+
+  @Post('send-expiry-reminders')
+  @Permissions('Stock::update')
+  async sendExpiryReminders() {
+    return await this.vouchersService.sendExpiryReminders();
   }
 }

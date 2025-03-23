@@ -30,12 +30,26 @@ export class RequestServicesService {
   async create(createRequestServicesDto: CreateRequestServicesDto) {
     try {
       const numbers = createRequestServicesDto?.metadata?.parents?.phone_number || createRequestServicesDto?.metadata?.customer?.phone_number || createRequestServicesDto?.metadata?.Company?.phone_number;
+      
+      // Ensure Incident Reporting cases always start with 'Open' status
+      if (createRequestServicesDto.type === 'Incident Reporting') {
+        createRequestServicesDto.state = 'Open'; // Force Open status
+        
+        // Add metadata to track the creation time for 24-hour calculation
+        if (!createRequestServicesDto.metadata) {
+          createRequestServicesDto.metadata = {};
+        }
+        createRequestServicesDto.metadata.reportedAt = new Date();
+        createRequestServicesDto.metadata.statusChangeExpectedAt = moment().add(24, 'hours').toDate();
+      }
+      
       if (createRequestServicesDto.name === 'Gift Voucher Sales') {
         for (let i = 0; i < createRequestServicesDto.metadata.voucher.length; i++) {
           for (let j = 0; j < createRequestServicesDto.metadata.voucher[i].vouchers.length; j++) {
             createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.Client_ID = createRequestServicesDto.metadata.customer.id || createRequestServicesDto.metadata.Company.id
             createRequestServicesDto.metadata.voucher[i].vouchers[j].state = "Sold"
             createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.status = "Sold"
+            createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.purchase_reason = createRequestServicesDto?.metadata?.reason_purchase
             createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.date_sale = new Date()
             createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.expired_date = createRequestServicesDto.metadata.Expiry_date
             createRequestServicesDto.metadata.voucher[i].vouchers[j].metadata.type_sale = createRequestServicesDto.type === "Corporate Voucher Sale" ? "Company" : "Individual"
@@ -45,6 +59,12 @@ export class RequestServicesService {
         const Service = this.requestServicesRepository.create(createRequestServicesDto);
         var savedService = await this.requestServicesRepository.save(Service);
         await this.elasticService.indexData('services', Service.id, Service);
+        if(createRequestServicesDto.type === 'Individual Voucher Sale'){
+          const numbers = createRequestServicesDto?.metadata?.customer?.phone_number 
+          const language = createRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+          const message = SmsMessage[createRequestServicesDto.type]["Sold"][language]
+          await this.sendSms(numbers, `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`, numbers)
+        }
       }
       else{
         if (createRequestServicesDto.type === 'Found Child') {
@@ -194,6 +214,29 @@ export class RequestServicesService {
   // Update a department by IDsdd
   async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
     const data = await this.findOneColumn(id);
+    
+    // Prevent manual change to 'Pending Internal' for Incident Reporting cases if 24 hours haven't passed
+    if (data.type === 'Incident Reporting' && 
+        data.state === 'Open' && 
+        updateRequestServicesDto.state === 'Pending Internal') {
+      
+      // Only check time if this is a manual update (not from the cron job)
+      if (!updateRequestServicesDto.metadata?.statusChangeReason ||
+          updateRequestServicesDto.metadata.statusChangeReason !== 'Automatic status change after 24 hours') {
+            
+        const now = moment();
+        const createdAt = moment(data.createdAt);
+        const hoursDifference = now.diff(createdAt, 'hours');
+        
+        if (hoursDifference < 24) {
+          throw new HttpException(
+            'Cannot change Incident Reporting status to Pending Internal. This status will be set automatically after 24 hours from case creation.',
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+    }
+    
     if (data.state === 'Open' && updateRequestServicesDto.state === 'Child Found' && updateRequestServicesDto.type === 'Lost Child') {
       const numbers = data?.metadata?.parents?.phone_number
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"

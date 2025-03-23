@@ -126,6 +126,96 @@ export class CronsService {
     // }
   }
 
+  @Cron(CronExpression.EVERY_2_HOURS)
+  async updateIncidentReportingStatus() {
+    try {
+      console.log('Checking for Incident Reporting cases to update status...');
+      
+      // Search for all Incident Reporting cases with Open status
+      const incidentCases = await this.elasticService.search("services", {
+        type: 'Incident Reporting',
+        state: 'Open'
+      }, 1, 1000); // Get up to 1000 cases
+
+      if (!incidentCases || !incidentCases.results || incidentCases.results.length === 0) {
+        return;
+      }
+
+      const now = moment();
+      let updatedCount = 0;
+
+      for (const incident of incidentCases.results) {
+        // Skip if no createdAt timestamp
+        if (!incident.createdAt) continue;
+
+        const createdAt = moment(incident.createdAt);
+        const hoursDifference = now.diff(createdAt, 'hours');
+        
+        // Only update status if at least 24 hours have passed
+        if (hoursDifference >= 24) {
+          console.log(`Updating incident ${incident.id} to 'Pending Internal' status after ${hoursDifference} hours`);
+          
+          // Prepare update data
+          const updateData = {
+            state: 'Pending Internal',
+            metadata: {
+              ...incident.metadata,
+              statusChangedAt: now.toDate(),
+              previousState: 'Open',
+              statusChangeReason: 'Automatic status change after 24 hours'
+            },
+            type: incident.type,
+            name: incident.name,
+            actions: null // Include required property even if not used
+          };
+          
+          // Update the service record
+          await this.requestServicesService.update(incident.id, updateData);
+          updatedCount++;
+          
+          // Send notification if customer phone number exists
+          if (incident.metadata?.customer?.phone_number) {
+            const numbers = incident.metadata.customer.phone_number;
+            const language = incident.metadata?.IsArabic ? "ar" : "en";
+            let message;
+            
+            try {
+              message = SmsMessage['Incident Reporting']['Pending Internal'][language];
+            } catch (error) {
+              message = language === 'ar' 
+                ? "تم تحويل حالة البلاغ الخاص بك إلى المراجعة الداخلية بعد 24 ساعة من التقييم الأولي."
+                : "Your incident report has been escalated to internal review after 24 hours of assessment.";
+            }
+            
+            await this.sendSms(numbers, message, numbers);
+          }
+        }
+      }
+      
+      if (updatedCount > 0) {
+        console.log(`Updated ${updatedCount} incident cases to 'Pending Internal' status`);
+      }
+    } catch (error) {
+      console.error('Error updating incident statuses:', error);
+    }
+  }
+
+  /**
+   * Run daily at 10:00 AM to send SMS reminders for vouchers about to expire
+   * - For Extended vouchers: 3 days before expiry date
+   * - For Sold vouchers: 7 days before expiry date
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async handleVoucherExpiryReminders() {
+    try {
+      console.log('Running voucher expiry reminder check...');
+      const result = await this.vouchersService.sendExpiryReminders();
+      console.log(`Voucher expiry reminders sent: ${result.extendedCount} extended vouchers and ${result.soldCount} sold vouchers`);
+    } catch (error) {
+      console.error('Error sending voucher expiry reminders:', error);
+    }
+  }
+
   // @Cron(CronExpression.EVERY_30_SECONDS)
   // async handleCroTEST() {
   //   const number = "+962776850132";

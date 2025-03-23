@@ -25,6 +25,9 @@ export class UsersService {
     if(createUserDto.username){
       createUserDto.username = createUserDto.username.toLowerCase()
     }
+    if(createUserDto.email){
+      createUserDto.email = createUserDto.email.toLowerCase()
+    }
     const user = this.userRepository.create({
       ...createUserDto,
       avatar: avatarUrl, // Store the uploaded file URL in the avatar field
@@ -95,6 +98,11 @@ export class UsersService {
     }
     if(updateUserDto.username){
       updateUserDto.username = updateUserDto.username.toLowerCase()
+    }
+    if(updateUserDto.email){
+      console.log(updateUserDto.email)
+      updateUserDto.email = updateUserDto.email.toLowerCase()
+      console.log(updateUserDto.email)
     }
     await this.userRepository.update(id, updateUserDto);
     return this.findOne(id);

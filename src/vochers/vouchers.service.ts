@@ -253,10 +253,11 @@ export class VouchersService {
       }
       voucher_data.metadata.status = "Refunded";
       voucher_data.state = "Refunded";
-      delete voucher_data.metadata.type_sale
-      delete voucher_data.metadata.Client_ID
-      delete voucher_data.metadata.date_sale
-      delete voucher_data.metadata.expired_date
+      delete voucher_data?.metadata?.type_sale
+      delete voucher_data?.metadata?.Client_ID
+      delete voucher_data?.metadata?.date_sale
+      delete voucher_data?.metadata?.expired_date
+      delete voucher_data?.metadata?.purchase_reason
       await this.vouchersRepository.update(voucher_data.id, voucher_data);
       for (let j = 0; j < service.metadata.voucher.length; j++) {
         for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
@@ -315,5 +316,189 @@ export class VouchersService {
 
       },
     });
+  }
+
+  async updateNameCategory(id: string, updateData: { name?: string; categoryId?: string }) {
+    try {
+      const voucher = await this.vouchersRepository.findOne({ where: { id } });
+      
+      if (!voucher) {
+        throw new HttpException(`Voucher with ID ${id} not found`, HttpStatus.NOT_FOUND);
+      }
+
+      // Update name if provided
+      if (updateData.name) {
+        voucher.name = updateData.name;
+      }
+
+      // Update category in metadata if provided
+      if (updateData.categoryId) {
+        if (!voucher.metadata) {
+          voucher.metadata = {};
+        }
+        voucher.metadata.categoryId = updateData.categoryId;
+      }
+
+      // Save the updated voucher
+      await this.vouchersRepository.save(voucher);
+
+      // Update any related service records in Elasticsearch if needed
+      // Use a more complex query approach since direct JSON path querying has type issues
+      const serviceRecords = await this.requestServiceRepository
+        .createQueryBuilder('service')
+        .where(`service.metadata::jsonb @> '{"voucher": [{"vouchers": [{"id": "${id}"}]}]}'`)
+        .getMany();
+
+      if (serviceRecords && serviceRecords.length > 0) {
+        for (const service of serviceRecords) {
+          // Update the voucher within the service metadata
+          if (service.metadata && service.metadata.voucher) {
+            for (let i = 0; i < service.metadata.voucher.length; i++) {
+              for (let j = 0; j < service.metadata.voucher[i].vouchers.length; j++) {
+                if (service.metadata.voucher[i].vouchers[j].id === id) {
+                  if (updateData.name) {
+                    service.metadata.voucher[i].vouchers[j].name = updateData.name;
+                  }
+                  if (updateData.categoryId) {
+                    service.metadata.voucher[i].vouchers[j].metadata.categoryId = updateData.categoryId;
+                  }
+                }
+              }
+            }
+            
+            // Update the service record and its Elasticsearch entry
+            await this.requestServiceRepository.save(service);
+            await this.elasticService.updateDocument('services', service.id, service);
+          }
+        }
+      }
+
+      return { 
+        success: true, 
+        message: 'Voucher updated successfully', 
+        data: voucher 
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Error updating voucher', 
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Sends SMS reminders for vouchers about to expire
+   * - For Extended vouchers: 3 days before expiry
+   * - For Sold vouchers: 7 days before expiry
+   */
+  async sendExpiryReminders() {
+    try {
+      // Get current date
+      const currentDate = new Date();
+      
+      // Find vouchers that need reminders
+      const extendedVouchersExpiring = await this.vouchersRepository
+        .createQueryBuilder('voucher')
+        .where('voucher.state = :state', { state: 'Sold' })
+        .andWhere("voucher.metadata->>'status' = :status", { status: 'Extended' })
+        .andWhere("(voucher.metadata->>'extanded_expired_date')::timestamp - INTERVAL '3 days' <= :currentDate", { currentDate })
+        .andWhere("(voucher.metadata->>'extanded_expired_date')::timestamp > :currentDate", { currentDate })
+        .andWhere("voucher.metadata->>'reminderSent' IS NULL")
+        .getMany();
+        
+      const soldVouchersExpiring = await this.vouchersRepository
+        .createQueryBuilder('voucher')
+        .where('voucher.state = :state', { state: 'Sold' })
+        .andWhere("voucher.metadata->>'status' = :status", { status: 'Sold Voucher' })
+        .andWhere("(voucher.metadata->>'expired_date')::timestamp - INTERVAL '7 days' <= :currentDate", { currentDate })
+        .andWhere("(voucher.metadata->>'expired_date')::timestamp > :currentDate", { currentDate })
+        .andWhere("voucher.metadata->>'reminderSent' IS NULL")
+        .getMany();
+      
+      // Process extended vouchers (3 days before expiry)
+      for (const voucher of extendedVouchersExpiring) {
+        try {
+          const serviceId = voucher.metadata?.service_id;
+          if (!serviceId) continue;
+          
+          const service = await this.requestServiceRepository.findOne({ where: { id: serviceId } });
+          if (!service) continue;
+          
+          // Check if there's a recipient who should receive the SMS instead of purchaser
+          let phoneNumber;
+          if (voucher.metadata?.recipient_number) {
+            phoneNumber = voucher.metadata.recipient_number;
+          } else if (service?.metadata?.Company?.phone_number) {
+            phoneNumber = service.metadata.Company.phone_number;
+          } else if (service?.metadata?.customer?.phone_number) {
+            phoneNumber = service.metadata.customer.phone_number;
+          } else {
+            continue; // No phone number to send to
+          }
+          
+          const language = service?.metadata?.IsArabic ? "ar" : "en";
+          const message = SmsMessage["Individual Voucher Sale"]["Note Extented"][language].replace('(3)', '3');
+          
+          await this.sendSms(null, message, phoneNumber);
+          
+          // Mark as reminder sent
+          voucher.metadata.reminderSent = true;
+          await this.vouchersRepository.save(voucher);
+        } catch (error) {
+          console.error(`Error sending reminder for voucher ${voucher.id}:`, error);
+        }
+      }
+      
+      // Process sold vouchers (7 days before expiry)
+      for (const voucher of soldVouchersExpiring) {
+        try {
+          const serviceId = voucher.metadata?.service_id;
+          if (!serviceId) continue;
+          
+          const service = await this.requestServiceRepository.findOne({ where: { id: serviceId } });
+          if (!service) continue;
+          
+          // Check if there's a recipient who should receive the SMS instead of purchaser
+          let phoneNumber;
+          if (voucher.metadata?.recipient_number) {
+            phoneNumber = voucher.metadata.recipient_number;
+          } else if (service?.metadata?.Company?.phone_number) {
+            phoneNumber = service.metadata.Company.phone_number;
+          } else if (service?.metadata?.customer?.phone_number) {
+            phoneNumber = service.metadata.customer.phone_number;
+          } else {
+            continue; // No phone number to send to
+          }
+          
+          const language = service?.metadata?.IsArabic ? "ar" : "en";
+          // Modify message to mention 7 days instead of 3
+          const message = SmsMessage["Individual Voucher Sale"]["Note Extented"][language].replace('(3)', '7');
+          
+          await this.sendSms(null, message, phoneNumber);
+          
+          // Mark as reminder sent
+          voucher.metadata.reminderSent = true;
+          await this.vouchersRepository.save(voucher);
+        } catch (error) {
+          console.error(`Error sending reminder for voucher ${voucher.id}:`, error);
+        }
+      }
+      
+      return {
+        success: true,
+        message: `SMS reminders sent: ${extendedVouchersExpiring.length + soldVouchersExpiring.length}`,
+        extendedCount: extendedVouchersExpiring.length,
+        soldCount: soldVouchersExpiring.length
+      };
+    } catch (error) {
+      console.error('Error sending voucher expiry reminders:', error);
+      throw new HttpException(
+        error.message || 'Error sending voucher expiry reminders',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

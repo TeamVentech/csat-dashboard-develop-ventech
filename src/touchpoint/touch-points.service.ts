@@ -117,7 +117,10 @@ export class TouchPointsService {
   async findByCategory(id: string) {
     return this.touchpointRepository.find({
       where: { categoryId: id },
-      relations: ['category'], // Fetch customer relationship
+      select: {
+        id: true,
+        name: true,
+      },
     });
   }
 
@@ -148,11 +151,20 @@ export class TouchPointsService {
   async getAll() {
     return this.touchpointRepository.find({
       relations: ['category'],
+      select: {
+        id: true,
+        name: true,
+      },
     });
   }
 
   async findAllCategory() {
-    return this.touchpointRepository.find();
+    return this.touchpointRepository.find({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 
   // Update a touchpoint by ID
