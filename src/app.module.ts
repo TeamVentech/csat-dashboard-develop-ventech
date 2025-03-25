@@ -40,6 +40,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from 'email/email.module';
 import {  FilesS3Module } from 'azure-storage/aws-storage.module';
 import { ApiKeyMiddleware } from 'middleware/api-key.middleware';
+import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { ApiKeyMiddleware } from 'middleware/api-key.middleware';
     CronModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
+    CustomerAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,6 +12,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
+import { AddedValueServiceDto } from './dto/added-value-service.dto';
 
 @Controller('request-services')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -25,6 +26,14 @@ export class RequestServicesController {
   create(@Body() createRequestServicesDto: any) {
     return this.requestServicesService.create(createRequestServicesDto);
   }
+
+  @Post('added-value-service')
+  @Permissions('Service::write')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  addedValueService(@Body() createRequestServicesDto: AddedValueServiceDto) {
+    return this.requestServicesService.addedValueService(createRequestServicesDto);
+  }
+
 
   @Get()
   @Permissions('Service::read')
@@ -60,6 +69,8 @@ export class RequestServicesController {
   update(@Param('id') id: string, @Body() updateRequestServicesDto: any) {
     return this.requestServicesService.update(id, updateRequestServicesDto);
   }
+
+  
 
   @Patch(':id/rating')
   rating(@Param('id') id: string, @Body() rate: any) {

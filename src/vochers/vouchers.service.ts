@@ -208,6 +208,7 @@ export class VouchersService {
       specificDate.setDate(specificDate.getDate() + 14);
       voucher_data.metadata.extanded_expired_date = specificDate.toISOString();
       voucher_data.metadata.extendedBy = data.extendedBy;
+      voucher_data.metadata.extention_date = new Date();
       voucher_data.metadata.newVoucher = extended_voucher.data[0].vouchers[0].id;
       voucher_data.metadata.newVoucherSerialNumber = extended_voucher.data[0].vouchers[0].serialNumber;
       await this.vouchersRepository.update(voucher_data.id, voucher_data);
