@@ -134,11 +134,11 @@ const  SmsMessage =  {
             "ar": "نأسف لإبلاغكم بوجود ضرر في سلك الشاحن المتنقل. وفقًا لسياساتنا، سيتم خصم غرامة قدرها 4 د.أ من التأمين",
             "en": "We regret to inform you that powerbank wire was found damaged. As per our policies, a fine of 4jds will be deducted from security deposit."
         },
-        "Power bank damaged": {
+        "Powerbank damaged": {
             "ar": "نأسف لإبلاغكم بوجود ضرر في الشاحن المتنقل. وفقًا لسياساتنا، سيتم خصم غرامة قدرها 6 د.أ من التأمين",
             "en": "We regret to inform you that powerbank was found damaged. As per our policies, a fine of 6jds will be deducted from security deposit."
         },
-        "Wire and powerbank damaged": {
+        "Powerbank and Wire damaged": {
             "ar": "نأسف لإبلاغكم بوجود ضرر في الشاحن المتنقل والسلك. وفقًا لسياساتنا، سيتم خصم مبلغ التأمين بقيمة 10 د.أ",
             "en": "We regret to inform you that powerbank and wire was found damaged. As per our policies, security deposit amount of 10jds will be deducted."
         }
@@ -164,7 +164,11 @@ const  SmsMessage =  {
       "Item Returned": {
           "ar": "نشكرك على استخدام خدمة الكرسي المتحرك. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط",
           "en": "Thank you for using our wheelchair service. We hope you had an enjoyable experience. Please rate our service by following the below link:\n "
-      }
+      },
+      "Damaged": {
+        "ar": "السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا",
+        "en": "The item is damaged. As per policy, a payment of 20 JDs is required"
+    }
   },
     "Handsfree Request": {
         "En Route for Pickup": {

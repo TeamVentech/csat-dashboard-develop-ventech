@@ -66,6 +66,8 @@ export class VouchersService {
   }
 
   async importVouchers(data: any[]): Promise<void> {
+    const denominations = ["10 JOD", "25 JOD", "50 JOD"]
+    const errors = []
     for (const item of data) {
       let existingVoucher = await this.vouchersRepository.findOne({
         where: { serialNumber: item.Serial_Number },
@@ -76,12 +78,14 @@ export class VouchersService {
         existingVoucher.updatedAt = new Date();
       } else {
         // Create new voucher
-        existingVoucher = this.vouchersRepository.create({
-          name: "Vouchers",
-          addedBy: "System",
-          metadata: item,
-          serialNumber: item.Serial_Number
-        });
+        if(denominations.includes(item.Denomination)){
+          existingVoucher = this.vouchersRepository.create({
+            name: "Vouchers",
+            addedBy: "System",
+            metadata: item,
+            serialNumber: item.Serial_Number
+          });
+        }
       }
 
       await this.vouchersRepository.save(existingVoucher);

@@ -129,7 +129,7 @@ export class RequestServicesService {
             SmsMessage[createRequestServicesDto.type]['Sold'][language];
           await this.sendSms(
             numbers,
-            `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`,
+            `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`,
             numbers,
           );
         }
@@ -449,7 +449,7 @@ export class RequestServicesService {
       await this.sendSms(numbers, message, numbers)
     }
 
-    if (updateRequestServicesDto?.actions === "Awaiting Collection Itme") {
+    if (updateRequestServicesDto?.actions === "Awaiting Collection Item") {
       console.log(updateRequestServicesDto.actions)
       const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
       const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
@@ -458,11 +458,27 @@ export class RequestServicesService {
       await this.sendSms(numbers, message, numbers)
     }
 
+    if (updateRequestServicesDto?.actions === "Send Damage SMS") {
+      const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+      const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
+      updateRequestServicesDto.metadata.sendDamageSms = true;
+      let message = "";
+      if(updateRequestServicesDto.type === "Power Bank Request"){
+        console.log(updateRequestServicesDto.metadata.condition)
+        message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.metadata.condition][language]
+      }
+      else{
+        message = SmsMessage[updateRequestServicesDto.type]["Damaged"][language]
+      }
+      await this.sendSms(numbers, message, numbers)
+    }
+
     if (updateRequestServicesDto?.actions === "Awaiting Collection") {
       const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number
       const message = updateRequestServicesDto?.metadata?.IsArabic ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}` : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
       await this.sendSms(numbers, message, numbers)
     }
+
 
     if (updateRequestServicesDto?.actions === "in_progress_item" || updateRequestServicesDto?.actions === "ArticleFound") {
       const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
@@ -578,18 +594,6 @@ export class RequestServicesService {
       if (updateRequestServicesDto?.actions === "Item_Returned") {
         const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
         const language = updateRequestServicesDto?.metadata?.IsArabic ? "ar" : "en"
-        if (updateRequestServicesDto.metadata.condition === "Wire damaged") {
-          const message = SmsMessage[updateRequestServicesDto.type]["Wire damaged"][language]
-          await this.sendSms(numbers, message, numbers)
-        }
-        if (updateRequestServicesDto.metadata.condition === "Powerbank damaged") {
-          const message = SmsMessage[updateRequestServicesDto.type]["Power bank damaged"][language]
-          await this.sendSms(numbers, message, numbers)
-        }
-        if (updateRequestServicesDto.metadata.condition === "Powerbank and Wire damaged") {
-          const message = SmsMessage[updateRequestServicesDto.type]["Wire and powerbank damaged"][language]
-          await this.sendSms(numbers, message, numbers)
-        }
         const message = SmsMessage[updateRequestServicesDto.type]["Item Returned"][language]
         await this.sendSms(numbers, message, numbers)
       }

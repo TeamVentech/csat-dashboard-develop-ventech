@@ -41,6 +41,7 @@ import { EmailModule } from 'email/email.module';
 import {  FilesS3Module } from 'azure-storage/aws-storage.module';
 import { ApiKeyMiddleware } from 'middleware/api-key.middleware';
 import { CustomerAuthModule } from './customer-auth/customer-auth.module';
+import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { CustomerAuthModule } from './customer-auth/customer-auth.module';
     CategoriesModule,
     SubCategoriesModule,
     EmailModule,
+    SurveyTouchpointModule,
     DepartmentsModule,
     RolesModule,
     UsersModule,
