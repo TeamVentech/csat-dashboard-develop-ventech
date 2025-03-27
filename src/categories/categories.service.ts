@@ -104,7 +104,13 @@ export class CategoriesService {
   
 
   async findByComplaintType(type: string){
-    const category = await this.categoryRepository.find({ where: {  type } });
+    const category = await this.categoryRepository.find({ 
+      where: { type },
+      select: {
+        id: true,
+        name: true,
+      }
+    });
     if (!category) {
       throw new NotFoundException(`Category with ID ${type} not found`);
     }

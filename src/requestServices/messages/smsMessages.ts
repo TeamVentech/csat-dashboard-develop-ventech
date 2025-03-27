@@ -2,7 +2,7 @@ const  SmsMessage =  {
     "Lost Child": {
       "Open": {
         "ar": `زبوننا العزيز،\nتم تسجيل حالة فقدان الطفل. فرقنا تقوم بعملية البحث. سنبلغكم بأي جديد.\nنتمنى لكم السلامة`,
-        "en": `Dear customer,\nWe would like to inform you that missing child case is open. Our team is on the search. We will keep you updated.\n\"Stay Safe\" from City Mall`
+        "en": `Dear customer,\nWe would like to inform you that missing child case is open. Our team is on the search. We will keep you updated.\n"Stay Safe" from City Mall`
       },
       "Child Found": {
         "ar": "تم العثور على طفلكم المفقود. يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
@@ -173,51 +173,51 @@ const  SmsMessage =  {
     "Handsfree Request": {
         "En Route for Pickup": {
             "ar": "شكرا لطلب خدمة الأمانات. مندوب خدمة الزبائن في طريقه لاستلام الحقائب.",
-            "en": "Thank you for requesting our pick-up service for Handsfree. Our representative is on their way to you to collect the shopping bags."
+            "en": "Thank you for requesting our pick-up service for Handsfree.\nOur representative is on their way to you to collect the shopping bags."
         },
         "Bags Collected": {
-            "ar": "زبوننا العزيز، شكرا لطلب خدمة الأمانات. تم استلام حقائب عدد (#) وتأمينها. رقم البطاقة: TAG #. يرجى الاستلام قبل الساعة 10م أو طلب توصيلها إلى أي موقع في المول. للمساعدة، اتصل على 0798502319.",
-            "en": "Dear Customer, Thank you for using our Handsfree service. Your bags have been collected & secured. Tag number: TAG #. Number of bags: #. Please collect your bags before 10pm or request delivery to any location in City Mall. For inquiries, call 0798502319."
+            "ar": "زبوننا العزيز،\nشكرا لطلب خدمة الأمانات. تم استلام حقائب عدد (#) وتأمينها. رقم البطاقة: TAG #.\nيرجى الاستلام قبل الساعة 10م أو طلب توصيلها إلى أي موقع في المول.\nللمساعدة، اتصل على 0798502319.",
+            "en": "Dear Customer,\nThank you for using our Handsfree service. Your bags have been collected & secured.\nTag number: TAG #. Number of bags: #.\nPlease collect your bags before 10pm or request delivery to any location in City Mall.\nFor inquiries, call 0798502319."
         },
         "Out for Delivery": {
-            "ar": "شكراً لطلب خدمة توصيل الأمانات. مندوب خدمة الزبائن في طريقه إلى موقعك.",
-            "en": "Thank you for using our handsfree delivery service. Our representative is on their way to the location provided."
+            "ar": "شكراً لطلب خدمة توصيل الأمانات.\nمندوب خدمة الزبائن في طريقه إلى موقعك.",
+            "en": "Thank you for using our handsfree delivery service.\nOur representative is on their way to the location provided."
         },
         "Bags Returned": {
-            "ar": "شكراً لك على استخدام خدمة الأمانات. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط",
-            "en": "Thank you for using our Handsfree service. We hope you had an enjoyable experience. Please rate our service by following the below link: "
+            "ar": "شكراً لك على استخدام خدمة الأمانات.\nنرجو أن تكون تجربة مميزة لك.\nيرجى تقييم الخدمة من خلال الرابط",
+            "en": "Thank you for using our Handsfree service.\nWe hope you had an enjoyable experience.\nPlease rate our service by following the below link: "
         }
     },
     "Stroller Request": {
         "Out for Delivery": {
-            "ar": "زبوننا العزيز، شكراً لطلب خدمة توصيل عربة الأطفال. مندوب خدمة الزبائن في طريقه إليك.",
-            "en": "Dear Customer, Thank you for requesting our stroller delivery service. Our representative is on their way to you."
+            "ar": "زبوننا العزيز،\nشكراً لطلب خدمة توصيل عربة الأطفال. مندوب خدمة الزبائن في طريقه إليك.",
+            "en": "Dear Customer,\nThank you for requesting our stroller delivery service. Our representative is on their way to you."
         },
         "In Service": {
-            "ar": "زبوننا العزيز، شكرا لطلب خدمة عربة الأطفال. يرجى إعادته لمكتب خدمة الزبائن في الطابق الأرضي قبل الساعة 10م. للمساعدة، اتصل على 0798502319.",
-            "en": "Dear Customer, Thank you for using our stroller service. Please return it to the Customer Care Desk on GF before 10pm. For inquiries, call 0798502319."
+            "ar": "زبوننا العزيز،\nشكرا لطلب خدمة عربة الأطفال. يرجى إعادته لمكتب خدمة الزبائن في الطابق الأرضي قبل الساعة 10م.\nللمساعدة، اتصل على 0798502319.",
+            "en": "Dear Customer,\nThank you for using our stroller service. Please return it to the Customer Care Desk on GF before 10pm.\nFor inquiries, call 0798502319."
         },
         "Pending Customer": {
-            "ar": "تبقى 30 دقيقة على إغلاق المول. يرجى إعادة عربة الأطفال لخدمة الزبائن قبل انتهاء ساعات عمل المول.",
-            "en": "Dear Customer, The mall is closing in 30 minutes. Please return the stroller to the Customer Care Desk before mall closing hours."
+            "ar": "تبقى 30 دقيقة على إغلاق المول.\nيرجى إعادة عربة الأطفال لخدمة الزبائن قبل انتهاء ساعات عمل المول.",
+            "en": "Dear Customer,\nThe mall is closing in 30 minutes. Please return the stroller to the Customer Care Desk before mall closing hours."
         },
         "En Route for Pickup": {
-            "ar": "شكراً لطلب خدمة استلام عربة الأطفال. مندوب خدمة الزبائن في طريقه إليك لاستلامها.",
-            "en": "Thank you for requesting our pick-up service for the stroller. Our representative is on their way to you to collect it."
+            "ar": "شكراً لطلب خدمة استلام عربة الأطفال.\nمندوب خدمة الزبائن في طريقه إليك لاستلامها.",
+            "en": "Thank you for requesting our pick-up service for the stroller.\nOur representative is on their way to you to collect it."
         },
         "Item Returned": {
-            "ar": "نشكرك على استخدام خدمة عربة الأطفال. نرجو أن تكون تجربة مميزة لك. يرجى تقييم الخدمة من خلال الرابط",
-            "en": "Thank you for using our stroller service. We hope you had an enjoyable experience. Please rate our service by following the below link: "
+            "ar": "نشكرك على استخدام خدمة عربة الأطفال.\nنرجو أن تكون تجربة مميزة لك.\nيرجى تقييم الخدمة من خلال الرابط",
+            "en": "Thank you for using our stroller service.\nWe hope you had an enjoyable experience.\nPlease rate our service by following the below link: "
         },
     },
     "Complaints": {
         "Pending Review (Final Level)": {
-            "ar": "زبوننا العزيز، شكوتكم قيد المراجعة حالياً. سنبلغكم بأي جديد.",
-            "en": "Dear Customer, We would like to inform you that your complaint is now being reviewed. We will keep you updated."
+            "ar": "زبوننا العزيز،\nشكوتكم قيد المراجعة حالياً. سنبلغكم بأي جديد.",
+            "en": "Dear Customer,\nWe would like to inform you that your complaint is now being reviewed. We will keep you updated."
         },
         "Closed": {
-            "ar": "زبوننا العزيز، تم إغلاق شكوتكم. يرجى تقييم الخدمة من خلال الرابط",
-            "en": "Dear Customer, We would like to inform you that your complaint has been resolved. Please rate our service by following the below link: "
+            "ar": "زبوننا العزيز،\nتم إغلاق شكوتكم.\nيرجى تقييم الخدمة من خلال الرابط",
+            "en": "Dear Customer,\nWe would like to inform you that your complaint has been resolved.\nPlease rate our service by following the below link: "
         }
     }
    }

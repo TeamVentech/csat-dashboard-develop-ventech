@@ -25,6 +25,9 @@ export class RequestServices {
   @Column({ nullable: true, default:"service" })
   actions: string;
 
+  @Column({ nullable: true })
+  closedBy: string;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 

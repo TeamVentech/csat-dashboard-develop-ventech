@@ -115,9 +115,24 @@ export class TasksServices {
 		const data = updateTasksDto.complaints
 		// if()
 
+		// Handle updating complaint type, category, and touchpoint if they've changed
+		if (data) {
+			await this.complaintsRepository.update(	{id: data.id }, data);
+			await this.elasticService.updateDocument('complaints', data.id, data);
+			updateTasksDto.name = data.name
+			updateTasksDto.complaints = data
+		}
+
+		// Fetch the touchpoint with its workflow from database instead of assuming it's in the complaint data
+		const touchpoint = await this.touchPointsService.findOne(data.touchpointId);
+		if (!touchpoint) {
+			throw new NotFoundException(`Touchpoint with ID ${data.touchpointId} not found`);
+		}
+		const workflow = touchpoint.workflow;
+
 		if (updateTasksDto.action_role === 'CX_Team') {
 			if (updateTasksDto.actions["Confirm"].status === "Approve") {
-				const assignedTo = [...new Set(data.touchpoint.workflow.First_Level.map(user => user.name).flat())];
+				const assignedTo = [...new Set(workflow.First_Level.map(user => user.name).flat())];
 				updateTasksDto.type = "First Level"
 				updateTasksDto.complaints.status = "Pending (First Level)"
 				updateTasksDto.status = "Pending (First Level)"
@@ -135,7 +150,7 @@ export class TasksServices {
 			}
 			else {
 				updateTasksDto.type = "Disapprove"
-				const assignedTo = [...new Set(data.touchpoint.workflow.GM.map(user => user.name).flat())];
+				const assignedTo = [...new Set(workflow.GM.map(user => user.name).flat())];
 				updateTasksDto.complaints.status = "Disapprove"
 				updateTasksDto.status = "Disapprove"
 				const complaint_update = updateTasksDto.complaints
@@ -152,7 +167,7 @@ export class TasksServices {
 		}
 
 		if (updateTasksDto.action_role === 'first_role') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.Final_Level.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.Final_Level.map(user => user.name).flat())];
 			updateTasksDto.type = "Final Level"
 			updateTasksDto.status = "Pending Review (Final Level)"
 			updateTasksDto.complaints.status = "Pending Review (Final Level)"
@@ -172,7 +187,7 @@ export class TasksServices {
 		}
 
 		if (updateTasksDto.action_role === 'final_role') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.CX_Team.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.CX_Team.map(user => user.name).flat())];
 			updateTasksDto.type = "CX Check Team"
 			updateTasksDto.status = "Pending (CX Team)"
 			updateTasksDto.complaints.status = "Pending (CX Team)"
@@ -189,7 +204,7 @@ export class TasksServices {
 		}
 
 		if (updateTasksDto.action_role === 'resend_role') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.Final_Level.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.Final_Level.map(user => user.name).flat())];
 			updateTasksDto.type = "Final Level"
 			updateTasksDto.status = "Pending Review (Final Level)"
 			updateTasksDto.complaints.status = "Pending Review (Final Level)"
@@ -209,7 +224,7 @@ export class TasksServices {
 		}
 
 		if(updateTasksDto.type === "Escalated (Level 1)"){
-			const assignedTo = [...new Set(data.touchpoint.workflow.Level_1.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.Level_1.map(user => user.name).flat())];
 			updateTasksDto.type = "Escalated 1"
 			updateTasksDto.status = "Escalated (Level 1)"
 			updateTasksDto.complaints.status = "Escalated (Level 1)"
@@ -226,7 +241,7 @@ export class TasksServices {
 
 		}
 		if(updateTasksDto.type === "Escalated (Level 2)"){
-			const assignedTo = [...new Set(data.touchpoint.workflow.Level_2.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.Level_2.map(user => user.name).flat())];
 			updateTasksDto.type = "Escalated 2"
 			updateTasksDto.status = "Escalated (Level 2)"
 			updateTasksDto.complaints.status = "Escalated (Level 2)"
@@ -243,7 +258,7 @@ export class TasksServices {
 
 		}
 		if(updateTasksDto.type === "Escalated (Level 3)"){
-			const assignedTo = [...new Set(data.touchpoint.workflow.Level_3.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.Level_3.map(user => user.name).flat())];
 			updateTasksDto.type = "Escalated 3"
 			updateTasksDto.status = "Escalated (Level 3)"
 			updateTasksDto.complaints.status = "Escalated (Level 3)"
@@ -259,10 +274,8 @@ export class TasksServices {
 			await this.elasticService.updateDocument('complaints', complaint_update.id, complaint_update);
 
 		}
-
-
 		if (updateTasksDto.action_role === 'CX_Check_Team') {
-			const assignedTo = [...new Set(data.touchpoint.workflow.CX_Team.map(user => user.name).flat())];
+			const assignedTo = [...new Set(workflow.CX_Team.map(user => user.name).flat())];
 			updateTasksDto.assignedTo = assignedTo
 			updateTasksDto.type = "GM Team"
 			updateTasksDto.status = "Closed"
@@ -307,7 +320,13 @@ export class TasksServices {
 	async updateRequest(id: string, updateTasksDto: UpdateTaskServicesDto, file) {
 		// const task_data = await this.findOne(id)
 		const data = updateTasksDto.complaints
-		const assignedTo = [...new Set(data.touchpoint.workflow.First_Level.map(user => user.name).flat())];
+		const touchpoint = await this.touchPointsService.findOne(data.touchpointId);
+		if (!touchpoint) {
+			throw new NotFoundException(`Touchpoint with ID ${data.touchpointId} not found`);
+		}
+		const workflow = touchpoint.workflow;
+		
+		const assignedTo = [...new Set(workflow.First_Level.map(user => user.name).flat())];
 		updateTasksDto.type = "Re-sent"
 		updateTasksDto.assignedTo = assignedTo
 		updateTasksDto.complaints.status = "Re-sent"

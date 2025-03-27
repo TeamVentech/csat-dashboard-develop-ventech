@@ -13,8 +13,19 @@ export class SurveyTouchpointService {
   ) {}
 
   async create(createSurveyTouchpointDto: CreateSurveyTouchpointDto) {
-    const surveyTouchpoint = this.surveyTouchpointRepository.create(createSurveyTouchpointDto);
-    return this.surveyTouchpointRepository.save(surveyTouchpoint);
+    // Check if a survey touchpoint with the same survey ID and touchpoint name exists
+    const existingTouchpoint = await this.surveyTouchpointRepository.findOne({
+      where: {
+        surveyId: createSurveyTouchpointDto.surveyId,
+        touchpointName: createSurveyTouchpointDto.touchpointName,
+      },
+    });
+    if (!existingTouchpoint) {
+      const surveyTouchpoint = this.surveyTouchpointRepository.create(createSurveyTouchpointDto);
+      return this.surveyTouchpointRepository.save(surveyTouchpoint);
+    } else {
+      return existingTouchpoint;
+    }
   }
 
   async findAll() {
