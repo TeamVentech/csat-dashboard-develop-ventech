@@ -135,7 +135,7 @@ class MetadataDto {
   pickupLocation?: LocationDto;
 
   @IsEnum(['Wheelchair', 'Stroller'])
-  @IsNotEmpty()
+  @IsOptional()
   type: string;
 
   @ValidateNested()
