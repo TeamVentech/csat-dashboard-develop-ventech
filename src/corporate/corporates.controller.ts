@@ -33,14 +33,13 @@ export class CorporatesController {
 
     // Create a new corporate
     @Post()
-    @Permissions('Corporate::read')
+    @Permissions('Clients Management::read')
     async create(@Body() createCorporateDto: CreateCorporateDto): Promise<Corporate> {
         return this.corporatesService.create(createCorporateDto);
     }
 
     // Get all corporates with pagination and filtering
     @Get()
-    @Permissions('Corporate::read')
     findAll(
         @Query('page') page: number,
         @Query('perPage') perPage: number,
@@ -53,23 +52,25 @@ export class CorporatesController {
     }
 
     @Get('get/all')
-    @Permissions('Corporate::read')
     find(@Query('name') name?: string,
     ) {
         return this.corporatesService.find(name);
     }
 
 
+    @Get('report/all')
+    findAllCorporate( ) {
+        return this.corporatesService.findAllCorporate();
+    }
     // Get a corporate by ID
     @Get(':id')
-    @Permissions('Corporate::read')
     async findOne(@Param('id') id: string): Promise<Corporate> {
         return this.corporatesService.findOne(id);
     }
 
     // Update a corporate by ID
     @Put(':id')
-    @Permissions('Corporate::update')
+    @Permissions('Clients Management::update')
     async update(
         @Param('id') id: string,
         @Body() updatecorporateDto: UpdateCorporateDto,
@@ -79,7 +80,7 @@ export class CorporatesController {
 
     // Delete a corporate by ID
     @Delete(':id')
-    @Permissions('Corporate::delete')
+    @Permissions('Clients Management::delete')
     async remove(@Param('id') id: string): Promise<void> {
         return this.corporatesService.remove(id);
     }

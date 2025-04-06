@@ -12,20 +12,20 @@ export class TenantsService {
     private readonly tenantRepository: Repository<Tenant>,
   ) { }
 
-  async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
+  async create(createTenantDto: CreateTenantDto) {
     const tenant = this.tenantRepository.create(createTenantDto);
     return this.tenantRepository.save(tenant);
   }
 
   async findAll(page, perPage, filterOptions) {
     page = page || 1;
-    perPage = perPage || 10;
+    perPage = perPage || 100;
     const queryBuilder = this.tenantRepository.createQueryBuilder('user');
 
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString =await filterOptions.search.startsWith(' ')
+        const searchString = await filterOptions.search.startsWith(' ')
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
@@ -39,6 +39,7 @@ export class TenantsService {
         }
       });
     }
+    queryBuilder.orderBy('user.updatedAt', 'DESC');
 
     const [categories, total] = await queryBuilder
       .skip((page - 1) * perPage)

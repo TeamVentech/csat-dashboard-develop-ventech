@@ -6,9 +6,11 @@ import { RolesModule } from 'roles/roles.module';
 import { ElasticSearchModule } from 'ElasticSearch/elasticsearch.module';
 import { TasksModule } from 'userTask/task.module';
 import { ComplaintsModule } from 'complaint/complaint.module';
+import { RequestServicesModule } from 'requestServices/requestServices.module';
+import { VouchersModule } from 'vochers/vouchers.module';
 
 @Module({
-  imports: [DatabaseModule, RolesModule, ElasticSearchModule, TasksModule, ComplaintsModule],
+  imports: [DatabaseModule, RolesModule, ElasticSearchModule, TasksModule, ComplaintsModule, RequestServicesModule, VouchersModule],
   providers: [CronsService, ...CronProvider],
   exports:[CronsService]
 })

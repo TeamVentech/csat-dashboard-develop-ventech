@@ -2,23 +2,32 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import * as moment from 'moment';
 import { Client } from '@elastic/elasticsearch';
+import { classToPlain } from 'class-transformer';
 interface ServiceRecord {
     type?: string;
     metadata?: {
-      date?: string;
+        date?: string;
     };
-  }
+}
 @Injectable()
 export class ElasticService {
     constructor(
         private readonly elasticsearchService: ElasticsearchService
-      ) {}
+    ) { }
     async indexData(index: string, id: string, data: any) {
+        // Handle empty date fields in metadata
+        if (data.metadata) {
+            Object.keys(data.metadata).forEach(key => {
+                if (data.metadata[key] === '' && key.toLowerCase().includes('date')) {
+                    data.metadata[key] = null;
+                }
+            });
+        }
         return await this.elasticsearchService.index({
             index,
             id,
             body: data,
-            
+            refresh: true
         });
     }
 
@@ -91,7 +100,7 @@ export class ElasticService {
                     query: {
                         query_string: {
                             query: id
-                          }
+                        }
                     },
                     sort: [{ createdAt: { order: 'desc' } }], // Sort by createdAt in descending order
                 },
@@ -124,19 +133,39 @@ export class ElasticService {
 
     async updateDocument(index: string, id: string, updateData: any) {
         try {
+            const transformedData = classToPlain(updateData);
+            if (!transformedData || typeof transformedData !== 'object') {
+                throw new Error('Invalid transformed data: Ensure it is a properly defined object');
+            }
+
+            // Handle empty date fields in metadata
+            if (transformedData.metadata) {
+                Object.keys(transformedData.metadata).forEach(key => {
+                    if (transformedData.metadata[key] === '' && key.toLowerCase().includes('date')) {
+                        transformedData.metadata[key] = null;
+                    }
+                });
+            }
+
             const result = await this.elasticsearchService.update({
                 index,
                 id,
                 body: {
-                    doc: updateData,
+                    doc: transformedData,
                 },
+                refresh: true
             });
+            return {
+                success: true,
+                message: 'Document updated successfully',
+                result,
+            };
         } catch (error) {
-            console.log(error)
+            console.error('Error updating document:', error);
             return {
                 success: false,
                 message: 'Error updating document',
-                error,
+                error: error.message || error,
             };
         }
     }
@@ -228,8 +257,6 @@ export class ElasticService {
 
     async search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
-        console.log(query)
-        
         const must: any[] = [];
         if (query?.name) {
             must.push({ match: { "name": query.name } });
@@ -247,6 +274,23 @@ export class ElasticService {
             must.push({ match: { "metadata.parents.id": query.customer } });
             // must.push({ match: { "metadata.parents.id": query.customer } });
         }
+        if (query?.complaintDate) {
+            const dateStr = query.complaintDate;
+            let parsedDate = moment(dateStr, ['YYYY-MM-DD', 'MM/DD/YYYY']).tz('Asia/Amman');
+            if (parsedDate.isValid()) {
+                const startDate = parsedDate.startOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                const endDate = parsedDate.endOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                must.push({
+                    range: {
+                        createdAt: {
+                            gte: startDate,
+                            lte: endDate
+                        }
+                    }
+                });
+            }
+        }
+
         if (query?.location) {
             must.push({ match: { "metadata.location.tenant.keyword": query.location } });
         }
@@ -257,7 +301,7 @@ export class ElasticService {
             must.push({ match: { "createdAt": query.date } });
         }
         if (query?.voucherId) {
-            must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId} })
+            must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId } })
         }
         const result = await this.elasticsearchService.search({
             index,
@@ -297,6 +341,118 @@ export class ElasticService {
         };
     }
 
+    async searchByQuery(index: string, query: any, page: number = 1, pageSize: number = 10) {
+        const from = (page - 1) * pageSize;
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                ...query
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
+        } else {
+            totalHits = result.body.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
+    async searchExtendedVoucher(index: string, page: number = 1, pageSize: number = 300) {
+        const from = (page - 1) * pageSize;
+
+        const must: any[] = [];
+        must.push({ "match": { "metadata.voucher.vouchers.metadata.status": 'Extended' } })
+
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                query: {
+                    bool: {
+                        must: must.length > 0 ? must : [{ match_all: {} }]
+                    },
+                },
+                sort: [
+                    {
+                        createdAt: {
+                            order: "desc"
+                        }
+                    }
+                ]
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
+        } else {
+            totalHits = result.body.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
+
+
+    async getCustomerSurvey(index: string, id: string, page: number = 1, pageSize: number = 10) {
+        const from = (page - 1) * pageSize;
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                query: {
+                    query_string: {
+                        query: id
+                    }
+                },
+                sort: [
+                    {
+                        createdAt: {
+                            order: "desc"
+                        }
+                    }
+                ]
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
+        } else {
+            totalHits = result.body.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
     async customer_search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
         const result = await this.elasticsearchService.search({
@@ -305,7 +461,7 @@ export class ElasticService {
                 query: {
                     query_string: {
                         query: query.customer
-                      }
+                    }
                 },
                 sort: [
                     {
@@ -341,6 +497,7 @@ export class ElasticService {
             const result = await this.elasticsearchService.delete({
                 index,
                 id,
+                refresh: true
             });
 
             return {
@@ -411,8 +568,28 @@ export class ElasticService {
         if (query?.role) {
             must.push({ match: { "assignedTo": query.role } });
         }
-        if(query?.type){
+        if (query?.type) {
             must.push({ match: { "name.keyword": query.type } });
+        }
+        if (query?.status) {
+            must.push({ match: { "status.keyword": query.status } });
+        }
+
+        if (query?.tasksDate) {
+            const dateStr = query.tasksDate;
+            let parsedDate = moment(dateStr, ['YYYY-MM-DD', 'MM/DD/YYYY']).tz('Asia/Amman');
+            if (parsedDate.isValid()) {
+                const startDate = parsedDate.startOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                const endDate = parsedDate.endOf('day').format('YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+                must.push({
+                    range: {
+                        createdAt: {
+                            gte: startDate,
+                            lte: endDate
+                        }
+                    }
+                });
+            }
         }
         const result = await this.elasticsearchService.search({
             index,
@@ -454,12 +631,12 @@ export class ElasticService {
 
     async getRecordsCount() {
         const response = await this.elasticsearchService.search({
-          index: 'services',
-          size: 1000, // Adjust based on your data size
+            index: 'services',
+            size: 1000, // Adjust based on your data size
         });
-    
+
         const hits = response.body.hits.hits.map((hit) => hit._source as ServiceRecord);
-    
+
         const today = moment().format('YYYY-MM-DD'); // Get today's date
     
         const counts: Record<string, { total: number; new: number; active: number }> = {};
@@ -500,23 +677,27 @@ export class ElasticService {
         }
     
         return counts;
-      } 
-    
-      async searchTaskCount(index: string, query: any) {
-          const must: any[] = [];
-          if (query?.role) {
-              must.push({ match: { "assignedTo": query.role } });
-          }
-      
-          const result= await this.elasticsearchService.search({
+    }
+
+    async searchTaskCount(index: string, query: any) {
+        const must: any[] = [];
+
+        if (query?.role) {
+            must.push({ match: { "assignedTo": query.role } });
+        }
+
+        const result = await this.elasticsearchService.search({
             index,
             body: {
                 size: 0, // Don't return actual documents
                 track_total_hits: true, // Ensure total count is accurate
                 query: {
                     bool: {
-                        must: must.length > 0 ? must : [{ match_all: {} }]
-                    },
+                        must: must.length > 0 ? must : [{ match_all: {} }],
+                        must_not: [
+                            { match: { "status": "Closed" } } // Exclude closed tasks
+                        ]
+                    }
                 },
                 aggs: {
                     name_count: {
@@ -526,9 +707,9 @@ export class ElasticService {
                         }
                     }
                 }
-            },
+            }
         });
-    
+
         // Extract aggregated counts
         const nameCounts =
             (result.body.aggregations?.name_count as { buckets: { key: string; doc_count: number }[] })
@@ -536,15 +717,16 @@ export class ElasticService {
                     name: bucket.key,
                     count: bucket.doc_count
                 })) || [];
-    
+
         // Get the total count from search result metadata
-        const totalCount = result.body.hits.total ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value) : 0;
-    
+        const totalCount = result.body.hits.total
+            ? (typeof result.body.hits.total === "number" ? result.body.hits.total : result.body.hits.total.value)
+            : 0;
+
         return {
             totalCount,
             nameCounts
         };
-        
-      }
+    }
 
 }

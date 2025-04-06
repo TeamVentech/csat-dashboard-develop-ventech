@@ -8,12 +8,10 @@ export class EmailService {
 
 	constructor(private configService: ConfigService) {
 		this.transporter = nodemailer.createTransport({
-			host: 'smtp-relay.brevo.com',
-			port: 587,
-			secure: false, // Use `true` for port 465, `false` for other ports
+			service: "gmail",
 			auth: {
-				user: '86fc9b001@smtp-brevo.com', // Your Brevo email
-				pass: "xsmtpsib-4f7b4e0f03e8151a8e97dd5fe2566f94a91bd171d2d07769365bee1d6d7ae6e3-BgZ9hK8VQOA2frtI", // API Key
+				user: 'nazir.alkahwaji@gmail.com', // Your Brevo email
+				pass: "crdgwksoigtaifwp", // API Key
 			},
 		});
 	}

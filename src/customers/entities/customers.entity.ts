@@ -3,8 +3,8 @@
   import { v4 as uuidv4 } from 'uuid';
 
   export enum Gender {
-    Male = 'male',
-    Female = 'female',
+    Male = 'Male',
+    Female = 'Female',
   }
 
   @Entity('customers')

@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customers.entity';
@@ -13,14 +13,72 @@ export class CustomersService {
   ) { }
 
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    if (createCustomerDto.dob) {
-      const currentYear = new Date().getFullYear();
-      const DobYear = new Date(createCustomerDto.dob).getFullYear();
-      createCustomerDto.age = (currentYear - DobYear).toString()
-
+    try {
+      // Always store email in lowercase
+      if (createCustomerDto.email) {
+        createCustomerDto.email = createCustomerDto.email.toLowerCase();
+      }
+      
+      // Format phone number to include country code if needed
+      if (createCustomerDto.phone_number) {
+        createCustomerDto.phone_number = this.formatPhoneNumber(createCustomerDto.phone_number);
+      }
+      
+      if (createCustomerDto.dob) {
+        const currentYear = new Date().getFullYear();
+        const DobYear = new Date(createCustomerDto.dob).getFullYear();
+        createCustomerDto.age = (currentYear - DobYear).toString()
+      }
+      
+      // Check if email already exists (case-insensitive)
+      if (createCustomerDto.email) {
+        const existingCustomer = await this.customerRepository
+          .createQueryBuilder('customer')
+          .where('LOWER(customer.email) = LOWER(:email)', { email: createCustomerDto.email })
+          .getOne();
+        
+        if (existingCustomer) {
+          throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+        }
+      }
+      
+      // Check if phone number already exists
+      if (createCustomerDto.phone_number) {
+        const existingCustomer = await this.customerRepository
+          .createQueryBuilder('customer')
+          .where('customer.phone_number = :phone_number', { phone_number: createCustomerDto.phone_number })
+          .getOne();
+        
+        if (existingCustomer) {
+          throw new HttpException('Phone number already exists', HttpStatus.CONFLICT);
+        }
+      }
+      
+      const customer = this.customerRepository.create(createCustomerDto);
+      return this.customerRepository.save(customer);
+  
+    } catch (error) {
+        throw new HttpException(error, HttpStatus.NOT_FOUND);
     }
-    const customer = this.customerRepository.create(createCustomerDto);
-    return this.customerRepository.save(customer);
+  }
+
+  // Format phone number to ensure it has the +962 country code
+  private formatPhoneNumber(phone: string): string {
+    // Remove any spaces or special characters
+    phone = phone.replace(/\s+/g, '');
+    
+    // If it starts with 0, replace with +962
+    if (phone.startsWith('0')) {
+      return '+962' + phone.substring(1);
+    }
+    
+    // If it already has the country code, return as is
+    if (phone.startsWith('+962')) {
+      return phone;
+    }
+    
+    // For any other format, prepend +962 (this is a fallback)
+    return '+962' + phone;
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -54,6 +112,12 @@ export class CustomersService {
 
     return { categories, total };
   }
+
+  async findAllCustomers(){
+    const customer = await this.customerRepository.find();
+    return customer;
+  }
+
   async findOne(id: string): Promise<Customer> {
     const customer = await this.customerRepository.findOne({ where: { id } });
     if (!customer) {

@@ -20,13 +20,11 @@ export class TransactionSurveyController {
   constructor(private readonly transactionSurveyService: TransactionSurveyService) { }
 
   @Post()
-  @Permissions('Survey::write')
   create(@Body() createTransactionSurveyDto: CreateTransactionSurveyDto) {
     return this.transactionSurveyService.create(createTransactionSurveyDto);
   }
 
   @Get()
-  @Permissions('Survey::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -51,25 +49,21 @@ export class TransactionSurveyController {
     return this.transactionSurveyService.findAllState(page, perPage, filterOptions, surveyId);
   }
   @Get(':id')
-  @Permissions('Survey::read')
   findOne(@Param('id') id: string) {
     return this.transactionSurveyService.findOne(id);
   }
 
   @Get('survey/:id')
-  @Permissions('Survey::read')
   findOneServey(@Param('id') id: string) {
     return this.transactionSurveyService.findOneServey(id);
   }
 
   @Patch(':id')
-  @Permissions('Survey::update')
   update(@Param('id') id: string, @Body() updateTransactionSurveyDto: UpdateTransactionSurveyDto) {
     return this.transactionSurveyService.update(id, updateTransactionSurveyDto);
   }
 
   @Delete(':id')
-  @Permissions('Survey::delete')
   remove(@Param('id') id: string) {
     return this.transactionSurveyService.remove(id);
   }

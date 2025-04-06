@@ -39,7 +39,6 @@ export class TenantsController {
 
     // Get all tenants with pagination and filtering
     @Get()
-    @Permissions('Lookups::read')
     findAll(
         @Query('page') page: number,
         @Query('perPage') perPage: number,

@@ -23,6 +23,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column({default:""})
+  message: string;
+
   @Column({ name: 'phone_number', length: 15, nullable: true })
   phoneNumber: string;
 
@@ -38,5 +41,12 @@ export class User {
   @BeforeInsert()
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
+    if (this.email) {
+      this.email = this.email.toLowerCase();
+    }
+    if (this.username) {
+      this.username = this.username.toLowerCase();
+    }
   }
+  
 }

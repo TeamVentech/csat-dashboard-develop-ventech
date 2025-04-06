@@ -20,14 +20,14 @@ export class CommentController {
   constructor(private readonly requestServicesService: CommentService) {}
 
   @Post()
-  @Permissions('Comment::write')
+  @Permissions('Customer Care Center::write')
 
   create(@Body() createCommentDto: any) {
     return this.requestServicesService.create(createCommentDto);
   }
 
   @Get()
-  @Permissions('Comment::read')
+  @Permissions('Customer Care Center::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -41,7 +41,7 @@ export class CommentController {
   }
 
   @Get(':id')
-  @Permissions('Comment::read')
+  @Permissions('Customer Care Center::read')
 
   findOne(@Param('id') id: string) {
     return this.requestServicesService.findOne(id);
@@ -54,14 +54,13 @@ export class CommentController {
   // }
 
   @Patch(':id')
-  @Permissions('Comment::update')
+  @Permissions('Customer Care Center::update')
   update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
     return this.requestServicesService.update(id, updateCommentDto);
   }
 
   @Delete(':id')
-  @Permissions('Comment::delete')
-
+  @Permissions('Customer Care Center::delete')
   remove(@Param('id') id: string) {
     return this.requestServicesService.remove(id);
   }

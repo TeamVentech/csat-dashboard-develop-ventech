@@ -22,13 +22,13 @@ export class SurveysController {
   constructor(private readonly surveysService: SurveysService) { }
 
   @Post()
-  @Permissions('Survey::write')
+  @Permissions('Survey Management::write')
   create(@Body() createSurveysDto: any) {
     return this.surveysService.create(createSurveysDto);
   }
 
   @Get()
-  @Permissions('Survey::read')
+  @Permissions('Survey Management::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -41,12 +41,11 @@ export class SurveysController {
   }
 
   @Get(':id')
-  @Permissions('Survey::read')
+  @Permissions('Survey Management::read')
   findOne(@Param('id') id: string) {
     return this.surveysService.findOne(id);
   }
   @Get(':id/report')
-  @Permissions('Survey::read')
   report(@Param('id') id: string,
     @Query('from') from: string,
     @Query('to') to: string,
@@ -55,13 +54,13 @@ export class SurveysController {
   }
 
   @Patch(':id')
-  @Permissions('Survey::update')
+  @Permissions('Survey Management::update')
   update(@Param('id') id: string, @Body() updateSurveysDto: any) {
     return this.surveysService.update(id, updateSurveysDto);
   }
 
   @Delete(':id')
-  @Permissions('Survey::delete')
+  @Permissions('Survey Management::delete')
   remove(@Param('id') id: string) {
     return this.surveysService.remove(id);
   }

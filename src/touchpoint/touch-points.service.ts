@@ -17,15 +17,19 @@ export class TouchPointsService {
   ) { }
 
   async create(createTouchPointDto: any) {
-    const category = await this.categoryRepository.findOne({ where: { id: createTouchPointDto.categoryId } });
-    if (!category) {
-      throw new NotFoundException(`Category with ID ${createTouchPointDto.categoryId} not found`);
-    }
-    const subCategory = this.touchpointRepository.create({
-      ...createTouchPointDto,
-      category,
-    });
-    return this.touchpointRepository.save(subCategory);
+    
+    
+      const category = await this.categoryRepository.findOne({ where: { id: createTouchPointDto.categoryId } });
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${createTouchPointDto.categoryId} not found`);
+      }
+      const subCategory = this.touchpointRepository.create({
+        ...createTouchPointDto,
+        category,
+      });
+      return this.touchpointRepository.save(subCategory);
+
+      
   }
 
   // Get all touchpoints with pagination and filtering
@@ -113,17 +117,20 @@ export class TouchPointsService {
   async findByCategory(id: string) {
     return this.touchpointRepository.find({
       where: { categoryId: id },
-      relations: ['category'], // Fetch customer relationship
+      select: {
+        id: true,
+        name: true,
+      },
     });
   }
 
   async getTouchpointsGroupedByCategory(type) {
     const touchpoints = await this.touchpointRepository.find({ relations: ['category'] });
-    console.log(type)
+  
     const grouped = touchpoints.reduce((acc, touchpoint) => {
-      const categoryName = touchpoint.category?.name.en
-
-      if (touchpoint.category.type === type) {
+      if (touchpoint.category?.type === type) {
+        const categoryName = touchpoint.category.name.en;
+  
         if (!acc[categoryName]) {
           acc[categoryName] = [];
         }
@@ -131,22 +138,33 @@ export class TouchPointsService {
       }
       return acc;
     }, {} as Record<string, Touchpoint[]>);
+  
     return Object.entries(grouped).map(([category, touchpoints]) => ({
       category,
       touchpoint: touchpoints,
     }));
   }
+  
 
 
 
   async getAll() {
     return this.touchpointRepository.find({
       relations: ['category'],
+      select: {
+        id: true,
+        name: true,
+      },
     });
   }
 
   async findAllCategory() {
-    return this.touchpointRepository.find();
+    return this.touchpointRepository.find({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 
   // Update a touchpoint by ID

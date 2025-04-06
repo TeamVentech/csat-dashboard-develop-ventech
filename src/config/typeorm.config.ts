@@ -12,6 +12,7 @@ export const TypeOrmConfigCentrize: TypeOrmModuleOptions = {
   database: process.env.DB_NAME_CENTRIZE,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   // logging: true,
+  useUTC: true,
   extra: {
     ssl: {
       rejectUnauthorized: false, // This disables certificate validation

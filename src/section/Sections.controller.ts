@@ -26,7 +26,6 @@ export class SectionsController {
   }
 
   @Get()
-  @Permissions('Lookups::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -52,7 +51,6 @@ export class SectionsController {
   @Get('sections/all')
   findAllCategory(
   ) {
-
     return this.sectionsService.findAllSections();
   }
   @Patch(':id')

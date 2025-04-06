@@ -33,14 +33,13 @@ export class CustomersController {
 
     // Create a new customer
     @Post()
-    @Permissions('Customer::write')
+    @Permissions('Clients Management::write')
     async create(@Body() createCustomerDto: CreateCustomerDto): Promise<Customer> {
         return this.customersService.create(createCustomerDto);
     }
 
     // Get all customers with pagination and filtering
     @Get()
-    @Permissions('Customer::read')
     findAll(
         @Query('page') page: number,
         @Query('perPage') perPage: number,
@@ -52,8 +51,13 @@ export class CustomersController {
         return this.customersService.findAll(page, perPage, filterOptions);
     }
 
+    @Get('report/all')
+    findAllCustomer( ) {
+
+        return this.customersService.findAllCustomers();
+    }
+
     @Get('check-existence')
-    @Permissions('Customer::read')
     async checkExistence(
       @Query('email') email?: string,
       @Query('phone_number') phone_number?: string,
@@ -69,14 +73,13 @@ export class CustomersController {
 
     // Get a customer by ID
     @Get(':id')
-    @Permissions('Customer::read')
     async findOne(@Param('id') id: string): Promise<Customer> {
         return this.customersService.findOne(id);
     }
 
     // Update a customer by ID
     @Put(':id')
-    @Permissions('Customer::update')
+    @Permissions('Clients Management::update')
     async update(
         @Param('id') id: string,
         @Body() updateCustomerDto: UpdateCustomerDto,
@@ -86,7 +89,7 @@ export class CustomersController {
 
     // Delete a customer by ID
     @Delete(':id')
-    @Permissions('Customer::delete')
+    @Permissions('Clients Management::delete')
     async remove(@Param('id') id: string): Promise<void> {
         return this.customersService.remove(id);
     }

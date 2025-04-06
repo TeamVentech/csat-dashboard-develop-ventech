@@ -11,6 +11,8 @@ import { TouchPointsService } from 'touchpoint/touch-points.service';
 import { UsersService } from 'users/users.service';
 import { EmailService } from 'email/email.service';
 import { SurveysService } from 'surveys/surveys.service';
+import { TenantsService } from 'tenants/tenants.service';
+import { SmsService } from 'sms/sms.service';
 
 @Injectable()
 export class ComplaintsService {
@@ -24,7 +26,8 @@ export class ComplaintsService {
     private readonly emailService: EmailService,
     // private readonly notificationsGateway: NotificationsGateway, // Inject gateway
     private readonly touchpointService: TouchPointsService, // Inject gateway
-
+    private readonly tenantService: TenantsService, // Inject tenant service
+    private readonly smsService: SmsService,
   ) { }
 
   async create(createComplaintsDto: CreateComplaintServicesDto) {
@@ -34,12 +37,45 @@ export class ComplaintsService {
       createComplaintsDto.metadata.question_label = question[0].question
       createComplaintsDto.metadata.answer_label = question[0].choices[createComplaintsDto.metadata.answer]
     }
+    
+    // Check if this is a tenant complaint and if tenant data needs to be updated
+    if (createComplaintsDto.type === "Tenant Complaint" && createComplaintsDto.tenant && createComplaintsDto.tenant.id) {
+      try {
+        // Get the current tenant data
+        const existingTenant = await this.tenantService.findOne(createComplaintsDto.tenant.id);
+        
+        // Check for changes in tenant data
+        const tenantUpdates = {};
+        const updateableFields = ['name', 'contact_name', 'email', 'manager_account', 'manager_email', 'phone_number'];
+        
+        let hasChanges = false;
+        updateableFields.forEach(field => {
+          if (createComplaintsDto.tenant[field] && createComplaintsDto.tenant[field] !== existingTenant[field]) {
+            tenantUpdates[field] = createComplaintsDto.tenant[field];
+            hasChanges = true;
+          }
+        });
+        
+        // Update tenant if there are changes
+        if (hasChanges) {
+          console.log('Tenant data changed, updating tenant:', tenantUpdates);
+          await this.tenantService.update(existingTenant.id, tenantUpdates);
+          // Use the updated tenant data
+          createComplaintsDto.tenant = await this.tenantService.findOne(existingTenant.id);
+        }
+      } catch (error) {
+        console.error('Error updating tenant data:', error);
+        // Continue with complaint creation even if tenant update fails
+      }
+    }
+    
     const payload = {
       "name": createComplaintsDto.name,
       "type": createComplaintsDto.type,
       "status": createComplaintsDto.status,
       "customerId": createComplaintsDto?.customer?.id,
       "tenantId": createComplaintsDto?.tenant?.id,
+      "tenant": createComplaintsDto?.tenant,
       "categoryId": createComplaintsDto.category.id,
       "touchpointId": createComplaintsDto.touchpoint.id,
       "sections": createComplaintsDto.sections,
@@ -56,12 +92,13 @@ export class ComplaintsService {
     complaint.touchpoint = createComplaintsDto.touchpoint
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
-    await this.elasticService.indexData('complaints', complaint.id, complaint);
+    const complaint_response = await this.elasticService.indexData('complaints', complaint.id, complaint);
     let assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
     if(createComplaintsDto.type === "Survey Complaint"){
-      assignedTo = ["SUPER_ADMIN"]
+      assignedTo = ["Super_Admin"]
       // assignedTo = ["CX Section Head"]
     }
+    console.log(assignedTo)
     const tasks_payload = {
       "taskId": complaint.id,
       "name": complaint.type,
@@ -73,9 +110,27 @@ export class ComplaintsService {
     }
     const users = await this.userService.getUsersByRoles(assignedTo)
     const email_user =  [...new Set(users.map(user => user.email).flat())]
-    // await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`http://localhost:5173/complaint/${complaint.id}/details`)
+    await this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`http://localhost:5173/complaint/${complaint.id}/details`)
     await this.taskService.create(tasks_payload, complaint)
 
+    // Send SMS notification for non-survey complaints
+    if (createComplaintsDto.type !== "Survey Complaint") {
+      const phoneNumber = createComplaintsDto?.customer?.phone_number || createComplaintsDto?.tenant?.phone_number
+      if (phoneNumber) {
+        const isArabic = createComplaintsDto?.metadata?.IsArabic || false;
+        const message = isArabic 
+          ? `زبوننا العزيز، تم استلام شكوتكم وتحويلها للدائرة المعنية. رقم ملف الشكوى الخاص بكم هو ${complaint.complaintId}. سنبلغكم بأي جديد.`
+          : `Dear Customer, Your complaint has been received, & transferred to concerned department. Your complaint file # is ${complaint.complaintId}. We will keep you updated.`;
+        
+        try {
+          await this.smsService.sendSms(null, message, phoneNumber);
+        } catch (error) {
+          console.error('Failed to send SMS notification:', error);
+        }
+      }
+    }
+
+    return this.findOne(complaint.id)
   }
 
   private async sendRealTimeNotifications(complaint: Complaints) {
@@ -153,6 +208,14 @@ export class ComplaintsService {
     await this.findOne(id);
     await this.complaintsRepository.update(id, updateComplaintsDto);
     await this.elasticService.updateDocument('complaints', id, updateComplaintsDto);
+    return this.findOne(id);
+  }
+
+  async rating(id: string, rate: any) {
+    const data = await this.findOne(id);
+    data.rating = rate.rating;
+    await this.complaintsRepository.update(id, data);
+    await this.elasticService.updateDocument('complaints', id, data);
     return this.findOne(id);
   }
 

@@ -22,7 +22,12 @@ export class UsersService {
     if (file) {
       avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
     }
-  
+    if(createUserDto.username){
+      createUserDto.username = createUserDto.username.toLowerCase()
+    }
+    if(createUserDto.email){
+      createUserDto.email = createUserDto.email.toLowerCase()
+    }
     const user = this.userRepository.create({
       ...createUserDto,
       avatar: avatarUrl, // Store the uploaded file URL in the avatar field
@@ -85,19 +90,29 @@ export class UsersService {
     return user;
   }
 
+  async findOneByPhoneNumber(phoneNumber: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { phoneNumber: phoneNumber } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${phoneNumber} not found`);
+    }
+    return user;  
+  }
   // Update a user by ID
   async update(id: string, updateUserDto: UpdateUserDto, file): Promise<User> {
     let avatarUrl = null;
-  
-    console.log('112')
-
     if (file) {
-      console.log('11')
       updateUserDto.avatar = await this.filesAzureService.uploadFile(file, "users"); 
     }
-    await this.findOne(id); // Check if the user exists
+    if(updateUserDto.username){
+      updateUserDto.username = updateUserDto.username.toLowerCase()
+    }
+    if(updateUserDto.email){
+      console.log(updateUserDto.email)
+      updateUserDto.email = updateUserDto.email.toLowerCase()
+      console.log(updateUserDto.email)
+    }
     await this.userRepository.update(id, updateUserDto);
-    return this.findOne(id); // Return the updated user
+    return this.findOne(id);
   }
 
   async getUsersByRoles(roles: any): Promise<User[]> {
@@ -112,5 +127,9 @@ export class UsersService {
   async findOneLog(email: string): Promise<User | undefined> {
     const user = await this.userRepository.findOne({ where: { email } });
     return user;
+  }
+
+  async save(user: User): Promise<User> {
+    return this.userRepository.save(user);
   }
 }

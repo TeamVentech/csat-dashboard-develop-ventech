@@ -57,6 +57,7 @@ export class ServicesService {
       AVAILABLE: 0,
       UNAVAILABLE: 0,
       OCCUPIED: 0,
+      TEMPORARY: 0,
     };
 
     // Populate the result with counts
@@ -96,9 +97,30 @@ export class ServicesService {
 
   // Update a department by ID
   async update(id: string, updateServicesDto: UpdateServicesDto) {
-    await this.findOne(id);
-    await this.servicesRepository.update(id, updateServicesDto);
-    return this.findOne(id);
+    console.log(updateServicesDto)
+    // Check if id is valid
+    if (!id || id.trim() === '') {
+      throw new HttpException('Invalid service ID', HttpStatus.BAD_REQUEST);
+    }
+    
+    // Check if updateServicesDto has at least one property
+    if (!updateServicesDto || Object.keys(updateServicesDto).length === 0) {
+      throw new HttpException('Update data cannot be empty', HttpStatus.BAD_REQUEST);
+    }
+    
+    // First check if the service exists
+    const service = await this.findOne(id);
+    
+    try {
+      await this.servicesRepository.update(id, updateServicesDto);
+      return this.findOne(id);
+    } catch (error) {
+      console.error('Update error:', error);
+      throw new HttpException(
+        'Failed to update service: ' + error.message, 
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async remove(id: string) {

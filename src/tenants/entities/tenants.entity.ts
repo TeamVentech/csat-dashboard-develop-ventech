@@ -10,10 +10,10 @@
     @Column()
     name: string;
 
-    @Column()
+    @Column({nullable:true})
     contact_name: string;
 
-    @Column()
+    @Column({nullable:true})
     email: string;
 
     @Column({nullable:true})
@@ -22,7 +22,7 @@
     @Column({nullable:true})
     manager_email: string;
 
-    @Column()
+    @Column({nullable:true})
     phone_number: string;
 
     @CreateDateColumn({ name: 'created_at' })

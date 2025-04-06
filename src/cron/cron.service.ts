@@ -8,6 +8,11 @@ import * as moment from 'moment';
 import { TasksServices } from 'userTask/task.service';
 import { Tasks } from 'userTask/entities/task.entity';
 import { ComplaintsService } from 'complaint/complaint.service';
+import { RequestServicesService } from 'requestServices/requestServices.service';
+import { VouchersService } from 'vochers/vouchers.service';
+import axios from 'axios';
+import SmsMessage from 'requestServices/messages/smsMessages';
+import { resolveSrv } from 'dns/promises';
 
 @Injectable()
 export class CronsService {
@@ -15,6 +20,8 @@ export class CronsService {
     private readonly tasksService: TasksServices, // Ensure the service name is correct
     private readonly complaintService: ComplaintsService, // Ensure the service name is correct
     private readonly elasticService: ElasticService,
+    private readonly requestServicesService: RequestServicesService,
+    private readonly vouchersService: VouchersService,
   ) { }
 
 
@@ -51,56 +58,172 @@ export class CronsService {
       }
     }
   }
+
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async handleExtendedVoucher() {
+    const page = 1;
+    const per_page = 200;
+    const complaint_tasks = await this.elasticService.searchExtendedVoucher("services", page, per_page);
+    const data = complaint_tasks.results
+    for (let i = 0; i < data.length; i++) {
+      let updated = false
+      for (let j = 0; j < data[i].metadata.voucher.length; j++) {
+        for (let z = 0; z < data[i].metadata.voucher[j].vouchers.length; z++) {
+          const element = data[i].metadata.voucher[j].vouchers[z];
+          if (element.metadata.status === "Extended") {
+            const now_date = new Date();
+            const extended_expired_date = new Date(element.metadata.extanded_expired_date);
+            if (now_date > extended_expired_date) {
+              data[i].metadata.voucher[j].vouchers[z].metadata.status = "Expired";
+              data[i].metadata.voucher[j].vouchers[z].status = "Expired";
+              await this.vouchersService.update(element.id, element)
+              updated = true
+            }
+            else {
+              const timeDiff = extended_expired_date.getTime() - now_date.getTime(); 
+              const daysLeft = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+              if (daysLeft === 3) {
+                const numbers = data[i].metadata.customer.phone_number || data[i].metadata.Company.phone_number;
+                const language = data[i]?.metadata?.IsArabic ? "ar" : "en"
+                const message = SmsMessage[data.type]["Note Extented"][language]          
+                await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+              }
+            }
+          }
+        }        
+      }
+      if(updated){
+        await this.requestServicesService.update(data[i].id , data[i])
+        await this.elasticService.updateDocument("services", data[i].id, data[i])  
+      }
+
+    }
+  }
+
+  @Cron(CronExpression.EVERY_2_HOURS)
+  async updateIncidentReportingStatus() {
+    try {
+      console.log('Checking for Incident Reporting cases to update status...');
+      
+      // Search for all Incident Reporting cases with Open status
+      const incidentCases = await this.elasticService.search("services", {
+        type: 'Incident Reporting',
+        state: 'Open'
+      }, 1, 1000); // Get up to 1000 cases
+
+      if (!incidentCases || !incidentCases.results || incidentCases.results.length === 0) {
+        return;
+      }
+
+      const now = moment();
+      let updatedCount = 0;
+
+      for (const incident of incidentCases.results) {
+        // Skip if no createdAt timestamp
+        if (!incident.createdAt) continue;
+
+        const createdAt = moment(incident.createdAt);
+        const hoursDifference = now.diff(createdAt, 'hours');
+        
+        // Only update status if at least 24 hours have passed
+        if (hoursDifference >= 24) {
+          console.log(`Updating incident ${incident.id} to 'Pending Internal' status after ${hoursDifference} hours`);
+          
+          // Prepare update data
+          const updateData = {
+            state: 'Pending Internal',
+            metadata: {
+              ...incident.metadata,
+              statusChangedAt: now.toDate(),
+              previousState: 'Open',
+              statusChangeReason: 'Automatic status change after 24 hours'
+            },
+            type: incident.type,
+            name: incident.name,
+            actions: null // Include required property even if not used
+          };
+          
+          // Update the service record
+          await this.requestServicesService.update(incident.id, updateData);
+          updatedCount++;
+          
+          // Send notification if customer phone number exists
+          if (incident.metadata?.customer?.phone_number) {
+            const numbers = incident.metadata.customer.phone_number;
+            const language = incident.metadata?.IsArabic ? "ar" : "en";
+            let message;
+            
+            try {
+              message = SmsMessage['Incident Reporting']['Pending Internal'][language];
+            } catch (error) {
+              message = language === 'ar' 
+                ? "تم تحويل حالة البلاغ الخاص بك إلى المراجعة الداخلية بعد 24 ساعة من التقييم الأولي."
+                : "Your incident report has been escalated to internal review after 24 hours of assessment.";
+            }
+            
+            await this.sendSms(numbers, message, numbers);
+          }
+        }
+      }
+      
+      if (updatedCount > 0) {
+        console.log(`Updated ${updatedCount} incident cases to 'Pending Internal' status`);
+      }
+    } catch (error) {
+      console.error('Error updating incident statuses:', error);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async handleVoucherExpiryReminders() {
+    try {
+      console.log('Running voucher expiry reminder check...');
+      const result = await this.vouchersService.sendExpiryReminders();
+      console.log(`Voucher expiry reminders sent: ${result.extendedCount} extended vouchers and ${result.soldCount} sold vouchers`);
+    } catch (error) {
+      console.error('Error sending voucher expiry reminders:', error);
+    }
+  }
+  async sendSms(data: any, message: any, number: string) {
+    const senderId = 'City Mall';
+    const numbers = number
+    const accName = 'CityMall';
+    const accPass = 'G_PAXDujRvrw_KoD';
+
+    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
+    const response = await axios.get(smsUrl, {
+      params: {
+        senderid: senderId,
+        numbers: numbers,
+        accname: accName,
+        AccPass: accPass,
+        msg: encodeURIComponent(message)
+
+      },
+    });
+  }
+  async sendSmss(data: any, message: string, number: string) {
+    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
+
+    try {
+      const response = await axios.get(smsUrl, {
+        params: {
+          senderid: 'City Mall',
+          numbers: number,
+          accname: 'CityMall',
+          AccPass: 'G_PAXDujRvrw_KoD',
+          msg: encodeURIComponent(message),
+        },
+      });
+
+      console.log(`SMS sent successfully to ${number}:`, response.data);
+    } catch (error) {
+      console.error(`Failed to send SMS to ${number}:`, error);
+    }
+  }
+
+  async checkUserConsent(number: string): Promise<boolean> {
+    const approvedNumbers = ["+962776850132"]; 
+    return approvedNumbers.includes(number);
+  }
 }
-// import { Injectable, OnModuleInit } from '@nestjs/common';
-// import * as crypto from 'crypto';
-// import { getRepository } from 'typeorm';
-// import { RequestServices } from '../requestServices/entities/requestServices.entity';
-// import { Cron } from '@nestjs/schedule';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { Repository, Raw, LessThan } from 'typeorm';
-// import axios from 'axios';
-// import { ElasticService } from 'ElasticSearch/elasticsearch.service';
-
-// @Injectable()
-// export class CronService {
-//   constructor(
-//     @InjectRepository(RequestServices)
-//     private readonly requestServicesRepo: Repository<RequestServices>,
-//     private readonly elasticService: ElasticService,
-//   ) { }
-
-//   // @Cron('0 22 * * *', { timeZone: 'Asia/Amman' })
-//   // async handleDailyJobs() {
-//   //   console.log('Running daily check for expiring vouchers at 10:00 AM');
-//   //   const expiringServices = await this.elasticService.searchInServiceState("services")
-//   // }
-//   @Cron('0 * * * * *') // Runs at the start of every hour
-//   handleCron() {
-//     console.log('This function runs every hour!');
-//     // Your logic here
-//   }
-//   // @Cron('0 10 * * *', { timeZone: 'Asia/Amman' })
-//   // async handleDailyJob() {
-//   //   console.log('Running daily check for expiring vouchers at 10:00 AM');
-//   //   const expiringServices = await this.elasticService.searchExpiringSoon("services")
-//   //   expiringServices.results.forEach(async (service) => {
-//   //     const senderId = 'City Mall';
-//   //     const numbers = service?.metadata?.customer?.phone_number || service?.metadata?.Company?.constact?.phone_number
-//   //     const accName = 'CityMall';
-//   //     const accPass = 'G_PAXDujRvrw_KoD';
-//   //     const msg = "Your Voucher will done after 1 Week ";
-
-//   //     const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-//   //     const response = await axios.get(smsUrl, {
-//   //       params: {
-//   //         senderid: senderId,
-//   //         numbers: numbers,
-//   //         accname: accName,
-//   //         AccPass: accPass,
-//   //         msg: msg,
-//   //       },
-//   //     });
-//   //   });
-//   // }
-// }

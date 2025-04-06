@@ -3,6 +3,7 @@ import {
     ExecutionContext,
     ForbiddenException,
     Injectable,
+    UnauthorizedException
   } from '@nestjs/common';
   import { Reflector } from '@nestjs/core';
   import { RolesService } from '../roles/roles.service';
@@ -24,6 +25,12 @@ import {
       const request = context.switchToHttp().getRequest();
       const user = request.user;
       const role = await this.rolesService.findOne(user.role);
+      
+      // // Check if the role version in the token matches the current role version
+      // if (user.roleVersion !== role.version) {
+      //   throw new UnauthorizedException('Your permissions have been updated. Please login again.');
+      // }
+      
       const userPermissions = role.ability.map(
         (ability) => `${ability.subject}::${ability.action}`,
       );

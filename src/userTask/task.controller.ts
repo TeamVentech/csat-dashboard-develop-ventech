@@ -49,13 +49,13 @@ export class TasksController {
     @UseInterceptors(FileInterceptor('file')) // Intercept file upload
 
   update(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto, @UploadedFile() file: Express.Multer.File) {
-    console.log(file)
     return this.tasksService.update(id, UpdateTaskServicesDto, file);
   }
 
   @Patch(':id/request_change')
-  updateRequest(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto) {
-    return this.tasksService.updateRequest(id, UpdateTaskServicesDto);
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
+  updateRequest(@Param('id') id: string, @Body() UpdateTaskServicesDto: UpdateTaskServicesDto,  @UploadedFile() file: Express.Multer.File) {
+    return this.tasksService.updateRequest(id, UpdateTaskServicesDto, file);
   }
 
   @Delete(':id')
@@ -67,15 +67,13 @@ export class TasksController {
   elasticSerchQurey(
     @Body() data: any,
   ) {
-    return ;
-    // return this.elasticSearchService.searchTask("tasks", data.search, data.page, data.perPage);
+    return this.elasticSearchService.searchTask("tasks", data.search, data.page, data.perPage);
   }
 
   @Post('search/query/count')
   elasticSerchCountQurey(
     @Body() data: any,
   ) {
-    return ;
-    // return this.elasticSearchService.searchTaskCount("tasks", data.search);
+    return this.elasticSearchService.searchTaskCount("tasks", data.search);
   }
 }

@@ -6,9 +6,10 @@ import { CategoriesService } from './categories.service';
 import { CategoriesController } from './categories.controller';
 import { DatabaseModule } from '../database/database.module';
 import { RolesModule } from 'roles/roles.module';
+import { FilesS3Module } from 'azure-storage/aws-storage.module';
 
 @Module({
-  imports: [DatabaseModule, RolesModule],
+  imports: [DatabaseModule, RolesModule, FilesS3Module],
   controllers: [CategoriesController],
   providers: [CategoriesService, ...categoryProviders],
   exports: [CategoriesService, ...categoryProviders], // Ensure you export the provider

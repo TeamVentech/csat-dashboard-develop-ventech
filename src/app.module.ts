@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -39,6 +39,10 @@ import { CronModule } from 'cron/cron.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from 'email/email.module';
 import {  FilesS3Module } from 'azure-storage/aws-storage.module';
+import { ApiKeyMiddleware } from 'middleware/api-key.middleware';
+import { CustomerAuthModule } from './customer-auth/customer-auth.module';
+import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.module';
+import { SmsModule } from './sms/sms.module';
 
 @Module({
   imports: [
@@ -65,6 +69,7 @@ import {  FilesS3Module } from 'azure-storage/aws-storage.module';
     CategoriesModule,
     SubCategoriesModule,
     EmailModule,
+    SurveyTouchpointModule,
     DepartmentsModule,
     RolesModule,
     UsersModule,
@@ -88,8 +93,11 @@ import {  FilesS3Module } from 'azure-storage/aws-storage.module';
     CronModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
+    CustomerAuthModule,
+    SmsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule  {
+}

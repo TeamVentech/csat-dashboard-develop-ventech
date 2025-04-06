@@ -6,11 +6,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
 import { LocalStrategy } from './local.strategy';
+import { RolesModule } from '../roles/roles.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    RolesModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'defaultSecretKey', // Use environment variable for production
       signOptions: { expiresIn: '3h' }, // Token expiration

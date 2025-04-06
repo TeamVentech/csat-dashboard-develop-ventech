@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import moment from 'moment-timezone';
 
 @Entity('request-services')
 export class RequestServices {
@@ -15,14 +16,17 @@ export class RequestServices {
   @Column()
   state: string;
 
-  @Column({ nullable: true })
+  @Column({ default:"0", nullable:true })
   rating: string;
 
   @Column({ nullable: true })
   addedBy: string;
 
-  @Column({ nullable: true, default:"" })
+  @Column({ nullable: true, default:"service" })
   actions: string;
+
+  @Column({ nullable: true })
+  closedBy: string;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;

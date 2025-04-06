@@ -14,8 +14,7 @@ export class RolesService {
 
   async create(createRoleDto: CreateRoleDto){
     const role = this.roleRepository.create(createRoleDto);
-    const res =  this.roleRepository.save(role);
-    return res
+    return this.roleRepository.save(role);
   }
 
   async findAll(page: number, perPage: number) {
@@ -51,7 +50,14 @@ export class RolesService {
   }
 
   async update(id: string, updateRoleDto: UpdateRoleDto) {
-    await this.findOne(id);
+    const role = await this.findOne(id);
+    
+    // If updating the ability permissions, increment the version
+    if (updateRoleDto.ability) {
+      role.version += 1;
+      await this.roleRepository.save(role);
+    }
+    
     await this.roleRepository.update(id, updateRoleDto);
     return this.findOne(id);
   }

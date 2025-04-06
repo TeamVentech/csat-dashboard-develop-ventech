@@ -68,8 +68,15 @@ export class LocationsService {
 
 
   async findAllLocation() {
-    return this.LocationRepository.find();
+    return this.LocationRepository.find({
+      select: {
+        id: true,
+        tenant: true,
+        floor: true,
+      },
+    });
   }
+  
 
   async remove(id: string) {
     const location = await this.findOne(id);
