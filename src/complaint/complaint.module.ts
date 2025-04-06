@@ -14,13 +14,13 @@ import { UsersModule } from 'users/users.module';
 import { EmailModule } from 'email/email.module';
 import { SurveysModule } from 'surveys/surveys.module';
 import { TenantsModule } from 'tenants/tenants.module';
+import { SmsModule } from 'sms/sms.module';
 
 @Module({
-  imports: [DatabaseModule, RolesModule, ElasticSearchModule, forwardRef(() => TasksModule), TouchPointsModule, UsersModule, EmailModule, SurveysModule, TenantsModule],
+  imports: [DatabaseModule, RolesModule, ElasticSearchModule, forwardRef(() => TasksModule), TouchPointsModule, UsersModule, EmailModule, SurveysModule, TenantsModule, SmsModule],
   controllers: [ComplaintsController],
   providers: [ComplaintsService, ...ComplaintsProvider],
   exports: [ComplaintsService]
-
 })
 export class ComplaintsModule {}
 

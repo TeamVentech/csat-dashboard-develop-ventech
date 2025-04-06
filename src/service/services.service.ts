@@ -57,6 +57,7 @@ export class ServicesService {
       AVAILABLE: 0,
       UNAVAILABLE: 0,
       OCCUPIED: 0,
+      TEMPORARY: 0,
     };
 
     // Populate the result with counts

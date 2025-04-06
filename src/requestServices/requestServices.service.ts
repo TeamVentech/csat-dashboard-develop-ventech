@@ -21,6 +21,10 @@ import { json } from 'stream/consumers';
 import { instanceToPlain } from 'class-transformer';
 import * as moment from 'moment';
 import { AddedValueServiceDto } from './dto/added-value-service.dto';
+import { WheelchairStrollerHandler, PowerBankHandler, HandsfreeHandler } from './handlers';
+import { SmsService } from './services/sms.service';
+import { ComplaintsService } from 'complaint/complaint.service';
+import { AddedValueServiceHandler } from './handlers/added-value-service.handler';
 
 @Injectable()
 export class RequestServicesService {
@@ -31,6 +35,12 @@ export class RequestServicesService {
     private readonly vouchersService: VouchersService,
     private readonly servicesService: ServicesService,
     private readonly customerService: CustomersService,
+    private readonly wheelchairStrollerHandler: WheelchairStrollerHandler,
+    private readonly powerBankHandler: PowerBankHandler,
+    private readonly handsfreeHandler: HandsfreeHandler,
+    private readonly smsService: SmsService,
+    private readonly complaintsService: ComplaintsService,
+    private readonly addedValueServiceHandler: AddedValueServiceHandler,
   ) { }
 
   async create(createRequestServicesDto: CreateRequestServicesDto) {
@@ -127,7 +137,7 @@ export class RequestServicesService {
             : 'en';
           const message =
             SmsMessage[createRequestServicesDto.type]['Sold'][language];
-          await this.sendSms(
+          await this.smsService.sendSms(
             numbers,
             `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`,
             numbers,
@@ -140,7 +150,7 @@ export class RequestServicesService {
             : 'en';
           const message =
             SmsMessage[createRequestServicesDto.type]['Sold'][language];
-          await this.sendSms(numbers, message, numbers);
+          await this.smsService.sendSms(numbers, message, numbers);
         }
       } else {
         if (createRequestServicesDto.type === 'Found Child') {
@@ -150,7 +160,7 @@ export class RequestServicesService {
             const message = createRequestServicesDto.metadata.isArabic
               ? 'تم العثور على طفلكم المفقود.\n يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.'
               : 'Dear Customer,\n Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID.';
-            await this.sendSms(numbers, message, numbers);
+            await this.smsService.sendSms(numbers, message, numbers);
             createRequestServicesDto.state = 'Awaiting Collection';
           }
         } else if (
@@ -165,7 +175,7 @@ export class RequestServicesService {
             SmsMessage[createRequestServicesDto.type][
             createRequestServicesDto.state
             ][language];
-          await this.sendSms(numbers, message, numbers);
+          await this.smsService.sendSms(numbers, message, numbers);
         }
         if (createRequestServicesDto.name === 'Lost Children Management') {
           if (createRequestServicesDto.type === 'Lost Child') {
@@ -226,11 +236,15 @@ export class RequestServicesService {
 
   async addedValueService(createRequestServicesDto: AddedValueServiceDto) {
     try {
-      const numbers =
-        createRequestServicesDto?.metadata?.customer?.phone_number;
+      const numbers = createRequestServicesDto?.metadata?.customer?.phone_number;
+      
       if (createRequestServicesDto.type !== 'Handsfree Request') {
-        let VoucherType = null;
-        let Service_data = null;
+        // await this.addedValueServiceHandler.checkExistingCases(
+        //   createRequestServicesDto.type,
+        //   numbers,
+        //   'Item Returned'
+        // );
+
         createRequestServicesDto.name = 'Added-Value Services';
         createRequestServicesDto.state = 'In Service';
 
@@ -238,62 +252,54 @@ export class RequestServicesService {
           createRequestServicesDto.state = 'Delivery Requested';
         }
 
-        if (createRequestServicesDto.type === 'Wheelchair & Stroller Request') {
-          VoucherType = createRequestServicesDto.metadata.type;
-        }
-        if (createRequestServicesDto.type === 'Power Bank Request') {
-          VoucherType = 'Power Bank';
-        }
-
-        Service_data = await this.servicesService.findOneByTypeStatus(
-          VoucherType,
-          'AVAILABLE',
-        );
-
-        if (!Service_data) {
-          const payload = {
-            type: VoucherType,
-            status: 'AVAILABLE',
-            addedBy: 'system',
-            numbers: 1,
-          };
-          Service_data = await this.servicesService.create(payload);
-        }
-
+        const Service_data = await this.addedValueServiceHandler.handleServiceAvailability(createRequestServicesDto);
         createRequestServicesDto.metadata.service = Service_data;
-
-        await this.servicesService.update(Service_data.id, {
-          status: 'OCCUPIED',
-        });
       }
 
-      const customers = createRequestServicesDto.metadata.customer;
-      const customer = await this.customerService.doesEmailOrPhoneExist(
-        customers.email,
-        customers.phone_number,
-      );
+      await this.addedValueServiceHandler.handleCustomerCreation(createRequestServicesDto.metadata.customer);
 
-      if (customer) {
-        await this.customerService.update(customer.id, { ...customers });
-      } else {
-        const customerData = { ...customers };
-        delete customerData.id;
-        await this.customerService.create(customerData);
-      }
-
-      const serviceData = this.requestServicesRepository.create(
-        createRequestServicesDto,
-      );
-      const savedService =
-        await this.requestServicesRepository.save(serviceData);
+      const serviceData = this.requestServicesRepository.create(createRequestServicesDto);
+      const savedService = (await this.requestServicesRepository.save(serviceData)) as unknown as RequestServices;
 
       if (savedService) {
         const transformedData = instanceToPlain(savedService);
-        await this.elasticService.indexData(
-          'services',
-          savedService.id,
-          transformedData,
+        await this.elasticService.indexData('services', savedService.id, transformedData);
+      }
+
+      return savedService;
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Failed to create added value service',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async addedValueServiceHandFree(createRequestServicesDto: any) {
+    try {
+      const numbers = createRequestServicesDto?.metadata?.customer?.phone_number;
+      
+      if (createRequestServicesDto.type === 'Handsfree Request') {
+        await this.addedValueServiceHandler.checkExistingCases(
+          createRequestServicesDto.type,
+          numbers,
+          'Bags Returned'
         );
+
+        createRequestServicesDto.name = 'Added-Value Services';
+        createRequestServicesDto.state = 'In Service';
+        
+        createRequestServicesDto = this.addedValueServiceHandler.setupHandsfreeRequestMetadata(createRequestServicesDto);
+      }
+
+      await this.addedValueServiceHandler.handleCustomerCreation(createRequestServicesDto.metadata.customer);
+
+      const serviceData = this.requestServicesRepository.create(createRequestServicesDto);
+      const savedService = (await this.requestServicesRepository.save(serviceData)) as unknown as RequestServices;
+
+      if (savedService) {
+        const transformedData = instanceToPlain(savedService);
+        await this.elasticService.indexData('services', savedService.id, transformedData);
       }
 
       return savedService;
@@ -370,8 +376,6 @@ export class RequestServicesService {
     return RequestServices;
   }
 
-  // Update a department by IDsdd
-
   async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
     const data = await this.findOneColumn(id);
 
@@ -413,7 +417,7 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type][
         updateRequestServicesDto.state
         ][language];
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
     if (
       updateRequestServicesDto.name === 'Gift Voucher Sales' &&
@@ -467,7 +471,7 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type][
         updateRequestServicesDto.state
         ][language];
-      await this.sendSms(
+      await this.smsService.sendSms(
         numbers,
         `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`,
         numbers,
@@ -484,7 +488,7 @@ export class RequestServicesService {
       const message = updateRequestServicesDto.metadata.isArabic
         ? 'عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العمsلاء].'
         : 'Dears Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child.';
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
     if (
       updateRequestServicesDto.type === 'Wheelchair & Stroller Request' &&
@@ -496,7 +500,7 @@ export class RequestServicesService {
       const message = updateRequestServicesDto.metadata.isArabic
         ? 'السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا'
         : 'The item is damaged. As per policy, a payment of 20 JDs is required';
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
 
     if (updateRequestServicesDto?.actions === 'Awaiting Collection Child') {
@@ -509,7 +513,7 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
         language
         ];
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
 
     if (updateRequestServicesDto?.actions === 'Awaiting Collection Item') {
@@ -524,27 +528,23 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
         language
         ];
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
 
     if (updateRequestServicesDto?.actions === 'Send Damage SMS') {
-      const numbers =
-        updateRequestServicesDto?.metadata?.customer?.phone_number;
-      const language = updateRequestServicesDto?.metadata?.IsArabic
-        ? 'ar'
-        : 'en';
+      const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number;
+      const language = updateRequestServicesDto?.metadata?.IsArabic ? 'ar' : 'en';
       updateRequestServicesDto.metadata.sendDamageSms = true;
       let message = '';
       if (updateRequestServicesDto.type === 'Power Bank Request') {
         console.log(updateRequestServicesDto.metadata.condition);
-        message =
-          SmsMessage[updateRequestServicesDto.type][
+        message = SmsMessage[updateRequestServicesDto.type][
           updateRequestServicesDto.metadata.condition
-          ][language];
+        ][language];
       } else {
         message = SmsMessage['Wheelchair Request']['Damaged'][language];
       }
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
 
     if (updateRequestServicesDto?.actions === 'Awaiting Collection') {
@@ -552,7 +552,7 @@ export class RequestServicesService {
       const message = updateRequestServicesDto?.metadata?.IsArabic
         ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
         : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`;
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
 
     if (
@@ -567,7 +567,7 @@ export class RequestServicesService {
       if (updateRequestServicesDto?.actions === 'ArticleFound') {
         const message =
           SmsMessage[updateRequestServicesDto.type]['Article Found'][language];
-        await this.sendSms(
+        await this.smsService.sendSms(
           numbers,
           `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
           numbers,
@@ -575,7 +575,7 @@ export class RequestServicesService {
       } else {
         const message =
           SmsMessage[updateRequestServicesDto.type]['In Progress'][language];
-        await this.sendSms(numbers, message, numbers);
+        await this.smsService.sendSms(numbers, message, numbers);
       }
     }
     if (updateRequestServicesDto?.actions === 'in_progress_item_3') {
@@ -588,7 +588,7 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type]['In Progress Day 3'][
         language
         ];
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
     if (updateRequestServicesDto?.actions === 'refunded_voucher') {
       const numbers =
@@ -599,7 +599,7 @@ export class RequestServicesService {
         : 'en';
       const message =
         SmsMessage[updateRequestServicesDto.type]['Refunded'][language];
-      await this.sendSms(
+      await this.smsService.sendSms(
         numbers,
         `${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
         numbers,
@@ -612,229 +612,34 @@ export class RequestServicesService {
       const message = updateRequestServicesDto?.metadata?.IsArabic
         ? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
         : `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`;
-      await this.sendSms(numbers, message, numbers);
+      await this.smsService.sendSms(numbers, message, numbers);
     }
-    if (
-      updateRequestServicesDto?.actions === 'In Service' ||
-      updateRequestServicesDto?.actions === 'Bags Collected'
-    ) {
-      const numbers = data?.metadata?.customer?.phone_number;
-      const language = updateRequestServicesDto?.metadata?.IsArabic
-        ? 'ar'
-        : 'en';
-      const message =
-        SmsMessage[updateRequestServicesDto.type][
-        updateRequestServicesDto.state
-        ][language];
-      await this.sendSms(numbers, message, numbers);
+    if (updateRequestServicesDto?.actions === 'In Service') {
+        const numbers = data?.metadata?.customer?.phone_number;
+        const language = updateRequestServicesDto?.metadata?.IsArabic ? 'ar' : 'en';
+        const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language];
+        await this.smsService.sendSms(numbers, message, numbers);
     }
 
+    // Handle Wheelchair & Stroller Request
     if (updateRequestServicesDto.type === 'Wheelchair & Stroller Request') {
       if (updateRequestServicesDto.metadata.type === 'Wheelchair') {
-        if (updateRequestServicesDto?.actions === 'out_for_delivery') {
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Wheelchair Request']['Out for Delivery'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-        if (updateRequestServicesDto?.actions === 'En_Route_Pickup') {
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Wheelchair Request']['En Route for Pickup'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-        if (updateRequestServicesDto?.actions === 'In_Service_Whileechair') {
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Wheelchair Request']['In Service'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-        if (updateRequestServicesDto?.actions === 'Item_Returned') {
-          if (updateRequestServicesDto.metadata?.service?.id) {
-            await this.servicesService.update(
-              updateRequestServicesDto.metadata.service.id,
-              { status: 'AVAILABLE' },
-            );
-          } else {
-            console.warn(
-              'Cannot update service status: service ID is undefined',
-            );
-          }
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Wheelchair Request']['Item Returned'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-      }
-      if (updateRequestServicesDto.metadata.type === 'Stroller') {
-        if (updateRequestServicesDto?.actions === 'out_for_delivery') {
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Stroller Request']['Out for Delivery'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-        if (updateRequestServicesDto?.actions === 'En_Route_Pickup') {
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Stroller Request']['En Route for Pickup'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-        if (updateRequestServicesDto?.actions === 'In_Service_Whileechair') {
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Stroller Request']['In Service'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
-        if (updateRequestServicesDto?.actions === 'Item_Returned') {
-          if (updateRequestServicesDto.metadata?.service?.id) {
-            await this.servicesService.update(
-              updateRequestServicesDto.metadata.service.id,
-              { status: 'AVAILABLE' },
-            );
-          } else {
-            console.warn(
-              'Cannot update service status: service ID is undefined',
-            );
-          }
-          const numbers =
-            updateRequestServicesDto?.metadata?.customer?.phone_number;
-          const language = updateRequestServicesDto?.metadata?.IsArabic
-            ? 'ar'
-            : 'en';
-          const message =
-            SmsMessage['Stroller Request']['Item Returned'][language];
-          await this.sendSms(numbers, message, numbers);
-        }
+        await this.wheelchairStrollerHandler.handleWheelchairRequest(updateRequestServicesDto, id);
+      } else if (updateRequestServicesDto.metadata.type === 'Stroller') {
+        await this.wheelchairStrollerHandler.handleStrollerRequest(updateRequestServicesDto, id);
       }
     }
+
+    // Handle Power Bank Request
     if (updateRequestServicesDto.type === 'Power Bank Request') {
-      if (updateRequestServicesDto?.actions === 'out_for_delivery') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['Out for Delivery'][
-          language
-          ];
-        await this.sendSms(numbers, message, numbers);
-      }
-      if (updateRequestServicesDto?.actions === 'En_Route_Pickup') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['En Route for Pickup'][
-          language
-          ];
-        await this.sendSms(numbers, message, numbers);
-      }
-      if (updateRequestServicesDto?.actions === 'In_Service_Whileechair') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['In Service'][language];
-        await this.sendSms(numbers, message, numbers);
-      }
-      if (updateRequestServicesDto?.actions === 'Item_Returned') {
-        if (updateRequestServicesDto.metadata?.service?.id) {
-          await this.servicesService.update(
-            updateRequestServicesDto.metadata.service.id,
-            { status: 'AVAILABLE' },
-          );
-        } else {
-          console.warn('Cannot update service status: service ID is undefined');
-        }
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['Item Returned'][language];
-        await this.sendSms(numbers, message, numbers);
-      }
+      await this.powerBankHandler.handlePowerBankRequest(updateRequestServicesDto, id);
     }
+
+    // Handle Handsfree Request
     if (updateRequestServicesDto.type === 'Handsfree Request') {
-      if (updateRequestServicesDto?.actions === 'En_Route_Pickup') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['En Route for Pickup'][
-          language
-          ];
-        await this.sendSms(numbers, message, numbers);
-      }
-      if (updateRequestServicesDto?.actions === 'bags_collected') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['Bags Collected'][language];
-        await this.sendSms(numbers, message, numbers);
-      }
-      if (updateRequestServicesDto?.actions === 'bags_returned') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['Bags Returned'][language];
-        await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers);
-      }
-      if (updateRequestServicesDto?.actions === 'outForDelvery') {
-        const numbers =
-          updateRequestServicesDto?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic
-          ? 'ar'
-          : 'en';
-        const message =
-          SmsMessage[updateRequestServicesDto.type]['Out for Delivery'][
-          language
-          ];
-        await this.sendSms(numbers, message, numbers);
-      }
+      await this.handsfreeHandler.handleHandsfreeRequest(updateRequestServicesDto, id);
     }
+
     if (
       data.state !== 'Closed' &&
       updateRequestServicesDto.state === 'Closed'
@@ -872,13 +677,13 @@ export class RequestServicesService {
         updateRequestServicesDto.type === 'Child Found' ||
         updateRequestServicesDto.type === 'Lost Child'
       ) {
-        await this.sendSms(
+        await this.smsService.sendSms(
           numbers,
           `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/ratin\n "Stay Safe" from City Mall`,
           numbers,
         );
       } else {
-        await this.sendSms(
+        await this.smsService.sendSms(
           numbers,
           `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
           numbers,
@@ -897,6 +702,17 @@ export class RequestServicesService {
 
   async rating(id: string, rate: any) {
     const data = await this.findOneColumn(id);
+    
+    // Check if this is a complaint type service
+    if (!data) {
+      const complaint = await this.complaintsService.findOne(id);
+      if (!complaint) {
+        throw new HttpException('Case not found', HttpStatus.NOT_FOUND);
+      }
+      return this.complaintsService.rating(id, rate);
+    }
+    
+    // For other service types, proceed with normal rating
     data.rating = rate.rating;
     await this.requestServicesRepository.update(id, data);
     await this.elasticService.updateDocument('services', id, data);
@@ -906,23 +722,5 @@ export class RequestServicesService {
   async remove(id: string) {
     const RequestServices = await this.findOneColumn(id);
     await this.requestServicesRepository.remove(RequestServices);
-  }
-
-  async sendSms(data: any, message: any, number: string) {
-    const senderId = 'City Mall';
-    const numbers = number;
-    const accName = 'CityMall';
-    const accPass = 'G_PAXDujRvrw_KoD';
-
-    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-    const response = await axios.get(smsUrl, {
-      params: {
-        senderid: senderId,
-        numbers: numbers,
-        accname: accName,
-        AccPass: accPass,
-        msg: encodeURIComponent(message),
-      },
-    });
   }
 }

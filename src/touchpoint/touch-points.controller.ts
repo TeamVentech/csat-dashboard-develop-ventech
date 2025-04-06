@@ -41,7 +41,6 @@ export class TouchPointsController {
 
 
   @Get('search/all')
-  @Permissions('Lookups::read')
   findAllSearch(
     @Query('page') page: number = 1,
     @Query('perPage') perPage: number = 10,

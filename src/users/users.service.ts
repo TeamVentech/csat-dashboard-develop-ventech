@@ -90,6 +90,13 @@ export class UsersService {
     return user;
   }
 
+  async findOneByPhoneNumber(phoneNumber: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { phoneNumber: phoneNumber } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${phoneNumber} not found`);
+    }
+    return user;  
+  }
   // Update a user by ID
   async update(id: string, updateUserDto: UpdateUserDto, file): Promise<User> {
     let avatarUrl = null;

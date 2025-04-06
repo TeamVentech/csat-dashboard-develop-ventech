@@ -22,14 +22,11 @@ export class LocationsController {
 
   @Post()
   @Permissions('Lookups::write')
-
   create(@Body() createLocationDto: CreateLocationDto) {
     return this.LocationsService.create(createLocationDto);
   }
 
   @Get()
-  @Permissions('Lookups::read')
-
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -43,7 +40,6 @@ export class LocationsController {
 
   @Get(':id')
   @Permissions('Lookups::read')
-
   findOne(@Param('id') id: string) {
     return this.LocationsService.findOne(id);
   }

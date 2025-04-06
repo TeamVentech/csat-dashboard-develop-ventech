@@ -42,6 +42,7 @@ import {  FilesS3Module } from 'azure-storage/aws-storage.module';
 import { ApiKeyMiddleware } from 'middleware/api-key.middleware';
 import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.module';
+import { SmsModule } from './sms/sms.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.modu
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([RequestServices]), 
     CustomerAuthModule,
+    SmsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

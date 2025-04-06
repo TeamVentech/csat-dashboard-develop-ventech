@@ -3,11 +3,11 @@ import { Type } from 'class-transformer';
 
 class CustomerDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   national_id: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   passport_number: string;
 
   @IsString()

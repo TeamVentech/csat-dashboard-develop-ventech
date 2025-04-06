@@ -22,13 +22,11 @@ export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Post()
-  // @Permissions('Stock::write')
   create(@Body() createServicesDto: any) {
     return this.servicesService.create(createServicesDto);
   }
 
   @Get()
-  // @Permissions('Stock::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -41,31 +39,26 @@ export class ServicesController {
   }
 
   @Get(':id')
-  // @Permissions('Stock::read')
   findOne(@Param('id') id: string) {
     return this.servicesService.findOne(id);
   }
 
   @Get('type/:type')
-  @Permissions('Stock::read')
   findType(@Param('type') type: string) {
     return this.servicesService.getServiceStatusCounts(type);
   }
 
   @Get('type/:type/status/:status')
-  @Permissions('Stock::read')
   findOneByTypeStatus(@Param('type') type: string, @Param('status') status: string) {
     return this.servicesService.findOneByTypeStatus(type, status);
   }
 
   @Patch(':id')
-  // @Permissions('Stock::update')
   update(@Param('id') id: string, @Body() updateServicesDto: UpdateServicesDto) {
     return this.servicesService.update(id, updateServicesDto);
   }
 
   @Delete(':id')
-  // @Permissions('Stock::delete')
   remove(@Param('id') id: string) {
     return this.servicesService.remove(id); 
   }

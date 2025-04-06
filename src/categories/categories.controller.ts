@@ -24,14 +24,14 @@ export class CategoriesController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file')) // Intercept file upload
-  @Permissions('Survey::write')
+  @Permissions('Lookups::write')
   async create(@Body() createCategoryDto: CreateCategoryDto,  @UploadedFile() file: Express.Multer.File) {
 
     return this.categoriesService.create(createCategoryDto, file);
   }
 
   @Get()
-  @Permissions('Survey::read')
+  @Permissions('Lookups::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -52,33 +52,28 @@ export class CategoriesController {
   }
 
   @Get(':id')
-  @Permissions('Survey::read')
-
   async findOne(@Param('id') id: string) {
     return this.categoriesService.findOne(id);
   }
 
   @Get('type/:type')
-  @Permissions('Survey::read')
   async findByType(@Param('type') type: string) {
     return this.categoriesService.findByType(type);
   }
 
   @Get('complaint/type/:type')
-  @Permissions('Survey::read')
   async findByComplaintType(@Param('type') type: string) {
     return this.categoriesService.findByComplaintType(type);
   }
 
   @Put(':id')
-  @Permissions('Survey::update')
-
+  @Permissions('Lookups::update')
   async update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoriesService.update(id, updateCategoryDto);
   }
 
   @Delete(':id')
-  @Permissions('Survey::delete')
+  @Permissions('Lookups::delete')
 
   async remove(@Param('id') id: string) {
     return this.categoriesService.remove(id);

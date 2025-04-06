@@ -4,12 +4,14 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
+import { RolesService } from '../roles/roles.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private rolesService: RolesService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -22,11 +24,15 @@ export class AuthService {
   }
 
   async login(user: any) {
+    // Get role version for permission validation
+    const role = await this.rolesService.findOne(user.role);
+    
     const payload = {
       email: user.email,
       id: user.id,
       username: user.username,
       role: user.role,
+      roleVersion: role.version,
       phoneNumber: user.phoneNumber,
     };
     return { access_token: this.jwtService.sign(payload) };
@@ -52,4 +58,5 @@ export class AuthService {
 
     return { message: 'Password updated successfully' };
   }
+
 }

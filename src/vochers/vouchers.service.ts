@@ -233,6 +233,14 @@ export class VouchersService {
       await this.requestServiceRepository.update(service.id, service);
       await this.elasticService.updateDocument('services', service.id, service);
       const updated_data  = await this.elasticService.getById('services', service.id)
+      const language = service?.metadata?.IsArabic ? "ar" : "en";
+      const formattedDate = new Date(voucher_data.metadata.extanded_expired_date).toLocaleDateString('en-GB');
+      const message = {
+        en: `We would like to inform you that your extension request is approved. The new expiry date is ${formattedDate}\nPlease rate our service by following the below link:\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${service_id}/rating`,
+        ar: `تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: ${formattedDate}\nيرجى تقييم الخدمة من خلال الرابط\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${service_id}/rating`
+      };
+      const phoneNumber = service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number
+      await this.sendSms(null, message[language], phoneNumber);
       return { message: "Voucher extended successfully", status: HttpStatus.OK, data: updated_data };
     } catch (error) {
       if (error instanceof HttpException) {

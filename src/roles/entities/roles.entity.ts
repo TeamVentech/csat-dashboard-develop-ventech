@@ -10,6 +10,9 @@ export class Role {
   @Column('json', { nullable: true })
   ability: AbilityDto[];
 
+  @Column({ default: 1 })
+  version: number;
+
   @ManyToMany(() => Section, (section) => section.role)
   sections: Section[];
 

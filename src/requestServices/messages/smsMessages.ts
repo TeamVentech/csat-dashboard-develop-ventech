@@ -92,7 +92,7 @@ const  SmsMessage =  {
       }
     },
     "Corporate Voucher Sale": {
-      "Sold": {
+       "Sold": {
         "ar": "شكراً لك. نتمنى لك الاستمتاع بقسائم الإهداء!\nيرجى تقييم الخدمة من خلال الرابط",
         "en": "Thank you. Enjoy your gift vouchers!\nPlease rate our service by following the below link:\n"
       },

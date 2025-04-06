@@ -15,13 +15,13 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
-  @Permissions('Roles::write')
+  @Permissions('Admin::write')
   create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
   }
 
   @Get()
-  @Permissions('Roles::read')
+  @Permissions('Admin::read')
   findAll(
     @Query('page') page: number,
     @Query('perPage') perPage: number,
@@ -35,14 +35,13 @@ export class RolesController {
   }
 
   @Get(':name')
-  @Permissions('Roles::read')
+  @Permissions('Admin::read')
   findOne(@Param('name') name: string) {
     return this.rolesService.findOne(name);
   }
 
   @Patch(':name')
-  @Permissions('Roles::update')
-
+  @Permissions('Admin::update')
   update(@Param('name') name: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(name, updateRoleDto);
   }
@@ -50,7 +49,7 @@ export class RolesController {
   
 
   @Delete(':id')
-  @Permissions('Roles::delete')
+  @Permissions('Admin::delete')
   remove(@Param('id') id: string) {
     return this.rolesService.remove(id);
   }

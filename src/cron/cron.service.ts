@@ -98,32 +98,6 @@ export class CronsService {
       }
 
     }
-    // for (const task of complaint_tasks.results as any[]) {
-    //   if (task.createdAt) {
-    //     const taskDate = moment(task.createdAt);
-    //     const now = moment();
-    //     const hoursDifference = now.diff(taskDate, 'hours');
-    //     let level = null
-    //     if (hoursDifference >= 48 && hoursDifference < 72 && task.type === "First Level") {
-    //       level =  "Escalated (Level 1)"
-    //     }
-    //     if (hoursDifference >= 72 && hoursDifference < 120 && task.type === "Final Level") {
-    //       level =  "Escalated (Level 2)"
-    //     }
-    //     if (hoursDifference >= 120 && task.type === "Escalated 2") {
-    //       level =  "Escalated (Level 3)"
-    //     }
-    //     if(level){
-    //       task.type =  level
-    //       await this.tasksService.update(task.id, task, null)
-    //     }
-    //     // else{
-    //     //   console.log(hoursDifference)
-    //     // }
-    //   } else {
-    //     console.log(`Complaint ID: ${task.id}, createdAt not found`);
-    //   }
-    // }
   }
 
   @Cron(CronExpression.EVERY_2_HOURS)
@@ -200,11 +174,6 @@ export class CronsService {
     }
   }
 
-  /**
-   * Run daily at 10:00 AM to send SMS reminders for vouchers about to expire
-   * - For Extended vouchers: 3 days before expiry date
-   * - For Sold vouchers: 7 days before expiry date
-   */
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async handleVoucherExpiryReminders() {
     try {
@@ -215,61 +184,6 @@ export class CronsService {
       console.error('Error sending voucher expiry reminders:', error);
     }
   }
-
-  // @Cron(CronExpression.EVERY_30_SECONDS)
-  // async handleCroTEST() {
-  //   const number = "+962776850132";
-    
-  //   // التحقق من موافقة المستخدم قبل الإرسال
-  //   const isApproved = await this.checkUserConsent(number);
-  //   if (!isApproved) {
-  //     console.log(`لم يتم إرسال الرسالة، لا يوجد موافقة من الرقم ${number}`);
-  //     return;
-  //   }
-
-  //   const message = "SRV-CityMall: hello"; // إضافة رمز SRV قبل اسم المرسل
-  //   await this.sendSmss({}, message, number);
-  // }
-
-// async sendSmss(data: any, message: any, number: string) {
-//   const senderId = 'City Mall';
-//   const numbers = number;
-//   const accName = '';
-//   const accPass = '';
-
-//   const srvDomain = '_http._tcp.josmsservice.com'; // Adjust if needed
-
-//   try {
-//     // Resolve SRV record
-//     const srvRecords = await resolveSrv(srvDomain);
-
-//     if (!srvRecords.length) {
-//       throw new Error('No SRV records found');
-//     }
-
-//     // Pick the highest-priority record
-//     const { name: host, port } = srvRecords[0];
-
-//     const smsUrl = `https://${host}:${port}/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-
-//     // Send the request
-//     const response = await axios.get(smsUrl, {
-//       params: {
-//         senderid: senderId,
-//         numbers: numbers,
-//         accname: accName,
-//         AccPass: accPass,
-//         msg: encodeURIComponent(message),
-//       },
-//     });
-
-//     return response.data;
-//   } catch (error) {
-//     console.error('Error sending SMS:', error);
-//     throw error;
-//   }
-// }
-
   async sendSms(data: any, message: any, number: string) {
     const senderId = 'City Mall';
     const numbers = number
@@ -313,56 +227,3 @@ export class CronsService {
     return approvedNumbers.includes(number);
   }
 }
-// import { Injectable, OnModuleInit } from '@nestjs/common';
-// import * as crypto from 'crypto';
-// import { getRepository } from 'typeorm';
-// import { RequestServices } from '../requestServices/entities/requestServices.entity';
-// import { Cron } from '@nestjs/schedule';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { Repository, Raw, LessThan } from 'typeorm';
-// import axios from 'axios';
-// import { ElasticService } from 'ElasticSearch/elasticsearch.service';
-
-// @Injectable()
-// export class CronService {
-//   constructor(
-//     @InjectRepository(RequestServices)
-//     private readonly requestServicesRepo: Repository<RequestServices>,
-//     private readonly elasticService: ElasticService,
-//   ) { }
-
-//   // @Cron('0 22 * * *', { timeZone: 'Asia/Amman' })
-//   // async handleDailyJobs() {
-//   //   console.log('Running daily check for expiring vouchers at 10:00 AM');
-//   //   const expiringServices = await this.elasticService.searchInServiceState("services")
-//   // }
-//   @Cron('0 * * * * *') // Runs at the start of every hour
-//   handleCron() {
-//     console.log('This function runs every hour!');
-//     // Your logic here
-//   }
-//   // @Cron('0 10 * * *', { timeZone: 'Asia/Amman' })
-//   // async handleDailyJob() {
-//   //   console.log('Running daily check for expiring vouchers at 10:00 AM');
-//   //   const expiringServices = await this.elasticService.searchExpiringSoon("services")
-//   //   expiringServices.results.forEach(async (service) => {
-//   //     const senderId = 'City Mall';
-//   //     const numbers = service?.metadata?.customer?.phone_number || service?.metadata?.Company?.constact?.phone_number
-//   //     const accName = 'CityMall';
-//   //     const accPass = 'G_PAXDujRvrw_KoD';
-//   //     const msg = "Your Voucher will done after 1 Week ";
-
-//   //     const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-//   //     const response = await axios.get(smsUrl, {
-//   //       params: {
-//   //         senderid: senderId,
-//   //         numbers: numbers,
-//   //         accname: accName,
-//   //         AccPass: accPass,
-//   //         msg: msg,
-//   //       },
-//   //     });
-//   //   });
-//   // }
-// }
-

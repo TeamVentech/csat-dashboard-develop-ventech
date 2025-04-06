@@ -341,6 +341,34 @@ export class ElasticService {
         };
     }
 
+    async searchByQuery(index: string, query: any, page: number = 1, pageSize: number = 10) {
+        const from = (page - 1) * pageSize;
+        const result = await this.elasticsearchService.search({
+            index,
+            body: {
+                ...query
+            },
+            from,
+            size: pageSize,
+        });
+        let totalHits: number;
+
+        if (typeof result.body.hits.total === 'number') {
+            totalHits = result.body.hits.total;
+        } else {
+            totalHits = result.body.hits.total.value;
+        }
+
+        const totalPages = Math.ceil(totalHits / pageSize);
+        const sources = result.body.hits.hits.map((hit) => hit._source);
+        return {
+            totalHits,
+            totalPages,
+            currentPage: page,
+            pageSize,
+            results: sources,
+        };
+    }
     async searchExtendedVoucher(index: string, page: number = 1, pageSize: number = 300) {
         const from = (page - 1) * pageSize;
 

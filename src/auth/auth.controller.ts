@@ -29,5 +29,4 @@ export class AuthController {
     const userId = req.user.id;
     return this.authService.changePassword(userId, oldPassword, newPassword);
   }
-
 }

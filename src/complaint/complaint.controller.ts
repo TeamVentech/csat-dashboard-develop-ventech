@@ -24,7 +24,7 @@ export class ComplaintsController {
   ) {}
 
   @Post()
-  @Permissions('Complaint::write')
+  @Permissions('Customer Care Center::write')
   create(@Body() CreateComplaintServicesDto: any) {
     return this.complaintsService.create(CreateComplaintServicesDto);
   }
@@ -43,31 +43,28 @@ export class ComplaintsController {
   // }
 
   @Get(':id')
-  @Permissions('Service::read')
+  @Permissions('Customer Care Center::read')
   findOne(@Param('id') id: string) {
     return this.complaintsService.findOne(id);
   }
 
   @Get('type/:type')
-  @Permissions('Service::read')
   findType(@Param('type') type: string) {
     return this.complaintsService.findType(type);
   }
 
   @Patch(':id')
-  @Permissions('Service::update')
+  @Permissions('Customer Care Center::update')
   update(@Param('id') id: string, @Body() UpdateComplaintServicesDto: UpdateComplaintServicesDto) {
     return this.complaintsService.update(id, UpdateComplaintServicesDto);
   }
 
   @Delete(':id')
-  @Permissions('Service::delete')
+  @Permissions('Customer Care Center::delete')
   remove(@Param('id') id: string) {
     return this.complaintsService.remove(id);
   }
   @Post('search/query')
-  @Permissions('Service::read')
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   elasticSerchQurey(
     @Body() data: any,
   ) {

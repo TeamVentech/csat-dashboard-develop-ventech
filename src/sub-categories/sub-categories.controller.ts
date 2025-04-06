@@ -21,13 +21,13 @@ export class SubCategoriesController {
   constructor(private readonly subCategoriesService: SubCategoriesService) { }
 
   @Post()
-  @Permissions('Survey::write')
+  @Permissions('Lookups::write')
   create(@Body() createSubCategoryDto: CreateSubCategoryDto) {
     return this.subCategoriesService.create(createSubCategoryDto);
   }
 
   @Get()
-  @Permissions('Survey::write')
+  @Permissions('Lookups::write')
   findAll(
     @Query('page') page: number = 1,
     @Query('perPage') perPage: number = 10,
@@ -37,7 +37,7 @@ export class SubCategoriesController {
   }
 
   @Get(':id')
-  @Permissions('Survey::write')
+  @Permissions('Lookups::write')
   findOne(@Param('id') id: string) {
     return this.subCategoriesService.findOne(id);
   }
@@ -48,13 +48,13 @@ export class SubCategoriesController {
   }
 
   @Patch(':id')
-  @Permissions('Survey::update')
+  @Permissions('Lookups::update')
   update(@Param('id') id: string, @Body() updateSubCategoryDto: UpdateSubCategoryDto) {
     return this.subCategoriesService.update(id, updateSubCategoryDto);
   }
 
   @Delete(':id')
-  @Permissions('Survey::delete')
+  @Permissions('Lookups::delete')
   remove(@Param('id') id: string) {
     return this.subCategoriesService.remove(id);
   }
