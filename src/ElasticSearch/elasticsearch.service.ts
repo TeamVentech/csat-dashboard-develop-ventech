@@ -596,7 +596,10 @@ export class ElasticService {
             body: {
                 query: {
                     bool: {
-                        must: must.length > 0 ? must : [{ match_all: {} }]
+                        must: must.length > 0 ? must : [{ match_all: {} }],
+                        must_not: [
+                            { match: { "status": "Closed" } } // Exclude closed tasks
+                        ]
                     },
                 },
                 sort: [

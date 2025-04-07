@@ -43,7 +43,6 @@ export class ComplaintsController {
   // }
 
   @Get(':id')
-  @Permissions('Customer Care Center::read')
   findOne(@Param('id') id: string) {
     return this.complaintsService.findOne(id);
   }

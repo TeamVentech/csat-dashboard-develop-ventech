@@ -18,15 +18,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
   async changePassword(
-    @Request() req,
     @Body() changePasswordDto: ChangePasswordDto
   ) {
-    const { oldPassword, newPassword, confirmPassword } = changePasswordDto;
+    const { newPassword, confirmPassword } = changePasswordDto;
     console.log(changePasswordDto)
     if(confirmPassword !== newPassword){
         throw new HttpException("the password and confirm password  not matched.", HttpStatus.CONFLICT);
     }
-    const userId = req.user.id;
-    return this.authService.changePassword(userId, oldPassword, newPassword);
+    const userId = changePasswordDto.userId;
+    return this.authService.changePassword(userId, newPassword);
   }
 }

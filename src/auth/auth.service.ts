@@ -39,19 +39,8 @@ export class AuthService {
   }
 
   // Add the changePassword method
-  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<any> {
+  async changePassword(userId: string,  newPassword: string): Promise<any> {
     const user = await this.usersService.findOne(userId);
-
-    // Check if user exists and if the old password is correct
-    if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
-      throw new UnauthorizedException('Old password is incorrect');
-    }
-
-    // Check if the new password is the same as the old password
-    if (oldPassword === newPassword) {
-      throw new UnauthorizedException('New password cannot be the same as old password');
-    }
-
     // Hash and update the password
     user.password = await bcrypt.hash(newPassword, 10);
     await this.usersService.save(user);

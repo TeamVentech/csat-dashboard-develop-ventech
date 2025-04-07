@@ -129,7 +129,10 @@ export class UsersService {
     return user;
   }
 
-  async save(user: User): Promise<User> {
-    return this.userRepository.save(user);
+  async save(user: User) {
+    console.log(user)
+    await this.userRepository.update(user.id ,user);
+    return this.findOne(user.id);
+
   }
 }

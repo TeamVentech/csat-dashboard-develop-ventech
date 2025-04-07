@@ -80,6 +80,7 @@ export class RequestServicesController {
 
   @Patch(':id/rating')
   rating(@Param('id') id: string, @Body() rate: any) {
+    console.log(rate)
     return this.requestServicesService.rating(id, rate);
   }
 

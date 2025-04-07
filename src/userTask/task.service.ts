@@ -152,12 +152,18 @@ export class TasksServices {
 
 	private async handleCXTeamAction(updateTasksDto: any, workflow: any) {
 		if (updateTasksDto.actions["Confirm"].status === "Approve") {
+			if (!Array.isArray(workflow.First_Level)) {
+				throw new NotFoundException('workflow sub-category is not a valid array');
+			}
 			const assignedTo = [...new Set(workflow.First_Level.map(user => user.name).flat())];
 			updateTasksDto.type = "First Level";
 			updateTasksDto.complaints.status = "Pending (First Level)";
 			updateTasksDto.status = "Pending (First Level)";
 			updateTasksDto.assignedTo = assignedTo;
 		} else {
+			if (!Array.isArray(workflow.GM)) {
+				throw new NotFoundException('workflow sub-category is not a valid array');
+			}
 			const assignedTo = [...new Set(workflow.GM.map(user => user.name).flat())];
 			updateTasksDto.type = "Disapprove";
 			updateTasksDto.complaints.status = "Disapprove";
@@ -167,15 +173,29 @@ export class TasksServices {
 	}
 
 	private async handleFirstRoleAction(updateTasksDto: any, workflow: any, file: any) {
+		const status = updateTasksDto.complaints.status
+		if (!Array.isArray(workflow.Final_Level)) {
+			throw new NotFoundException('workflow sub-category is not a valid array');
+		}
 		const assignedTo = [...new Set(workflow.Final_Level.map(user => user.name).flat())];
 		updateTasksDto.type = "Final Level";
 		updateTasksDto.status = "Pending Review (Final Level)";
 		updateTasksDto.complaints.status = "Pending Review (Final Level)";
 		await this.handleFileUpload(file, 'firstLevel', updateTasksDto);
 		updateTasksDto.assignedTo = assignedTo;
+		console.log(status)
+
+		if(status === "Pending (First Level)"){
+			const number = updateTasksDto.complaints.customer.phone_number || updateTasksDto.complaints.tenant.phone_number
+			this.sendSmsToCustomer(number, updateTasksDto.complaints.complaintId, updateTasksDto.complaints.metadata?.IsArabic, 'reviewing')	
+		}
+
 	}
 
 	private async handleFinalRoleAction(updateTasksDto: any, workflow: any) {
+		if (!Array.isArray(workflow.CX_Team)) {
+			throw new NotFoundException('CX_Team workflow is not a valid array');
+		}
 		const assignedTo = [...new Set(workflow.CX_Team.map(user => user.name).flat())];
 		updateTasksDto.type = "CX Check Team";
 		updateTasksDto.status = "Pending (CX Team)";
@@ -184,6 +204,9 @@ export class TasksServices {
 	}
 
 	private async handleResendRoleAction(updateTasksDto: any, workflow: any, file: any) {
+		if (!Array.isArray(workflow.Final_Level)) {
+			throw new NotFoundException('Final_Level workflow is not a valid array');
+		}
 		const assignedTo = [...new Set(workflow.Final_Level.map(user => user.name).flat())];
 		updateTasksDto.type = "Final Level";
 		updateTasksDto.status = "Pending Review (Final Level)";
@@ -193,6 +216,10 @@ export class TasksServices {
 	}
 
 	private async handleEscalationAction(updateTasksDto: any, workflow: any, level: number) {
+		if (!workflow[`Level_${level}`] || !Array.isArray(workflow[`Level_${level}`])) {
+			throw new NotFoundException(`Workflow escalation level ${level} not found or is not a valid array`);
+		}
+		
 		const assignedTo = [...new Set(workflow[`Level_${level}`].map(user => user.name).flat())];
 		updateTasksDto.type = `Escalated ${level}`;
 		updateTasksDto.status = `Escalated (Level ${level})`;
@@ -200,16 +227,27 @@ export class TasksServices {
 		updateTasksDto.assignedTo = assignedTo;
 	}
 
-	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false) {
+	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false, messageType: string = 'resolved') {
 		const ratingLink = `http://localhost:5173/complaint/${complaintId}/rating`;
-		const message = isArabic 
-			? `زبوننا العزيز،\nتم إغلاق شكوتكم\nيرجى تقييم الخدمة من خلال الرابط\n${ratingLink}`
-			: `Dear Customer,\nWe would like to inform you that your complaint has been resolved.\nPlease rate our service by following the below link:\n${ratingLink}`;
+		let message = '';
+		
+		if (messageType === 'resolved') {
+			message = isArabic 
+				? `زبوننا العزيز،\nتم إغلاق شكوتكم\nيرجى تقييم الخدمة من خلال الرابط\n${ratingLink}`
+				: `Dear Customer,\nWe would like to inform you that your complaint has been resolved.\nPlease rate our service by following the below link:\n${ratingLink}`;
+		} else if (messageType === 'reviewing') {
+			message = isArabic 
+				? `زبوننا العزيز،\nشكوتكم قيد المراجعة حالياً. سنبلغكم بأي جديد.`
+				: `Dear Customer,\nWe would like to inform you that your complaint is now being reviewed. We will keep you updated.`;
+		}
 		
 		await this.smsService.sendSms(null, message, phoneNumber);
 	}
 
 	private async handleCXCheckTeamAction(updateTasksDto: any, workflow: any) {
+		if (!Array.isArray(workflow.CX_Team)) {
+			throw new NotFoundException('workflow sub-category is not a valid array');
+		}
 		const assignedTo = [...new Set(workflow.CX_Team.map(user => user.name).flat())];
 		updateTasksDto.assignedTo = assignedTo;
 		updateTasksDto.type = "GM Team";
@@ -221,7 +259,8 @@ export class TasksServices {
 			await this.sendSmsToCustomer(
 				updateTasksDto.complaints.customer.phone_number,
 				updateTasksDto.complaints.complaintId,
-				updateTasksDto.complaints.metadata?.IsArabic
+				updateTasksDto.complaints.metadata?.IsArabic,
+				'resolved'
 			);
 		}
 	}
@@ -237,8 +276,44 @@ export class TasksServices {
 			await this.sendSmsToCustomer(
 				updateTasksDto.complaints.customer.phone_number,
 				updateTasksDto.complaints.complaintId,
-				updateTasksDto.complaints.metadata?.IsArabic
+				updateTasksDto.complaints.metadata?.IsArabic,
+				'resolved'
 			);
+		}
+	}
+
+	private async validateWorkflow(workflow: any, action_role: string): Promise<void> {
+		if (!workflow) {
+			throw new NotFoundException('Workflow not found for this touchpoint');
+		}
+
+		// Check for required workflow components based on the action role
+		switch (action_role) {
+			case 'CX_Team':
+				if (!workflow.First_Level || !Array.isArray(workflow.First_Level) || !workflow.GM || !Array.isArray(workflow.GM)) {
+					throw new NotFoundException('workflow sub-category missing , or they are not valid arrays');
+				}
+				break;
+			case 'first_role':
+				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
+			case 'final_role':
+				if (!workflow.CX_Team || !Array.isArray(workflow.CX_Team)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
+			case 'resend_role':
+				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
+			case 'CX_Check_Team':
+				if (!workflow.CX_Team || !Array.isArray(workflow.CX_Team)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
 		}
 	}
 
@@ -249,7 +324,7 @@ export class TasksServices {
 		if (data) {
 			await this.complaintsRepository.update({ id: data.id }, data);
 			await this.elasticService.updateDocument('complaints', data.id, data);
-			updateTasksDto.name = data.name;
+			// updateTasksDto.name = data.name;
 			updateTasksDto.complaints = data;
 		}
 
@@ -258,6 +333,7 @@ export class TasksServices {
 			throw new NotFoundException(`Touchpoint with ID ${data.touchpointId} not found`);
 		}
 		const workflow = touchpoint.workflow;
+		await this.validateWorkflow(workflow, updateTasksDto.action_role);
 
 		switch (updateTasksDto.action_role) {
 			case 'CX_Team':
@@ -274,9 +350,13 @@ export class TasksServices {
 				break;
 			case 'CX_Check_Team':
 				await this.handleCXCheckTeamAction(updateTasksDto, workflow);
+				updateTasksDto.complaints.metadata.closed_at = new Date();
+				updateTasksDto.complaints.closed_by = updateTasksDto.actions["CX_Call"].actor;
 				break;
 			case 'GM_Team':
 				await this.handleGMTeamAction(updateTasksDto);
+				updateTasksDto.complaints.metadata.closed_at = new Date();
+				updateTasksDto.complaints.metadata.closed_by = updateTasksDto.actions["Close"].actor;
 				break;
 		}
 
@@ -287,7 +367,6 @@ export class TasksServices {
 		} else if (updateTasksDto.type === "Escalated (Level 3)") {
 			await this.handleEscalationAction(updateTasksDto, workflow, 3);
 		}
-
 		await this.updateComplaintStatus(updateTasksDto.complaints);
 
 		const elastic_data = { ...updateTasksDto };
@@ -303,13 +382,15 @@ export class TasksServices {
 	}
 
 	async updateRequest(id: string, updateTasksDto: UpdateTaskServicesDto) {
-		// const task_data = await this.findOne(id)
 		const data = updateTasksDto.complaints
 		const touchpoint = await this.touchPointsService.findOne(data.touchpointId);
 		if (!touchpoint) {
 			throw new NotFoundException(`Touchpoint with ID ${data.touchpointId} not found`);
 		}
 		const workflow = touchpoint.workflow;
+		if (!workflow || !workflow.First_Level || !Array.isArray(workflow.First_Level)) {
+			throw new NotFoundException('Workflow or First_Level roles not found for this touchpoint, or First_Level is not a valid array');
+		}
 		
 		const assignedTo = [...new Set(workflow.First_Level.map(user => user.name).flat())];
 		updateTasksDto.type = "Re-sent"

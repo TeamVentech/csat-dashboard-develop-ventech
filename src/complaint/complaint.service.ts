@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Complaints } from './entities/complaint.entity';
@@ -31,6 +31,16 @@ export class ComplaintsService {
   ) { }
 
   async create(createComplaintsDto: CreateComplaintServicesDto) {
+    // Check if incident time is in the future
+    if (createComplaintsDto.metadata?.time_incident) {
+      const incidentTime = new Date(createComplaintsDto.metadata.time_incident);
+      const currentTime = new Date();
+      
+      if (incidentTime.getTime() > currentTime.getTime()) {
+        throw new BadRequestException('Incident time cannot be in the future');
+      }
+    }
+    
     if(createComplaintsDto.type === "Survey Complaint"){
       const survey = await this.SurveyService.findOne(createComplaintsDto.metadata.survey_id)
       const question =  survey.metadata.questions.filter(user => user.id === createComplaintsDto.metadata.question_id)
@@ -93,6 +103,9 @@ export class ComplaintsService {
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
     const complaint_response = await this.elasticService.indexData('complaints', complaint.id, complaint);
+    if (!Array.isArray(touchpoint.workflow.CX_Team)) {
+      throw new NotFoundException('workflow sub-category is not a valid ');
+    }
     let assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
     if(createComplaintsDto.type === "Survey Complaint"){
       assignedTo = ["Super_Admin"]

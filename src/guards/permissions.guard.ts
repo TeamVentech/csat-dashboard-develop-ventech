@@ -26,7 +26,7 @@ import {
       const user = request.user;
       const role = await this.rolesService.findOne(user.role);
       
-      // // Check if the role version in the token matches the current role versions
+      // // Check if the role version in the token matches the current role versions $2b$10$KM190z7xIYEOGApd5XtNyOqFXe.rvpFVB/SKi/m9Y/eTPuFys9g8q
       // if (user.roleVersion !== role.version) {
       //   throw new UnauthorizedException('Your permissions have been updated. Please login again.');
       // }
