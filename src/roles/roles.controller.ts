@@ -35,13 +35,11 @@ export class RolesController {
   }
 
   @Get(':name')
-  @Permissions('Admin::read')
   findOne(@Param('name') name: string) {
     return this.rolesService.findOne(name);
   }
 
   @Patch(':name')
-  @Permissions('Admin::update')
   update(@Param('name') name: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(name, updateRoleDto);
   }
