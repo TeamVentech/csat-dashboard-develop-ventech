@@ -146,7 +146,7 @@ export class TasksServices {
 			complaintId,
 			"System",
 			"1",
-			`http://localhost:5173/complaint/${complaintId}/details`
+			`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaintId}/details`
 		);
 	}
 
@@ -186,7 +186,7 @@ export class TasksServices {
 		console.log(status)
 
 		if(status === "Pending (First Level)"){
-			const number = updateTasksDto.complaints.customer.phone_number || updateTasksDto.complaints.tenant.phone_number
+			const number = updateTasksDto?.complaints?.customer?.phone_number || updateTasksDto?.complaints?.tenant?.phone_number
 			this.sendSmsToCustomer(number, updateTasksDto.complaints.complaintId, updateTasksDto.complaints.metadata?.IsArabic, 'reviewing')	
 		}
 
@@ -211,7 +211,11 @@ export class TasksServices {
 		updateTasksDto.type = "Final Level";
 		updateTasksDto.status = "Pending Review (Final Level)";
 		updateTasksDto.complaints.status = "Pending Review (Final Level)";
+		if(!file?.originalname){
+			updateTasksDto.actions['firstResend'].Attach = null
+		}
 		await this.handleFileUpload(file, 'firstResend', updateTasksDto);
+
 		updateTasksDto.assignedTo = assignedTo;
 	}
 
@@ -228,7 +232,7 @@ export class TasksServices {
 	}
 
 	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false, messageType: string = 'resolved') {
-		const ratingLink = `http://localhost:5173/complaint/${complaintId}/rating`;
+		const ratingLink = `https://main.dy9kln3badsnq.amplifyapp.com//complaint/${complaintId}/rating`;
 		let message = '';
 		
 		if (messageType === 'resolved') {
@@ -351,7 +355,7 @@ export class TasksServices {
 			case 'CX_Check_Team':
 				await this.handleCXCheckTeamAction(updateTasksDto, workflow);
 				updateTasksDto.complaints.metadata.closed_at = new Date();
-				updateTasksDto.complaints.closed_by = updateTasksDto.actions["CX_Call"].actor;
+				updateTasksDto.complaints.metadata.closed_by = updateTasksDto.actions["CX_Call"].actor;
 				break;
 			case 'GM_Team':
 				await this.handleGMTeamAction(updateTasksDto);
@@ -417,7 +421,7 @@ export class TasksServices {
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
 		const email_user =  [...new Set(users.map(user => user.email).flat())]
-		this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`http://localhost:5173/complaint/${complaint_update.id}/details`)
+		this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`https://main.dy9kln3badsnq.amplifyapp.com//complaint/${complaint_update.id}/details`)
 	
 		return this.findOne(id);
 	}

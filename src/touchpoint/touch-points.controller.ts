@@ -64,7 +64,6 @@ export class TouchPointsController {
   }
 
   @Get('category/:id')
-  @Permissions('Lookups::read')
   findByCategory(@Param('id') id: string) {
     return this.touchpointsService.findByCategory(id);
   }
