@@ -1,9 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Corporate } from './entities/corporates.entity';
 import { CreateCorporateDto } from './dto/create.dto';
 import { UpdateCorporateDto } from './dto/update.dto';
+import { PhoneValidator } from '../utils/phone-validator.util';
 
 @Injectable()
 export class CorporatesService {
@@ -13,8 +14,22 @@ export class CorporatesService {
   ) { }
 
   async create(createCorporateDto: CreateCorporateDto): Promise<Corporate> {
-    const Corporate = this.corporateRepository.create(createCorporateDto);
-    return this.corporateRepository.save(Corporate);
+    try {
+      // Format phone number if provided
+      if (createCorporateDto.phone_number) {
+        createCorporateDto.phone_number = PhoneValidator.formatPhoneNumber(createCorporateDto.phone_number);
+      }
+      
+      // Format email to lowercase if provided
+      if (createCorporateDto.email) {
+        createCorporateDto.email = createCorporateDto.email.toLowerCase();
+      }
+      
+      const Corporate = this.corporateRepository.create(createCorporateDto);
+      return this.corporateRepository.save(Corporate);
+    } catch (error) {
+      throw new HttpException(error.message || 'Failed to create corporate', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -73,6 +88,17 @@ export class CorporatesService {
 
   async update(id: string, updateCorporateDto: UpdateCorporateDto): Promise<Corporate> {
     await this.findOne(id);
+    
+    // Format phone number if provided in update
+    if (updateCorporateDto.phone_number) {
+      updateCorporateDto.phone_number = PhoneValidator.formatPhoneNumber(updateCorporateDto.phone_number);
+    }
+    
+    // Format email to lowercase if provided
+    if (updateCorporateDto.email) {
+      updateCorporateDto.email = updateCorporateDto.email.toLowerCase();
+    }
+    
     await this.corporateRepository.update(id, updateCorporateDto);
     return this.findOne(id);
   }

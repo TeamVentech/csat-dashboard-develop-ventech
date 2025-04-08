@@ -134,7 +134,7 @@ export class TasksServices {
 		}
 	}
 
-	private async sendNotificationEmail(assignedTo: string[], complaintId: string) {
+	private async sendNotificationEmail(assignedTo: string[], complaintId: string, complaint_id: string) {
 		try {
 			const users = await this.usersService.getUsersByRoles(assignedTo);
 			const email_users = [...new Set(users.map(user => user.email).flat())];
@@ -147,7 +147,7 @@ export class TasksServices {
 				complaintId,
 				"System",
 				"1",
-				`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaintId}/details`
+				`https://main.dy9kln3badsnq.amplifyapp.com/services/${complaint_id}/details`
 			);
 			
 			if (!emailResult.success) {
@@ -177,6 +177,7 @@ export class TasksServices {
 			updateTasksDto.type = "Disapprove";
 			updateTasksDto.complaints.status = "Disapprove";
 			updateTasksDto.status = "Disapprove";
+
 			updateTasksDto.assignedTo = assignedTo;
 		}
 	}
@@ -196,7 +197,7 @@ export class TasksServices {
 
 		if(status === "Pending (First Level)"){
 			const number = updateTasksDto?.complaints?.customer?.phone_number || updateTasksDto?.complaints?.tenant?.phone_number
-			this.sendSmsToCustomer(number, updateTasksDto.complaints.complaintId, updateTasksDto.complaints.metadata?.IsArabic, 'reviewing')	
+			this.sendSmsToCustomer(number, updateTasksDto.complaints.id, updateTasksDto.complaints.metadata?.IsArabic, 'reviewing')	
 		}
 
 	}
@@ -241,7 +242,7 @@ export class TasksServices {
 	}
 
 	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false, messageType: string = 'resolved') {
-		const ratingLink = `https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaintId}/rating`;
+		const ratingLink = `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaintId}/rating`;
 		let message = '';
 		
 		if (messageType === 'resolved') {
@@ -271,7 +272,7 @@ export class TasksServices {
 		if (updateTasksDto.complaints.customer?.phone_number) {
 			await this.sendSmsToCustomer(
 				updateTasksDto.complaints.customer.phone_number,
-				updateTasksDto.complaints.complaintId,
+				updateTasksDto.complaints.id,
 				updateTasksDto.complaints.metadata?.IsArabic,
 				'resolved'
 			);
@@ -279,7 +280,7 @@ export class TasksServices {
 		if(updateTasksDto.complaints.tenant?.phone_number){
 			await this.sendSmsToCustomer(
 				updateTasksDto.complaints.tenant.phone_number,
-				updateTasksDto.complaints.complaintId,
+				updateTasksDto.complaints.id,
 				updateTasksDto.complaints.metadata?.IsArabic,
 				'resolved'
 			);
@@ -296,7 +297,7 @@ export class TasksServices {
 		if (updateTasksDto?.complaints?.customer?.phone_number) {
 			await this.sendSmsToCustomer(
 				updateTasksDto?.complaints?.customer?.phone_number,
-				updateTasksDto.complaints.complaintId,
+				updateTasksDto.complaints.id,
 				updateTasksDto.complaints.metadata?.IsArabic,
 				'resolved'
 			);
@@ -304,7 +305,7 @@ export class TasksServices {
 		if(updateTasksDto?.complaints?.tenant?.phone_number){
 			await this.sendSmsToCustomer(
 				updateTasksDto?.complaints?.tenant?.phone_number,
-				updateTasksDto.complaints.complaintId,
+				updateTasksDto.complaints.id,
 				updateTasksDto.complaints.metadata?.IsArabic,
 				'resolved'
 			);
@@ -367,6 +368,10 @@ export class TasksServices {
 		switch (updateTasksDto.action_role) {
 			case 'CX_Team':
 				await this.handleCXTeamAction(updateTasksDto, workflow);
+				if(updateTasksDto?.actions["Confirm"]?.status === "Disapprove"){
+					updateTasksDto.complaints.metadata.closed_at = new Date();
+					updateTasksDto.complaints.metadata.closed_by = updateTasksDto.actions["Confirm"].actor;
+				}
 				break;
 			case 'first_role':
 				await this.handleFirstRoleAction(updateTasksDto, workflow, file);
@@ -399,13 +404,14 @@ export class TasksServices {
 		await this.updateComplaintStatus(updateTasksDto.complaints);
 
 		const elastic_data = { ...updateTasksDto };
+		const complaint_id = updateTasksDto.complaints.id
 		delete updateTasksDto.complaints;
 		delete updateTasksDto.action_role;
 
 		await this.tasksRepository.update(id, updateTasksDto);
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 
-		this.sendNotificationEmail(updateTasksDto.assignedTo, data.id);
+		this.sendNotificationEmail(updateTasksDto.assignedTo, data.id, complaint_id);
 
 		return this.findOne(id);
 	}
@@ -457,7 +463,7 @@ export class TasksServices {
 				complaint_update.id,  
 				"System", 
 				"1",
-				`https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaint_update.id}/details`
+				`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint_update.id}/details`
 			);
 			
 			if (!emailResult.success) {

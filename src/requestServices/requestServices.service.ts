@@ -21,7 +21,11 @@ import { json } from 'stream/consumers';
 import { instanceToPlain } from 'class-transformer';
 import * as moment from 'moment';
 import { AddedValueServiceDto } from './dto/added-value-service.dto';
-import { WheelchairStrollerHandler, PowerBankHandler, HandsfreeHandler } from './handlers';
+import {
+  WheelchairStrollerHandler,
+  PowerBankHandler,
+  HandsfreeHandler,
+} from './handlers';
 import { SmsService } from './services/sms.service';
 import { ComplaintsService } from 'complaint/complaint.service';
 import { AddedValueServiceHandler } from './handlers/added-value-service.handler';
@@ -41,7 +45,7 @@ export class RequestServicesService {
     private readonly smsService: SmsService,
     private readonly complaintsService: ComplaintsService,
     private readonly addedValueServiceHandler: AddedValueServiceHandler,
-  ) { }
+  ) {}
 
   async create(createRequestServicesDto: CreateRequestServicesDto) {
     try {
@@ -150,7 +154,7 @@ export class RequestServicesService {
             : 'en';
           const message =
             SmsMessage[createRequestServicesDto.type]['Sold'][language];
-          await this.smsService.sendSms(numbers, message, numbers);
+          await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`, numbers);
         }
       } else {
         if (createRequestServicesDto.type === 'Found Child') {
@@ -173,7 +177,7 @@ export class RequestServicesService {
             : 'en';
           const message =
             SmsMessage[createRequestServicesDto.type][
-            createRequestServicesDto.state
+              createRequestServicesDto.state
             ][language];
           await this.smsService.sendSms(numbers, message, numbers);
         }
@@ -236,14 +240,15 @@ export class RequestServicesService {
 
   async addedValueService(createRequestServicesDto: AddedValueServiceDto) {
     try {
-      const numbers = createRequestServicesDto?.metadata?.customer?.phone_number;
-      
+      const numbers =
+        createRequestServicesDto?.metadata?.customer?.phone_number;
+
       if (createRequestServicesDto.type !== 'Handsfree Request') {
-        // await this.addedValueServiceHandler.checkExistingCases(
-        //   createRequestServicesDto.type,
-        //   numbers,
-        //   'Item Returned'
-        // );
+        await this.addedValueServiceHandler.checkExistingCases(
+          createRequestServicesDto.type,
+          numbers,
+          'Item Returned'
+        );
 
         createRequestServicesDto.name = 'Added-Value Services';
         createRequestServicesDto.state = 'In Service';
@@ -252,18 +257,31 @@ export class RequestServicesService {
           createRequestServicesDto.state = 'Delivery Requested';
         }
 
-        const Service_data = await this.addedValueServiceHandler.handleServiceAvailability(createRequestServicesDto);
+        const Service_data =
+          await this.addedValueServiceHandler.handleServiceAvailability(
+            createRequestServicesDto,
+          );
         createRequestServicesDto.metadata.service = Service_data;
       }
 
-      await this.addedValueServiceHandler.handleCustomerCreation(createRequestServicesDto.metadata.customer);
+      await this.addedValueServiceHandler.handleCustomerCreation(
+        createRequestServicesDto.metadata.customer,
+      );
 
-      const serviceData = this.requestServicesRepository.create(createRequestServicesDto);
-      const savedService = (await this.requestServicesRepository.save(serviceData)) as unknown as RequestServices;
+      const serviceData = this.requestServicesRepository.create(
+        createRequestServicesDto,
+      );
+      const savedService = (await this.requestServicesRepository.save(
+        serviceData,
+      )) as unknown as RequestServices;
 
       if (savedService) {
         const transformedData = instanceToPlain(savedService);
-        await this.elasticService.indexData('services', savedService.id, transformedData);
+        await this.elasticService.indexData(
+          'services',
+          savedService.id,
+          transformedData,
+        );
       }
 
       return savedService;
@@ -277,29 +295,43 @@ export class RequestServicesService {
 
   async addedValueServiceHandFree(createRequestServicesDto: any) {
     try {
-      const numbers = createRequestServicesDto?.metadata?.customer?.phone_number;
-      
+      const numbers =
+        createRequestServicesDto?.metadata?.customer?.phone_number;
+
       if (createRequestServicesDto.type === 'Handsfree Request') {
         await this.addedValueServiceHandler.checkExistingCases(
           createRequestServicesDto.type,
           numbers,
-          'Bags Returned'
+          'Bags Returned',
         );
 
         createRequestServicesDto.name = 'Added-Value Services';
         createRequestServicesDto.state = 'In Service';
-        
-        createRequestServicesDto = this.addedValueServiceHandler.setupHandsfreeRequestMetadata(createRequestServicesDto);
+
+        createRequestServicesDto =
+          this.addedValueServiceHandler.setupHandsfreeRequestMetadata(
+            createRequestServicesDto,
+          );
       }
 
-      await this.addedValueServiceHandler.handleCustomerCreation(createRequestServicesDto.metadata.customer);
+      await this.addedValueServiceHandler.handleCustomerCreation(
+        createRequestServicesDto.metadata.customer,
+      );
 
-      const serviceData = this.requestServicesRepository.create(createRequestServicesDto);
-      const savedService = (await this.requestServicesRepository.save(serviceData)) as unknown as RequestServices;
+      const serviceData = this.requestServicesRepository.create(
+        createRequestServicesDto,
+      );
+      const savedService = (await this.requestServicesRepository.save(
+        serviceData,
+      )) as unknown as RequestServices;
 
       if (savedService) {
         const transformedData = instanceToPlain(savedService);
-        await this.elasticService.indexData('services', savedService.id, transformedData);
+        await this.elasticService.indexData(
+          'services',
+          savedService.id,
+          transformedData,
+        );
       }
 
       return savedService;
@@ -389,7 +421,7 @@ export class RequestServicesService {
       if (
         !updateRequestServicesDto.metadata?.statusChangeReason ||
         updateRequestServicesDto.metadata.statusChangeReason !==
-        'Automatic status change after 24 hours'
+          'Automatic status change after 24 hours'
       ) {
         const now = moment();
         const createdAt = moment(data.createdAt);
@@ -415,7 +447,7 @@ export class RequestServicesService {
         : 'en';
       const message =
         SmsMessage[updateRequestServicesDto.type][
-        updateRequestServicesDto.state
+          updateRequestServicesDto.state
         ][language];
       await this.smsService.sendSms(numbers, message, numbers);
     }
@@ -469,7 +501,7 @@ export class RequestServicesService {
         : 'en';
       const message =
         SmsMessage[updateRequestServicesDto.type][
-        updateRequestServicesDto.state
+          updateRequestServicesDto.state
         ][language];
       await this.smsService.sendSms(
         numbers,
@@ -511,7 +543,7 @@ export class RequestServicesService {
       updateRequestServicesDto.state = 'Awaiting Collection';
       const message =
         SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
-        language
+          language
         ];
       await this.smsService.sendSms(numbers, message, numbers);
     }
@@ -526,21 +558,25 @@ export class RequestServicesService {
       updateRequestServicesDto.state = 'Awaiting Collection';
       const message =
         SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
-        language
+          language
         ];
       await this.smsService.sendSms(numbers, message, numbers);
     }
 
     if (updateRequestServicesDto?.actions === 'Send Damage SMS') {
-      const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number;
-      const language = updateRequestServicesDto?.metadata?.IsArabic ? 'ar' : 'en';
+      const numbers =
+        updateRequestServicesDto?.metadata?.customer?.phone_number;
+      const language = updateRequestServicesDto?.metadata?.IsArabic
+        ? 'ar'
+        : 'en';
       updateRequestServicesDto.metadata.sendDamageSms = true;
       let message = '';
       if (updateRequestServicesDto.type === 'Power Bank Request') {
         console.log(updateRequestServicesDto.metadata.condition);
-        message = SmsMessage[updateRequestServicesDto.type][
-          updateRequestServicesDto.metadata.condition
-        ][language];
+        message =
+          SmsMessage[updateRequestServicesDto.type][
+            updateRequestServicesDto.metadata.condition
+          ][language];
       } else {
         message = SmsMessage['Wheelchair Request']['Damaged'][language];
       }
@@ -586,7 +622,7 @@ export class RequestServicesService {
         : 'en';
       const message =
         SmsMessage[updateRequestServicesDto.type]['In Progress Day 3'][
-        language
+          language
         ];
       await this.smsService.sendSms(numbers, message, numbers);
     }
@@ -615,29 +651,46 @@ export class RequestServicesService {
       await this.smsService.sendSms(numbers, message, numbers);
     }
     if (updateRequestServicesDto?.actions === 'In Service') {
-        const numbers = data?.metadata?.customer?.phone_number;
-        const language = updateRequestServicesDto?.metadata?.IsArabic ? 'ar' : 'en';
-        const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language];
-        await this.smsService.sendSms(numbers, message, numbers);
+      const numbers = data?.metadata?.customer?.phone_number;
+      const language = updateRequestServicesDto?.metadata?.IsArabic
+        ? 'ar'
+        : 'en';
+      const message =
+        SmsMessage[updateRequestServicesDto.type][
+          updateRequestServicesDto.state
+        ][language];
+      await this.smsService.sendSms(numbers, message, numbers);
     }
 
     // Handle Wheelchair & Stroller Request
     if (updateRequestServicesDto.type === 'Wheelchair & Stroller Request') {
       if (updateRequestServicesDto.metadata.type === 'Wheelchair') {
-        await this.wheelchairStrollerHandler.handleWheelchairRequest(updateRequestServicesDto, id);
+        await this.wheelchairStrollerHandler.handleWheelchairRequest(
+          updateRequestServicesDto,
+          id,
+        );
       } else if (updateRequestServicesDto.metadata.type === 'Stroller') {
-        await this.wheelchairStrollerHandler.handleStrollerRequest(updateRequestServicesDto, id);
+        await this.wheelchairStrollerHandler.handleStrollerRequest(
+          updateRequestServicesDto,
+          id,
+        );
       }
     }
 
     // Handle Power Bank Request
     if (updateRequestServicesDto.type === 'Power Bank Request') {
-      await this.powerBankHandler.handlePowerBankRequest(updateRequestServicesDto, id);
+      await this.powerBankHandler.handlePowerBankRequest(
+        updateRequestServicesDto,
+        id,
+      );
     }
 
     // Handle Handsfree Request
     if (updateRequestServicesDto.type === 'Handsfree Request') {
-      await this.handsfreeHandler.handleHandsfreeRequest(updateRequestServicesDto, id);
+      await this.handsfreeHandler.handleHandsfreeRequest(
+        updateRequestServicesDto,
+        id,
+      );
     }
 
     if (
@@ -671,7 +724,7 @@ export class RequestServicesService {
         : 'en';
       const message =
         SmsMessage[updateRequestServicesDto.type][
-        updateRequestServicesDto.state
+          updateRequestServicesDto.state
         ][language];
       if (
         updateRequestServicesDto.type === 'Child Found' ||
@@ -703,7 +756,7 @@ export class RequestServicesService {
   async rating(id: string, rate: any) {
     try {
       const data = await this.findOneColumn(id);
-      
+
       // If we found the service request, update its rating
       data.rating = rate.rating;
       await this.requestServicesRepository.update(id, data);
@@ -719,17 +772,25 @@ export class RequestServicesService {
           try {
             return await this.complaintsService.rating(id, rate);
           } catch (ratingError) {
-            console.error('Error updating complaint rating:', ratingError.message);
-            
+            console.error(
+              'Error updating complaint rating:',
+              ratingError.message,
+            );
+
             // Try to update using our own implementation that handles multiple primary keys
             complaint.rating = rate.rating;
-            
+
             // Use the ElasticSearch update instead of direct repository update
             try {
-              await this.elasticService.updateDocument('complaints', id, { rating: rate.rating });
+              await this.elasticService.updateDocument('complaints', id, {
+                rating: rate.rating,
+              });
               return await this.complaintsService.findOne(id);
             } catch (elasticError) {
-              console.error('Error updating complaint in ElasticSearch:', elasticError.message);
+              console.error(
+                'Error updating complaint in ElasticSearch:',
+                elasticError.message,
+              );
               // Return the complaint object with updated rating even if we couldn't save it
               return complaint;
             }

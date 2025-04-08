@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Customer } from './entities/customers.entity';
 import { CreateCustomerDto } from './dto/create.dto';
 import { UpdateCustomerDto } from './dto/update.dto';
+import { PhoneValidator } from '../utils/phone-validator.util';
 
 @Injectable()
 export class CustomersService {
@@ -21,7 +22,7 @@ export class CustomersService {
       
       // Format phone number to include country code if needed
       if (createCustomerDto.phone_number) {
-        createCustomerDto.phone_number = this.formatPhoneNumber(createCustomerDto.phone_number);
+        createCustomerDto.phone_number = PhoneValidator.formatPhoneNumber(createCustomerDto.phone_number);
       }
       
       if (createCustomerDto.dob) {
@@ -60,25 +61,6 @@ export class CustomersService {
     } catch (error) {
         throw new HttpException(error, HttpStatus.NOT_FOUND);
     }
-  }
-
-  // Format phone number to ensure it has the +962 country code
-  private formatPhoneNumber(phone: string): string {
-    // Remove any spaces or special characters
-    phone = phone.replace(/\s+/g, '');
-    
-    // If it starts with 0, replace with +962
-    if (phone.startsWith('0')) {
-      return '+962' + phone.substring(1);
-    }
-    
-    // If it already has the country code, return as is
-    if (phone.startsWith('+962')) {
-      return phone;
-    }
-    
-    // For any other format, prepend +962 (this is a fallback)
-    return '+962' + phone;
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -142,6 +124,12 @@ export class CustomersService {
 
   async update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
     await this.findOne(id);
+    
+    // Format phone number if provided in update
+    if (updateCustomerDto.phone_number) {
+      updateCustomerDto.phone_number = PhoneValidator.formatPhoneNumber(updateCustomerDto.phone_number);
+    }
+    
     await this.customerRepository.update(id, updateCustomerDto);
     return this.findOne(id);
   }

@@ -1,9 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tenant } from './entities/tenants.entity';
 import { CreateTenantDto } from './dto/create.dto';
 import { UpdateTenantDto } from './dto/update.dto';
+import { PhoneValidator } from '../utils/phone-validator.util';
 
 @Injectable()
 export class TenantsService {
@@ -13,8 +14,26 @@ export class TenantsService {
   ) { }
 
   async create(createTenantDto: CreateTenantDto) {
-    const tenant = this.tenantRepository.create(createTenantDto);
-    return this.tenantRepository.save(tenant);
+    try {
+      // Format phone number if provided
+      if (createTenantDto.phone_number) {
+        createTenantDto.phone_number = PhoneValidator.formatPhoneNumber(createTenantDto.phone_number);
+      }
+      
+      // Format emails to lowercase if provided
+      if (createTenantDto.email) {
+        createTenantDto.email = createTenantDto.email.toLowerCase();
+      }
+      
+      if (createTenantDto.manager_email) {
+        createTenantDto.manager_email = createTenantDto.manager_email.toLowerCase();
+      }
+      
+      const tenant = this.tenantRepository.create(createTenantDto);
+      return this.tenantRepository.save(tenant);
+    } catch (error) {
+      throw new HttpException(error.message || 'Failed to create tenant', HttpStatus.BAD_REQUEST);
+    }
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -58,6 +77,21 @@ export class TenantsService {
 
   async update(id: string, updateTenantDto: UpdateTenantDto): Promise<Tenant> {
     await this.findOne(id);
+    
+    // Format phone number if provided in update
+    if (updateTenantDto.phone_number) {
+      updateTenantDto.phone_number = PhoneValidator.formatPhoneNumber(updateTenantDto.phone_number);
+    }
+    
+    // Format emails to lowercase if provided
+    if (updateTenantDto.email) {
+      updateTenantDto.email = updateTenantDto.email.toLowerCase();
+    }
+    
+    if (updateTenantDto.manager_email) {
+      updateTenantDto.manager_email = updateTenantDto.manager_email.toLowerCase();
+    }
+    
     await this.tenantRepository.update(id, updateTenantDto);
     return this.findOne(id);
   }

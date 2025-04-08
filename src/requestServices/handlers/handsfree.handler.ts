@@ -77,14 +77,14 @@ export class HandsfreeHandler {
     )];
 
     let message = {
-      "ar": `زبوننا العزيز،\nشكرا لاستخدام خدمة الأمانات. تم إرجاع حقائب عدد (${uniqueIdentifiers.length}) بنجاح. رقم البطاقة: ${uniqueIdentifiers.join(', ')}.\nنرجو تقييم خدمتنا من خلال الرابط التالي:`,
-      "en": `Dear Customer,\nThank you for using our Handsfree service. Your bags have been returned successfully.\nTag numbers: ${uniqueIdentifiers.join(', ')}. Number of bags: ${uniqueIdentifiers.length}.\nPlease rate our service through the following link:`
+      "ar": `شكراً لك على استخدام خدمة الأمانات. نرجو أن تكون تجربة مميزة لك.\nيرجى تقييم الخدمة من خلال الرابط\nالرابط`,
+      "en": `Thank you for your using our Handsfree service. We hope you had an enjoyable experience.\nPlease rate our service by following the below link:\nLINK`
     };
 
     const messages = message[language];
     await this.smsService.sendSms(
       numbers,
-      `${messages}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${id}/rating`,
+      `${messages.replace('LINK', `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${id}/rating`).replace('الرابط', `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${id}/rating`)}`,
       numbers
     );
   }

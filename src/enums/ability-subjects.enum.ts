@@ -4,6 +4,7 @@ export enum AbilitySubjects {
     CUSTOMER_CARE_CENTER = 'Customer Care Center',
     SURVEY_MANAGEMENT = 'Survey Management',
     COMPLAINTS = 'Complaints',
+    WORKFLOW = 'Workflow',
     STOCK_MANAGEMENT = 'Stock Management',
     REPORTING_ENGINE = 'Reporting Engine',
     LOOKUPS = 'Lookups',
