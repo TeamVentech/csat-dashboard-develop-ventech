@@ -135,19 +135,28 @@ export class TasksServices {
 	}
 
 	private async sendNotificationEmail(assignedTo: string[], complaintId: string) {
-		const users = await this.usersService.getUsersByRoles(assignedTo);
-		const email_users = [...new Set(users.map(user => user.email).flat())];
-		await this.emailService.sendEmail(
-			email_users,
-			"nazir.alkahwaji@gmail.com",
-			"Complaint Actions",
-			"Take Actions",
-			" ",
-			complaintId,
-			"System",
-			"1",
-			`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaintId}/details`
-		);
+		try {
+			const users = await this.usersService.getUsersByRoles(assignedTo);
+			const email_users = [...new Set(users.map(user => user.email).flat())];
+			const emailResult = await this.emailService.sendEmail(
+				email_users,
+				"nazir.alkahwaji@gmail.com",
+				"Complaint Actions",
+				"Take Actions",
+				" ",
+				complaintId,
+				"System",
+				"1",
+				`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaintId}/details`
+			);
+			
+			if (!emailResult.success) {
+				console.warn(`Email notification partially failed: ${emailResult.error}`);
+			}
+		} catch (error) {
+			console.error('Failed to send notification email:', error.message);
+			// Don't throw to prevent the process from crashing
+		}
 	}
 
 	private async handleCXTeamAction(updateTasksDto: any, workflow: any) {
@@ -437,7 +446,27 @@ export class TasksServices {
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
 		const email_user =  [...new Set(users.map(user => user.email).flat())]
-		this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaint_update.id}/details`)
+
+		try {
+			const emailResult = await this.emailService.sendEmail(
+				email_user, 
+				"nazir.alkahwaji@gmail.com", 
+				"Complaint Actions", 
+				"Take Actions",
+				" ", 
+				complaint_update.id,  
+				"System", 
+				"1",
+				`https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaint_update.id}/details`
+			);
+			
+			if (!emailResult.success) {
+				console.warn(`Email notification partially failed: ${emailResult.error}`);
+			}
+		} catch (error) {
+			console.error('Failed to send notification email:', error.message);
+			// Don't throw to prevent the process from crashing
+		}
 	
 		return this.findOne(id);
 	}
