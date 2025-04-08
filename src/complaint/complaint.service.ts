@@ -124,7 +124,7 @@ export class ComplaintsService {
     }
     const users = await this.userService.getUsersByRoles(assignedTo)
     const email_user =  [...new Set(users.map(user => user.email).flat())]
-    this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaint.id}/details`)
+    this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaint.id}/details`)
     await this.taskService.create(tasks_payload, complaint)
 
     // Send SMS notification for non-survey complaints

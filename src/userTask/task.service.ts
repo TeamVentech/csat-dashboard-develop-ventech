@@ -232,7 +232,7 @@ export class TasksServices {
 	}
 
 	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false, messageType: string = 'resolved') {
-		const ratingLink = `https://main.dy9kln3badsnq.amplifyapp.com//complaint/${complaintId}/rating`;
+		const ratingLink = `https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaintId}/rating`;
 		let message = '';
 		
 		if (messageType === 'resolved') {
@@ -437,7 +437,7 @@ export class TasksServices {
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
 		const email_user =  [...new Set(users.map(user => user.email).flat())]
-		this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`https://main.dy9kln3badsnq.amplifyapp.com//complaint/${complaint_update.id}/details`)
+		this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint_update.id,  "System", "1",`https://main.d3n0sp6u84gnwb.amplifyapp.com/complaint/${complaint_update.id}/details`)
 	
 		return this.findOne(id);
 	}
