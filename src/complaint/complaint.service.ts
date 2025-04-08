@@ -87,6 +87,7 @@ export class ComplaintsService {
       "tenantId": createComplaintsDto?.tenant?.id,
       "tenant": createComplaintsDto?.tenant,
       "categoryId": createComplaintsDto.category.id,
+      "addedBy": createComplaintsDto.addedBy,
       "touchpointId": createComplaintsDto.touchpoint.id,
       "sections": createComplaintsDto.sections,
       "metadata": createComplaintsDto.metadata,

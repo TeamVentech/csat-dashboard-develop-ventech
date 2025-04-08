@@ -267,6 +267,14 @@ export class TasksServices {
 				'resolved'
 			);
 		}
+		if(updateTasksDto.complaints.tenant?.phone_number){
+			await this.sendSmsToCustomer(
+				updateTasksDto.complaints.tenant.phone_number,
+				updateTasksDto.complaints.complaintId,
+				updateTasksDto.complaints.metadata?.IsArabic,
+				'resolved'
+			);
+		}
 	}
 
 	private async handleGMTeamAction(updateTasksDto: any) {
@@ -276,9 +284,17 @@ export class TasksServices {
 		updateTasksDto.assignedTo = [];
 
 		// Send SMS to customer if phone number is available
-		if (updateTasksDto.complaints.customer?.phone_number) {
+		if (updateTasksDto?.complaints?.customer?.phone_number) {
 			await this.sendSmsToCustomer(
-				updateTasksDto.complaints.customer.phone_number,
+				updateTasksDto?.complaints?.customer?.phone_number,
+				updateTasksDto.complaints.complaintId,
+				updateTasksDto.complaints.metadata?.IsArabic,
+				'resolved'
+			);
+		}
+		if(updateTasksDto?.complaints?.tenant?.phone_number){
+			await this.sendSmsToCustomer(
+				updateTasksDto?.complaints?.tenant?.phone_number,
 				updateTasksDto.complaints.complaintId,
 				updateTasksDto.complaints.metadata?.IsArabic,
 				'resolved'
