@@ -341,6 +341,13 @@ export class RequestServicesService {
       const serviceData = this.requestServicesRepository.create(
         createRequestServicesDto,
       );
+      if(createRequestServicesDto.state === 'Bags Collected'){
+        const number = createRequestServicesDto.metadata.customer.phone_number;
+        const language = createRequestServicesDto?.metadata?.IsArabic ? 'ar' : 'en';
+        const message = SmsMessage[createRequestServicesDto.type][createRequestServicesDto.state][language];
+        await this.smsService.sendSms(number, message, number);
+        // serviceData.state = 'In Service';
+      }
       const savedService = (await this.requestServicesRepository.save(
         serviceData,
       )) as unknown as RequestServices;
