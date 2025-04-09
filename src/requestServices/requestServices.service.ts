@@ -161,8 +161,8 @@ export class RequestServicesService {
           if (createRequestServicesDto.metadata.parents.phone_number) {
             const numbers =
               createRequestServicesDto?.metadata?.parents?.phone_number;
-            const message = createRequestServicesDto.metadata.isArabic
-              ? 'تم العثور على طفلكم المفقود.\n يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.'
+            const message = createRequestServicesDto.metadata.IsArabic
+              ? 'تم العثور على طفلكم تم العثور على طفلكم المفقود.\n يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.'
               : 'Dear Customer,\n Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID.';
             await this.smsService.sendSms(numbers, message, numbers);
             createRequestServicesDto.state = 'Awaiting Collection';
@@ -283,7 +283,24 @@ export class RequestServicesService {
           transformedData,
         );
       }
+      if (createRequestServicesDto.state === 'In Service') {
+        const language = createRequestServicesDto?.metadata?.IsArabic ? 'ar' : 'en';
+        if(createRequestServicesDto.type === 'Power Bank Request'){
+          const message = SmsMessage[createRequestServicesDto.type][createRequestServicesDto.state][language];
+          await this.smsService.sendSms(numbers, message, numbers);
+        }
+        if(createRequestServicesDto.type === 'Wheelchair & Stroller Request'){
+          if(createRequestServicesDto.metadata.type === 'Wheelchair'){
+            const message = SmsMessage['Wheelchair Request'][createRequestServicesDto.state][language];
+            await this.smsService.sendSms(numbers, message, numbers);
+          }
+          if(createRequestServicesDto.metadata.type === 'Stroller'){
+            const message = SmsMessage['Stroller Request'][createRequestServicesDto.state][language];
+            await this.smsService.sendSms(numbers, message, numbers);
+          }
+        }
 
+      }
       return savedService;
     } catch (error) {
       throw new HttpException(
@@ -308,6 +325,9 @@ export class RequestServicesService {
         createRequestServicesDto.name = 'Added-Value Services';
         createRequestServicesDto.state = 'In Service';
 
+        if(createRequestServicesDto.metadata.pickUp){
+          createRequestServicesDto.state = 'Pickup Requested';
+        }
         createRequestServicesDto =
           this.addedValueServiceHandler.setupHandsfreeRequestMetadata(
             createRequestServicesDto,
@@ -626,6 +646,18 @@ export class RequestServicesService {
         ];
       await this.smsService.sendSms(numbers, message, numbers);
     }
+    if (updateRequestServicesDto?.actions === 'in_progress_item_7') {
+      const numbers =
+        updateRequestServicesDto?.metadata?.customer?.phone_number;
+      const language = updateRequestServicesDto?.metadata?.IsArabic
+        ? 'ar'
+        : 'en';
+      const message =
+        SmsMessage[updateRequestServicesDto.type]['Article Not Found'][
+          language
+        ];
+      await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers);
+    }
     if (updateRequestServicesDto?.actions === 'refunded_voucher') {
       const numbers =
         data?.metadata?.customer?.phone_number ||
@@ -727,12 +759,13 @@ export class RequestServicesService {
           updateRequestServicesDto.state
         ][language];
       if (
-        updateRequestServicesDto.type === 'Child Found' ||
+        updateRequestServicesDto.type === 'Found Child' ||
         updateRequestServicesDto.type === 'Lost Child'
       ) {
+        const messageFound = updateRequestServicesDto.metadata.IsArabic ?  message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "نتمنى لكم السلامة"` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`;
         await this.smsService.sendSms(
           numbers,
-          `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/ratin\n "Stay Safe" from City Mall`,
+          `${messageFound}`,
           numbers,
         );
       } else {

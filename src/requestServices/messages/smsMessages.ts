@@ -9,17 +9,17 @@ const  SmsMessage =  {
         "en": "We would like to inform you that your child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID."
       },
       "Closed": {
-        "ar": " تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nنتمنى سلامتكم ",
+        "ar": " تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط ",
         "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\n"
       }
     },
     "Found Child": {
       "Awaiting Collection": {
-        "ar": "تم العثور على طفلكم المفقود. يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
-        "en": "Dear Customer,\Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID:\n"
+        "ar": "تم العثور على طفلكم المفقود.\n يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.",
+        "en": "Dear Customer,\nYour missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID:\n"
       },
       "Closed": {
-        "ar": "تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط\nنتمنى لكم السلامة",
+        "ar": "تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط",
         "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\n"
       }
     },
@@ -37,7 +37,7 @@ const  SmsMessage =  {
         "en": "The case is closed.\nPlease rate our services by following the below link:\n"
       },
       "Article Not Found": {
-        "ar": "زبوننا العزيز،\nلم يتم العثور المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط",
+        "ar": "زبوننا العزيز،\nلم يتم العثور على المفقود. سنبلغكم عند العثور عليه.\nيرجى تقييم الخدمة من خلال الرابط",
         "en": "Dear Customer,\nThe lost item has not been found yet. We will notify you once found.\nPlease rate our service by following the below link:\n"
       },
       "In Progress": {
@@ -47,7 +47,7 @@ const  SmsMessage =  {
       "In Progress Day 3": {
         "ar": "زبوننا العزيز،\n لم يتم العثور على المفقود بعد.\n سنبلغكم عند العثور عليه.",
         "en": "Dear Customer,\n  We would like to inform you that the item has not been found yet.\n We will inform you when it is found."
-      }
+      },
     },
     "Incident Reporting": {
       "Closed": {

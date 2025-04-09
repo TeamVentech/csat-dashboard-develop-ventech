@@ -52,7 +52,7 @@ export class RequestServices {
       'Comments': 'CMT',
       'Corporate Voucher Sale': 'GVS-C',
       'Individual Voucher Sale': 'GVS-I',
-      'Wheelchair & Stroller Request': 'WC',
+      'Wheelchair & Stroller Request': 'W-S',
       'Power Bank Request': 'PB',
       'Handsfree Request': 'HF',
       'Incident Reporting': 'INC',
