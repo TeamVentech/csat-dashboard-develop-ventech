@@ -325,8 +325,8 @@ export class RequestServicesService {
         createRequestServicesDto.name = 'Added-Value Services';
         createRequestServicesDto.state = 'In Service';
 
-        if(createRequestServicesDto.metadata.pickUp){
-          createRequestServicesDto.state = 'Pickup Requested';
+        if(!createRequestServicesDto.metadata.pickUp){
+          createRequestServicesDto.state = 'Bags Collected';
         }
         createRequestServicesDto =
           this.addedValueServiceHandler.setupHandsfreeRequestMetadata(
