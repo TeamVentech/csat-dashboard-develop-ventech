@@ -184,6 +184,7 @@ export class CronsService {
       console.error('Error sending voucher expiry reminders:', error);
     }
   }
+
   async sendSms(data: any, message: any, number: string) {
     const senderId = 'City Mall';
     const numbers = number

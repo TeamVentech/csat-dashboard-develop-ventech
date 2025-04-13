@@ -453,7 +453,10 @@ export class VouchersService {
           }
           
           const language = service?.metadata?.IsArabic ? "ar" : "en";
-          const message = SmsMessage["Individual Voucher Sale"]["Note Extented"][language].replace('(3)', '3');
+          const message ={
+            ar: `ستنتهي صلاحية قسيمة الإهداء خلال 3 أيام.\n استخدمها قريباً\n يرجى تجاهل الرسالة في حال قمت باستخدامها.\n نتمنى لكم تسوّق سعيد`,
+            en: `Your gift voucher expires in (3) days.\nDon't forget to use it soon.\nIf you have used it already, please disregard this text.\nHappy Shopping`
+          }
           
           await this.sendSms(null, message, phoneNumber);
           
@@ -488,7 +491,10 @@ export class VouchersService {
           
           const language = service?.metadata?.IsArabic ? "ar" : "en";
           // Modify message to mention 7 days instead of 3
-          const message = SmsMessage["Individual Voucher Sale"]["Note Extented"][language].replace('(3)', '7');
+          const message ={
+            ar: `ستنتهي صلاحية قسيمة الإهداء خلال 7 أيام.\n استخدمها قريباً\n يرجى تجاهل الرسالة في حال قمت باستخدامها.\n نتمنى لكم تسوّق سعيد`,
+            en: `Your gift voucher expires in (7) days.\nDon't forget to use it soon.\nIf you have used it already, please disregard this text.\nHappy Shopping`
+          }
           
           await this.sendSms(null, message, phoneNumber);
           

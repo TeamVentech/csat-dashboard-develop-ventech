@@ -54,11 +54,20 @@ export class RequestServicesService {
         createRequestServicesDto?.metadata?.customer?.phone_number ||
         createRequestServicesDto?.metadata?.Company?.phone_number;
 
-      // Ensure Incident Reporting cases always start with 'Open' status
       if (createRequestServicesDto.type === 'Incident Reporting') {
-        createRequestServicesDto.state = 'Open'; // Force Open status
-
-        // Add metadata to track the creation time for 24-hour calculation
+        createRequestServicesDto.state = 'Open';
+        if(createRequestServicesDto.metadata.Incident.outcome === 'Resolved'){
+          // Check if solve_date is not in the future
+          const solveDate = new Date(createRequestServicesDto.metadata.solve_date);
+          const currentDate = new Date();
+          
+          if(solveDate > currentDate) {
+            throw new HttpException(
+              'Solve date cannot be in the future',
+              500
+            );
+          }
+        }
         if (!createRequestServicesDto.metadata) {
           createRequestServicesDto.metadata = {};
         }
@@ -233,6 +242,10 @@ export class RequestServicesService {
       }
     } catch (error) {
       console.error('Error sending SMS :', error.message);
+      throw new HttpException(
+        error.message || 'Failed to create added value service',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     return savedService;

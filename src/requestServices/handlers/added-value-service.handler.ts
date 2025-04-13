@@ -18,7 +18,7 @@ export class AddedValueServiceHandler {
       query: {
         bool: {
           must: [
-            { match: { type } },
+            { match: { 'type.keyword': type } },
             { match: { 'metadata.customer.phone_number': phoneNumber } },
           ],
           must_not: [
@@ -27,7 +27,7 @@ export class AddedValueServiceHandler {
         }
       }
     });
-
+    console.log(JSON.stringify(existingCases));
     if (existingCases.totalHits > 0) {
       throw new HttpException(
         'You already have a case that is not closed',

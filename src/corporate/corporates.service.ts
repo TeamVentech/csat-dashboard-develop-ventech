@@ -19,9 +19,11 @@ export class CorporatesService {
       if (createCorporateDto.phone_number) {
         createCorporateDto.phone_number = PhoneValidator.formatPhoneNumber(createCorporateDto.phone_number);
       }
-      
-      // Format email to lowercase if provided
+
       if (createCorporateDto.email) {
+        if (!this.validateEmail(createCorporateDto.email)) {
+          throw new HttpException('Invalid email format', HttpStatus.BAD_REQUEST);
+        }
         createCorporateDto.email = createCorporateDto.email.toLowerCase();
       }
       
@@ -94,13 +96,21 @@ export class CorporatesService {
       updateCorporateDto.phone_number = PhoneValidator.formatPhoneNumber(updateCorporateDto.phone_number);
     }
     
-    // Format email to lowercase if provided
     if (updateCorporateDto.email) {
+      if (!this.validateEmail(updateCorporateDto.email)) {
+        throw new HttpException('Invalid email format', HttpStatus.BAD_REQUEST);
+      }
       updateCorporateDto.email = updateCorporateDto.email.toLowerCase();
     }
+        
     
     await this.corporateRepository.update(id, updateCorporateDto);
     return this.findOne(id);
+  }
+
+  private validateEmail(email: string): boolean {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
   }
 
   async remove(id: string): Promise<void> {

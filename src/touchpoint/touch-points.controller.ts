@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query,  UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
+  UploadedFile,
  } from '@nestjs/common';
 import { TouchPointsService } from './touch-points.service';
 import { CreateTouchPointDto } from './dto/create.dto';
@@ -9,6 +10,7 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('touchpoints')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -20,8 +22,9 @@ export class TouchPointsController {
 
   @Post()
   @Permissions('Lookups::write')
-  create(@Body() createTouchPointDto: any) {
-    return this.touchpointsService.create(createTouchPointDto);
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload  
+  create(@Body() createTouchPointDto: any, @UploadedFile() file: Express.Multer.File) {
+    return this.touchpointsService.create(createTouchPointDto, file);
   }
 
   @Get('grouped-by-category/:type')
@@ -79,10 +82,11 @@ export class TouchPointsController {
     return this.touchpointsService.findLowestRated();
   }
 
-  @Patch(':id')
+  @Patch(':id') 
   @Permissions('Lookups::update')
-  update(@Param('id') id: string, @Body() updateTouchPointDto: any) {
-    return this.touchpointsService.update_touchpoint(id, updateTouchPointDto);
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
+  update(@Param('id') id: string, @Body() updateTouchPointDto: any, @UploadedFile() file: Express.Multer.File) {
+    return this.touchpointsService.update_touchpoint(id, updateTouchPointDto, file);
   }
 
   @Delete(':id')

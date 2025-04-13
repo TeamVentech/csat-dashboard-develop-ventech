@@ -11,6 +11,9 @@ export class Touchpoint {
   @Column({ type: 'jsonb', nullable: true })
   name: any;
 
+  @Column({ nullable: true })
+  avatar: string;
+
   @Column({ default: "0" })
   rating: string;
 

@@ -2,7 +2,16 @@ import { IsNotEmpty, IsOptional, IsString, MaxLength, IsUUID } from 'class-valid
 
 export class CreateTouchPointDto {
   @IsNotEmpty()
+  name_ar: any;
+
+  @IsNotEmpty()
+  name_en: any;
+
+  @IsOptional()
   name: any;
+
+  @IsOptional()
+  avatar: string;
 
   @IsOptional()
   @IsString()

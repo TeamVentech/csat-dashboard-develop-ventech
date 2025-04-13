@@ -6,9 +6,10 @@ import { TouchPointProvider } from './touchPoint.provider';
 import { DatabaseModule } from '../database/database.module';
 import { CategoriesModule } from 'categories/categories.module';
 import { RolesModule } from 'roles/roles.module';
+import { FilesS3Module } from 'azure-storage/aws-storage.module';
 
 @Module({
-  imports: [DatabaseModule, CategoriesModule, RolesModule],
+  imports: [DatabaseModule, CategoriesModule, RolesModule, FilesS3Module],
   controllers: [TouchPointsController],
   providers: [TouchPointsService, ...TouchPointProvider],
   exports: [TouchPointsService],

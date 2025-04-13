@@ -13,10 +13,18 @@ export class CustomersService {
     private readonly customerRepository: Repository<Customer>,
   ) { }
 
+  private validateEmail(email: string): boolean {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  }
+
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
     try {
-      // Always store email in lowercase
+      // Validate email format if provided
       if (createCustomerDto.email) {
+        if (!this.validateEmail(createCustomerDto.email)) {
+          throw new HttpException('Invalid email format', HttpStatus.BAD_REQUEST);
+        }
         createCustomerDto.email = createCustomerDto.email.toLowerCase();
       }
       
@@ -124,6 +132,14 @@ export class CustomersService {
 
   async update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
     await this.findOne(id);
+    
+    // Validate email format if provided
+    if (updateCustomerDto.email) {
+      if (!this.validateEmail(updateCustomerDto.email)) {
+        throw new HttpException('Invalid email format', HttpStatus.BAD_REQUEST);
+      }
+      updateCustomerDto.email = updateCustomerDto.email.toLowerCase();
+    }
     
     // Format phone number if provided in update
     if (updateCustomerDto.phone_number) {
