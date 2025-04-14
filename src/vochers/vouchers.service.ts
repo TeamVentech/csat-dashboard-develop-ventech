@@ -239,8 +239,15 @@ export class VouchersService {
         en: `We would like to inform you that your extension request is approved. The new expiry date is ${formattedDate}\nPlease rate our service by following the below link:\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${service_id}/rating`,
         ar: `تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: ${formattedDate}\nيرجى تقييم الخدمة من خلال الرابط\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${service_id}/rating`
       };
-      const phoneNumber = service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number
-      await this.sendSms(null, message[language], phoneNumber);
+      let phoneNumber;
+      if(service.type === 'Corporate Voucher Sale'){
+        phoneNumber = service?.metadata?.recipient?.recipient_phone_number
+      }else{
+        phoneNumber = service?.metadata?.customer?.phone_number
+      }
+      if(phoneNumber){
+        await this.sendSms(null, message[language], phoneNumber);
+      }
       return { message: "Voucher extended successfully", status: HttpStatus.OK, data: updated_data };
     } catch (error) {
       if (error instanceof HttpException) {

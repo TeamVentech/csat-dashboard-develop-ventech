@@ -782,7 +782,7 @@ export class RequestServicesService {
         updateRequestServicesDto.type === 'Found Child' ||
         updateRequestServicesDto.type === 'Lost Child'
       ) {
-        const messageFound = updateRequestServicesDto.metadata.IsArabic ?  message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "نتمنى لكم السلامة"` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`;
+        const messageFound = updateRequestServicesDto.metadata.IsArabic ?  message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "نتمنى سلامتكم"` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`;
         await this.smsService.sendSms(
           numbers,
           `${messageFound}`,

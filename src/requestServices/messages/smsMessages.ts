@@ -10,7 +10,7 @@ const  SmsMessage =  {
       },
       "Closed": {
         "ar": " تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط ",
-        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\n"
+        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:"
       }
     },
     "Found Child": {
@@ -20,7 +20,7 @@ const  SmsMessage =  {
       },
       "Closed": {
         "ar": "تم إغلاق الحالة.\nيرجى تقييم الخدمة من خلال الرابط",
-        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:\n"
+        "en": "We would like to inform you that the case is closed.\nPlease rate our service by following the below link:"
       }
     },
     "Lost Item": {

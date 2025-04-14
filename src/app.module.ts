@@ -43,6 +43,7 @@ import { ApiKeyMiddleware } from 'middleware/api-key.middleware';
 import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.module';
 import { SmsModule } from './sms/sms.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { SmsModule } from './sms/sms.module';
     TypeOrmModule.forFeature([RequestServices]), 
     CustomerAuthModule,
     SmsModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

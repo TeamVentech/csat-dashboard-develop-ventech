@@ -732,4 +732,11 @@ export class ElasticService {
         };
     }
 
+    /**
+     * Access the underlying Elasticsearch connection for advanced operations
+     * @returns The ElasticsearchService instance
+     */
+    getSearchService(): ElasticsearchService {
+        return this.elasticsearchService;
+    }
 }
