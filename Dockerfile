@@ -1,23 +1,23 @@
-FROM node:18
+# build stage
+FROM node:16.7-alpine
 
+WORKDIR /app
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
+COPY ./package*.json ./
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
+RUN npm install -g npm@7.20.3
 
-# Install the application dependencies
-RUN npm install
+RUN npm install rimraf --save-dev
 
-# Copy the rest of the application files
 COPY . .
 
-# Build the NestJS application
 RUN npm run build
 
-# Expose the application port
-EXPOSE 3000
+# production stage
+FROM node:16.7-alpine
 
-# Command to run the application
-CMD ["node", "dist/main"]
+COPY --from=0 /app ./
+
+EXPOSE 8080
+
+CMD ["npm", "run", "start:prod"]

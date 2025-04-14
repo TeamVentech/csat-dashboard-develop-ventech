@@ -44,10 +44,12 @@ import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.module';
 import { SmsModule } from './sms/sms.module';
 import { ExportModule } from './export/export.module';
+import { AwsParameterStoreModule } from './config/aws-ssm.module';
 
 @Module({
   imports: [
     AuthModule,
+    AwsParameterStoreModule,
     MailerModule.forRoot({
       transport: {
         host: process.env.EMAIL_HOST,
