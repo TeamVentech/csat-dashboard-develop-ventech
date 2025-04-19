@@ -856,6 +856,63 @@ export class RequestServicesService {
     }
   }
 
+  /**
+   * Checks if a customer has active services of a specific type
+   * @param type Service type to check (e.g., 'Handsfree Request', 'Wheelchair & Stroller Request', 'Power Bank Request')
+   * @param phoneNumber Customer's phone number
+   * @returns Object with hasActiveService flag and serviceDetails if applicable
+   */
+  async checkActiveServicesByType(type: string, phoneNumber: string) {
+    try {
+      // Determine the completed state based on service type
+      let completedState = 'Closed';
+      
+      if (type === 'Handsfree Request') {
+        completedState = 'Bags Returned';
+      } else if (type === 'Wheelchair & Stroller Request' || type === 'Power Bank Request') {
+        completedState = 'Item Returned';
+      }
+
+      // Query Elasticsearch for active services of the specified type
+      const activeServices = await this.elasticService.searchByQuery('services', {
+        query: {
+          bool: {
+            must: [
+              { match: { 'type.keyword': type } },
+              { match: { 'metadata.customer.phone_number': phoneNumber } },
+            ],
+            must_not: [
+              { match: { state: completedState } },
+              { match: { state: 'Closed' } }
+            ]
+          }
+        }
+      });
+
+      if (activeServices.totalHits > 0) {
+        // Customer has active services
+        return {
+          hasActiveService: true,
+          serviceDetails: activeServices.results[0]?.data || null, // Return the first active service's data
+          totalActiveServices: activeServices.totalHits
+        };
+      }
+
+      // No active services found
+      return {
+        hasActiveService: false,
+        serviceDetails: null,
+        totalActiveServices: 0
+      };
+    } catch (error) {
+      console.error('Error checking active services:', error);
+      throw new HttpException(
+        'Failed to check active services',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async remove(id: string) {
     const RequestServices = await this.findOneColumn(id);
     await this.requestServicesRepository.remove(RequestServices);

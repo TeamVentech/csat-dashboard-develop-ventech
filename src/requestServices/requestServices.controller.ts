@@ -13,6 +13,7 @@ import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 import { AddedValueServiceDto } from './dto/added-value-service.dto';
+import { CheckActiveServiceDto } from './dto/check-active-service.dto';
 
 @Controller('request-services')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -103,5 +104,15 @@ export class RequestServicesController {
   @Get('search/query/count')
   getRecordsCount() {
     return this.elasticSearchService.getRecordsCount() as any;
+  }
+
+  @Post('check-active-service')
+  @Permissions('Customer Care Center::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  checkActiveService(@Body() checkActiveServiceDto: CheckActiveServiceDto) {
+    return this.requestServicesService.checkActiveServicesByType(
+      checkActiveServiceDto.type,
+      checkActiveServiceDto.phoneNumber
+    );
   }
 }
