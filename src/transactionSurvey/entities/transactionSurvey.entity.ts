@@ -23,7 +23,7 @@ export class TransactionSurvey {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({default: 'pending'})
   state: string;
 
   @Column({ default: 'Customer' })

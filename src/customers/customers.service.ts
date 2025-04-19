@@ -18,7 +18,7 @@ export class CustomersService {
     return emailRegex.test(email);
   }
 
-  async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
+  async create(createCustomerDto: CreateCustomerDto){
     try {
       // Validate email format if provided
       if (createCustomerDto.email) {

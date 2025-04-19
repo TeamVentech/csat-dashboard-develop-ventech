@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { Surveys } from './entities/Surveys.entity';
 import { CreateSurveysDto } from './dto/create.dto';
 import { UpdateSurveysDto } from './dto/update.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class SurveysService {
@@ -118,6 +119,11 @@ export class SurveysService {
     const survey = await this.findOne(id);
     if(updateSurveysDto.metadata){
       survey.metadata.questions = updateSurveysDto.metadata.questions
+    }
+    for(let i = 0; i < updateSurveysDto.metadata.questions.length; i++){
+      if(!updateSurveysDto.metadata.questions[i].id){
+          updateSurveysDto.metadata.questions[i].id = uuidv4()
+      }
     }
     survey.name = updateSurveysDto?.name
     survey.brief = updateSurveysDto?.brief

@@ -35,7 +35,7 @@ export class CustomerAuthService {
     return { message: `OTP sent successfully : ${otp}` };
   }
 
-  async verifyOTP(phoneNumber: string, otp: string): Promise<{ accessToken: string }> {
+  async verifyOTP(phoneNumber: string, otp: string): Promise<{ accessToken: string, customer?: any }> {
     const storedData = this.otpStore.get(phoneNumber);
     
     if (!storedData) {
@@ -55,10 +55,17 @@ export class CustomerAuthService {
     this.otpStore.delete(phoneNumber);
 
     // Find customer by phone number
-    const customer = await this.customersService.doesEmailOrPhoneExist(undefined, phoneNumber);
+    let customer = await this.customersService.doesEmailOrPhoneExist(undefined, phoneNumber);
     
+    // If customer doesn't exist, create a new one with just the phone number
     if (!customer) {
-      throw new BadRequestException('Customer not found');
+      const newCustomerData = { 
+        phone_number: phoneNumber,
+        name: '',
+        email: '',
+      };
+      
+      customer = await this.customersService.create(newCustomerData);
     }
 
     // Generate JWT token with customer details
@@ -74,7 +81,18 @@ export class CustomerAuthService {
     
     const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    // Return both token and customer info
+    return { 
+      accessToken,
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone_number: customer.phone_number,
+        gender: customer.gender,
+        age: customer.age
+      } 
+    };
   }
 
   async sendSms(data: any, message: any, number: string) {

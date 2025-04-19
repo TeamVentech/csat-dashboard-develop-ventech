@@ -14,8 +14,7 @@ class AnswerDto {
 }
 
 export class CreateTransactionSurveyDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   state: string;
 
   @IsString()

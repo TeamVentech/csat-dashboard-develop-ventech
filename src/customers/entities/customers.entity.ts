@@ -12,16 +12,16 @@
     @PrimaryGeneratedColumn('uuid')
     id: string = uuidv4();
 
-    @Column()
+    @Column({ nullable: true })
     name: string;
 
-    @Column({ nullable: true})
+    @Column({ nullable: true })
     age: string;
 
     @Column({ length: 15, unique: true })
     phone_number: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     email: string;
 
     @Column({ nullable: true })

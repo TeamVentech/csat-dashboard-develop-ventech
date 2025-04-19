@@ -3,12 +3,14 @@ import { Type } from 'class-transformer';
 
 export class CreateCustomerDto {
   @IsString()
+  @IsOptional()
   name: string;
 
   @IsString()
   phone_number: string;
 
   @IsEmail()
+  @IsOptional()
   email: string;
 
   @IsOptional()

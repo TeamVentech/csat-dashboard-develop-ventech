@@ -346,6 +346,29 @@ export class TasksServices {
 				break;
 		}
 	}
+	private async validateWorkflowSurvey(workflow: any, action_role: string): Promise<void> {
+		if (!workflow) {
+			throw new NotFoundException('Workflow not found for this touchpoint');
+		}
+		switch (action_role) {
+			case 'first_role':
+				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
+			case 'final_role':
+				if (!workflow.CX_Team || !Array.isArray(workflow.CX_Team)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
+			case 'resend_role':
+				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
+					throw new NotFoundException('workflow sub-category missing, or it is not a valid array');
+				}
+				break;
+
+		}
+	}
 
 	async update(id: string, updateTasksDto: UpdateTaskServicesDto, file: any) {
 		const task_data = await this.findOne(id);
@@ -362,8 +385,15 @@ export class TasksServices {
 		if (!touchpoint) {
 			throw new NotFoundException(`Touchpoint with ID ${data.touchpointId} not found`);
 		}
-		const workflow = touchpoint.workflow;
-		await this.validateWorkflow(workflow, updateTasksDto.action_role);
+		let workflow = {}
+		if(updateTasksDto.complaints.type === "Survey Complaint"){
+			workflow = updateTasksDto.complaints.metadata.workflow
+			await this.validateWorkflowSurvey(workflow, updateTasksDto.action_role);
+		}
+		else{
+			workflow = touchpoint.workflow;
+			await this.validateWorkflow(workflow, updateTasksDto.action_role);
+		}
 
 		switch (updateTasksDto.action_role) {
 			case 'CX_Team':
@@ -422,10 +452,21 @@ export class TasksServices {
 		if (!touchpoint) {
 			throw new NotFoundException(`Touchpoint with ID ${data.touchpointId} not found`);
 		}
-		const workflow = touchpoint.workflow;
-		if (!workflow || !workflow.First_Level || !Array.isArray(workflow.First_Level)) {
-			throw new NotFoundException('Workflow or First_Level roles not found for this touchpoint, or First_Level is not a valid array');
+		let workflow = {
+			"First_Level": [],
+			"Level_1": [],
+			"Final_Level": [],
 		}
+		if(updateTasksDto.complaints.type === "Survey Complaint"){
+			workflow = updateTasksDto.complaints.metadata.workflow
+		}
+		else{
+			workflow = touchpoint.workflow;
+		}
+			if (!workflow || !workflow.First_Level || !Array.isArray(workflow.First_Level)) {
+				throw new NotFoundException('Workflow or First_Level roles not found for this touchpoint, or First_Level is not a valid array');
+			}
+		
 		
 		const assignedTo = [...new Set(workflow.First_Level.map(user => user.name).flat())];
 		updateTasksDto.type = "Re-sent"
@@ -452,30 +493,26 @@ export class TasksServices {
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
 		const email_user =  [...new Set(users.map(user => user.email).flat())]
-
-		try {
-			const emailResult = await this.emailService.sendEmail(
-				email_user, 
-				"nazir.alkahwaji@gmail.com", 
-				"Complaint Actions", 
-				"Take Actions",
-				" ", 
-				complaint_update.id,  
-				"System", 
-				"1",
-				`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint_update.id}/details`
-			);
-			
-			if (!emailResult.success) {
-				console.warn(`Email notification partially failed: ${emailResult.error}`);
-			}
-		} catch (error) {
-			console.error('Failed to send notification email:', error.message);
-			// Don't throw to prevent the process from crashing
-		}
-	
+		this.sendEmail(email_user, complaint_update)
 		return this.findOne(id);
 	}
+
+	async sendEmail(email_user: string[], complaint_update: any) {
+		const emailResult = await this.emailService.sendEmail(
+			email_user, 
+			"nazir.alkahwaji@gmail.com", 
+			"Complaint Actions", 
+			"Take Actions",
+			" ", 
+			complaint_update.id,  
+			"System", 
+			"1",
+			`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint_update.id}/details`
+		);
+		if (!emailResult.success) {
+			console.warn(`Email notification partially failed: ${emailResult.error}`);
+		}
+	}	
 
 	async updateEscalation(id: string, updateTasksDto: UpdateTaskServicesDto) {
 		// const task_data = await this.findOne(id)

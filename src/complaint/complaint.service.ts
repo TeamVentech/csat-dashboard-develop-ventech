@@ -41,11 +41,26 @@ export class ComplaintsService {
       }
     }
     
+    const workflow = []
     if(createComplaintsDto.type === "Survey Complaint"){
       const survey = await this.SurveyService.findOne(createComplaintsDto.metadata.survey_id)
       const question =  survey.metadata.questions.filter(user => user.id === createComplaintsDto.metadata.question_id)
       createComplaintsDto.metadata.question_label = question[0].question
-      createComplaintsDto.metadata.answer_label = question[0].choices[createComplaintsDto.metadata.answer]
+      console.log(JSON.stringify(question))
+      createComplaintsDto.metadata.workflow = {
+        "First_Level": question[0].firstRoles,
+        "Level_1": question[0].escalation,
+        "Final_Level": question[0].FinalRoles,
+      }
+      // createComplaintsDto.metadata.workflow[
+      //   {
+      //     name: "",
+      //     assignedTo: survey.metadata.workflow.CX_Team,
+      //     status: "Open",
+      //     actions: {}
+      //   }
+      // ]
+      createComplaintsDto.metadata.answer_label = question[0].choices[createComplaintsDto.metadata.answer - 1]
     }
     
     // Check if this is a tenant complaint and if tenant data needs to be updated
@@ -103,20 +118,26 @@ export class ComplaintsService {
     complaint.touchpoint = createComplaintsDto.touchpoint
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
+    console.log('touchpoint')
+    console.log(JSON.stringify(complaint))
+    delete complaint.touchpoint.workflow
     const complaint_response = await this.elasticService.indexData('complaints', complaint.id, complaint);
-    if (!Array.isArray(touchpoint.workflow.CX_Team)) {
-      throw new NotFoundException('workflow sub-category is not a valid ');
+    let assignedTo = []
+    let type =  "CX Team"
+    if(createComplaintsDto.type !== "Survey Complaint"){
+      if (!Array.isArray(touchpoint.workflow.CX_Team)) {
+        throw new NotFoundException('workflow sub-category is not a valid ');
+      }
+      assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
     }
-    let assignedTo = [...new Set(touchpoint.workflow.CX_Team.map(user => user.name).flat())];
-    if(createComplaintsDto.type === "Survey Complaint"){
-      assignedTo = ["Super_Admin"]
-      // assignedTo = ["CX Section Head"]
+    else{
+      assignedTo = [...new Set(createComplaintsDto.metadata.workflow.First_Level.map(user => user.name).flat())];
+      type = "First Level"
     }
-    console.log(assignedTo)
     const tasks_payload = {
       "taskId": complaint.id,
       "name": complaint.type,
-      "type": "CX Team",
+      "type": type,
       "assignedTo": assignedTo,
       "status": "Open",
       "complaintId": complaint.complaintId,
@@ -125,8 +146,9 @@ export class ComplaintsService {
     const users = await this.userService.getUsersByRoles(assignedTo)
     const email_user =  [...new Set(users.map(user => user.email).flat())]
     this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint.id}/details`)
+    console.log('tasks_payload')
     await this.taskService.create(tasks_payload, complaint)
-
+    console.log('complaint')
     // Send SMS notification for non-survey complaints
     if (createComplaintsDto.type !== "Survey Complaint") {
       const phoneNumber = createComplaintsDto?.customer?.phone_number || createComplaintsDto?.tenant?.phone_number
