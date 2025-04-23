@@ -893,7 +893,7 @@ export class RequestServicesService {
         // Customer has active services
         return {
           hasActiveService: true,
-          serviceDetails: activeServices.results[0]?.data || null, // Return the first active service's data
+          serviceDetails: activeServices.results[0] || null, // Return the first active service's data
           totalActiveServices: activeServices.totalHits
         };
       }
