@@ -133,12 +133,20 @@ export class SurveysService {
   }
   async updateMainTouchpoint(id: string, updateSurveysTouchpointDto: any) {
     const survey = await this.findOne(id);
-    console.log(JSON.stringify(survey))
-    console.log(JSON.stringify(updateSurveysTouchpointDto))
     survey.metadata.mainTouchpoint = updateSurveysTouchpointDto?.mainTouchpoint
     const result = await this.SurveysRepository.update(id, survey);
-    console.log(JSON.stringify(result))
     return this.findOne(id);
+  }
+
+  async getSurveysTouchpoint(mainTouchpoint: string) {
+    const touchpoint = await this.SurveysRepository
+      .createQueryBuilder('survey')
+      .where("survey.metadata->>'mainTouchpoint' = :mainTouchpoint", { 
+        mainTouchpoint: mainTouchpoint 
+      })
+      .getMany();
+    
+    return touchpoint;
   }
 
   async remove(id: string) {
