@@ -17,6 +17,9 @@ export class SurveyTouchpoint {
   @Column()
   qrImage: string;
 
+  @Column()
+  touchpointId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

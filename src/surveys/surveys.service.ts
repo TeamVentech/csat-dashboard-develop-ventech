@@ -131,6 +131,15 @@ export class SurveysService {
     await this.SurveysRepository.update(id, survey);
     return this.findOne(id);
   }
+  async updateMainTouchpoint(id: string, updateSurveysTouchpointDto: any) {
+    const survey = await this.findOne(id);
+    console.log(JSON.stringify(survey))
+    console.log(JSON.stringify(updateSurveysTouchpointDto))
+    survey.metadata.mainTouchpoint = updateSurveysTouchpointDto?.mainTouchpoint
+    const result = await this.SurveysRepository.update(id, survey);
+    console.log(JSON.stringify(result))
+    return this.findOne(id);
+  }
 
   async remove(id: string) {
     const Surveys = await this.findOne(id);

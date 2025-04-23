@@ -15,5 +15,9 @@ export class CreateSurveyTouchpointDto {
 
   @IsString()
   @IsNotEmpty()
+  touchpointId: string;
+
+  @IsString()
+  @IsNotEmpty()
   qrImage: string;
 } 

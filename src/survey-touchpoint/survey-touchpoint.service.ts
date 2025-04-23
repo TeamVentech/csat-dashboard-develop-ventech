@@ -17,11 +17,13 @@ export class SurveyTouchpointService {
     const existingTouchpoint = await this.surveyTouchpointRepository.findOne({
       where: {
         surveyId: createSurveyTouchpointDto.surveyId,
-        touchpointName: createSurveyTouchpointDto.touchpointName,
+        touchpointName: createSurveyTouchpointDto.touchpointName
       },
     });
     if (!existingTouchpoint) {
+      console.log(JSON.stringify(createSurveyTouchpointDto))
       const surveyTouchpoint = this.surveyTouchpointRepository.create(createSurveyTouchpointDto);
+      console.log(JSON.stringify(surveyTouchpoint))
       return this.surveyTouchpointRepository.save(surveyTouchpoint);
     } else {
       return existingTouchpoint;

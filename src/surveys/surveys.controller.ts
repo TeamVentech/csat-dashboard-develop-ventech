@@ -59,6 +59,12 @@ export class SurveysController {
     return this.surveysService.update(id, updateSurveysDto);
   }
 
+  @Patch(':id/main-touchpoint')
+  @Permissions('Survey Management::update')
+  updateMainTouchpoint(@Param('id') id: string, @Body() updateSurveysTouchpointDto: any) {
+    return this.surveysService.updateMainTouchpoint(id, updateSurveysTouchpointDto);
+  }
+
   @Delete(':id')
   @Permissions('Survey Management::delete')
   remove(@Param('id') id: string) {
