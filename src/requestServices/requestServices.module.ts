@@ -15,7 +15,12 @@ import { HandsfreeHandler } from './handlers/handsfree.handler';
 import { SmsService } from './services/sms.service';
 import { ComplaintsModule } from 'complaint/complaint.module';
 import { AddedValueServiceHandler } from './handlers/added-value-service.handler';
-
+import { LostItemStatisticsService } from './services/lost-item-statistics.service';
+import { LostItemStatisticsController } from './controllers/lost-item-statistics.controller';
+import { IncidentStatisticsService } from './services/incident-statistics.service';
+import { IncidentStatisticsController } from './controllers/incident-statistics.controller';
+import { FoundChildStatisticsController } from './controllers/found-child-statistics.controller';
+import { FoundChildStatisticsService } from './services/found-child-statistics.service';
 @Module({
   imports: [
     DatabaseModule,
@@ -27,7 +32,12 @@ import { AddedValueServiceHandler } from './handlers/added-value-service.handler
     CustomersModule,
     ComplaintsModule,
   ],
-  controllers: [RequestServicesController],
+  controllers: [
+    RequestServicesController,
+    LostItemStatisticsController,
+    IncidentStatisticsController,
+    FoundChildStatisticsController
+  ],
   providers: [
     {
       provide: 'REQUEST_SERVICES_REPOSITORY',
@@ -40,6 +50,9 @@ import { AddedValueServiceHandler } from './handlers/added-value-service.handler
     HandsfreeHandler,
     SmsService,
     AddedValueServiceHandler,
+    LostItemStatisticsService,
+    IncidentStatisticsService,
+    FoundChildStatisticsService
   ],
   exports: [RequestServicesService]
 })

@@ -76,6 +76,7 @@ export class CustomerAuthService {
       phone_number: customer.phone_number,
       gender: customer.gender,
       age: customer.age,
+      dob: customer.dob,
       role: 'customer'
     };
     
@@ -90,7 +91,8 @@ export class CustomerAuthService {
         email: customer.email,
         phone_number: customer.phone_number,
         gender: customer.gender,
-        age: customer.age
+        age: customer.age,
+        dob: customer.dob
       } 
     };
   }

@@ -14,6 +14,9 @@ import { Permissions } from '../decorator/permissions.decorator';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
 import { AddedValueServiceDto } from './dto/added-value-service.dto';
 import { CheckActiveServiceDto } from './dto/check-active-service.dto';
+import { LostChildChartDto } from './dto/lost-child-chart.dto';
+import { LostChildLocationChartDto } from './dto/lost-child-location-chart.dto';
+import { LostChildDurationDto } from './dto/lost-child-duration.dto';
 
 @Controller('request-services')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -114,5 +117,26 @@ export class RequestServicesController {
       checkActiveServiceDto.type,
       checkActiveServiceDto.phoneNumber
     );
+  }
+
+  @Post('lost-child/chart')
+  @Permissions('Customer Care Center::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  getLostChildChartData(@Body() filters: LostChildChartDto) {
+    return this.elasticSearchService.getLostChildChartData(filters);
+  }
+
+  @Post('lost-child/location-chart')
+  @Permissions('Customer Care Center::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  getLostChildLocationChartData(@Body() filters: LostChildLocationChartDto) {
+    return this.elasticSearchService.getLostChildLocationChartData(filters);
+  }
+
+  @Post('lost-child/duration')
+  @Permissions('Customer Care Center::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  getLostChildDurationData(@Body() filters: LostChildDurationDto) {
+    return this.elasticSearchService.getLostChildDurationData(filters);
   }
 }

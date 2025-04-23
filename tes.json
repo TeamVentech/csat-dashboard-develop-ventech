@@ -1,0 +1,16 @@
+{
+    "Changes": [
+        {
+            "Action": "UPSERT",
+            "ResourceRecordSet": {
+                "Name": "csat-citymall.com",
+                "Type": "A",
+                "AliasTarget": {
+                    "HostedZoneId": "Z03909393MB5IGJMXKNCB",
+                    "DNSName": "nest-alb-699516314.us-west-2.elb.amazonaws.com",
+                    "EvaluateTargetHealth": false
+                }
+            }
+        }
+    ]
+}
