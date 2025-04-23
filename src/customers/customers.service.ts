@@ -150,6 +150,14 @@ export class CustomersService {
     return this.findOne(id);
   }
 
+  async updateCustomer(updateCustomerDto: UpdateCustomerDto) {
+    const customer = await this.doesEmailOrPhoneExist(null,updateCustomerDto.phone_number);
+    if (customer) {
+      return this.update(customer.id, updateCustomerDto);
+    }
+    return this.customerRepository.update(customer.id, updateCustomerDto);
+  }
+
   async remove(id: string): Promise<void> {
     const customer = await this.findOne(id); // Check if the customer exists
     await this.customerRepository.remove(customer);

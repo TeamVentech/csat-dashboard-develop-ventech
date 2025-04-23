@@ -87,6 +87,11 @@ export class CustomersController {
         return this.customersService.update(id, updateCustomerDto);
     }
 
+    @Post('update-customer')
+    async updateCustomer(@Body() updateCustomerDto: UpdateCustomerDto){
+        return this.customersService.updateCustomer(updateCustomerDto);
+    }
+
     // Delete a customer by ID
     @Delete(':id')
     @Permissions('Clients Management::delete')

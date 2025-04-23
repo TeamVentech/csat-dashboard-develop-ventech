@@ -39,6 +39,7 @@ export class TransactionSurveyService {
     await this.touchPointsService.update(id, createTransactionSurveyDto.rating)
     const transactionSurvey =  this.transactionSurveyRepository.create(createTransactionSurveyDto);
     const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey);
+    
     for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
       if(createTransactionSurveyDto.answers[i].type === "multiple"){
         if(createTransactionSurveyDto.answers[i].answer < 3 ){
