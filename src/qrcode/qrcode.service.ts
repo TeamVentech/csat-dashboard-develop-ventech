@@ -18,8 +18,7 @@ export class QRCodesService {
   async create(createQRCodeDto: any) {
   
     // Create the identifier URL for the QR code
-    const identifier = `https://nooracademy.co.uk/#/${createQRCodeDto.surveyId}/${createQRCodeDto.subcategoryId}/`;
-  
+    const identifier = `https://cc.ventech.co/customer/survey/${createQRCodeDto.surveyId}/${createQRCodeDto.touchpointId}/`;
     // Generate the QR code image as a data URL
     const qrCodeData = await QRCodeLib.toDataURL(identifier);
   

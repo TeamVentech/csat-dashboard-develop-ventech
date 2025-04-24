@@ -21,9 +21,7 @@ export class SurveyTouchpointService {
       },
     });
     if (!existingTouchpoint) {
-      console.log(JSON.stringify(createSurveyTouchpointDto))
       const surveyTouchpoint = this.surveyTouchpointRepository.create(createSurveyTouchpointDto);
-      console.log(JSON.stringify(surveyTouchpoint))
       return this.surveyTouchpointRepository.save(surveyTouchpoint);
     } else {
       return existingTouchpoint;
