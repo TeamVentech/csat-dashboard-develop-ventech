@@ -77,6 +77,10 @@ export class CustomersController {
         return this.customersService.findOne(id);
     }
 
+    @Put('update-customer')
+    async updateCustomer(@Body() updateCustomerDto: UpdateCustomerDto){
+        return this.customersService.updateCustomer(updateCustomerDto);
+    } 
     // Update a customer by ID
     @Put(':id')
     @Permissions('Clients Management::update')
@@ -87,10 +91,7 @@ export class CustomersController {
         return this.customersService.update(id, updateCustomerDto);
     }
 
-    @Post('update-customer')
-    async updateCustomer(@Body() updateCustomerDto: UpdateCustomerDto){
-        return this.customersService.updateCustomer(updateCustomerDto);
-    }
+
 
     // Delete a customer by ID
     @Delete(':id')

@@ -21,6 +21,9 @@ import { IncidentStatisticsService } from './services/incident-statistics.servic
 import { IncidentStatisticsController } from './controllers/incident-statistics.controller';
 import { FoundChildStatisticsController } from './controllers/found-child-statistics.controller';
 import { FoundChildStatisticsService } from './services/found-child-statistics.service';
+import { WheelchairStrollerStatisticsService } from './services/wheelchair-stroller-statistics.service';
+import { WheelchairStrollerStatisticsController } from './controllers/wheelchair-stroller-statistics.controller';
+
 @Module({
   imports: [
     DatabaseModule,
@@ -36,7 +39,8 @@ import { FoundChildStatisticsService } from './services/found-child-statistics.s
     RequestServicesController,
     LostItemStatisticsController,
     IncidentStatisticsController,
-    FoundChildStatisticsController
+    FoundChildStatisticsController,
+    WheelchairStrollerStatisticsController
   ],
   providers: [
     {
@@ -52,7 +56,8 @@ import { FoundChildStatisticsService } from './services/found-child-statistics.s
     AddedValueServiceHandler,
     LostItemStatisticsService,
     IncidentStatisticsService,
-    FoundChildStatisticsService
+    FoundChildStatisticsService,
+    WheelchairStrollerStatisticsService
   ],
   exports: [RequestServicesService]
 })
