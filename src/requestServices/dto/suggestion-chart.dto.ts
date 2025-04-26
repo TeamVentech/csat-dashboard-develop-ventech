@@ -1,6 +1,12 @@
 import { IsOptional, IsString, IsNumber, IsDateString, IsEnum } from 'class-validator';
 
-export class WheelchairStrollerChartDto {
+export enum PeriodType {
+  DAILY = 'Daily',
+  WEEKLY = 'Weekly',
+  MONTHLY = 'Monthly',
+}
+
+export class SuggestionChartDto {
   @IsOptional()
   @IsDateString()
   fromDate?: string;
@@ -10,8 +16,20 @@ export class WheelchairStrollerChartDto {
   toDate?: string;
 
   @IsOptional()
-  @IsEnum(['Daily', 'Weekly', 'Monthly'])
-  period?: string = 'Monthly';
+  @IsEnum(PeriodType)
+  period?: PeriodType = PeriodType.MONTHLY;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  touchpointId?: string;
+
+  @IsOptional()
+  @IsString()
+  departmentId?: string;
 
   @IsOptional()
   @IsNumber()
@@ -23,11 +41,5 @@ export class WheelchairStrollerChartDto {
 
   @IsOptional()
   @IsString()
-  @IsEnum(['Male', 'Female'])
   gender?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsEnum(['QR Code', 'Hotline', 'CC Desk'])
-  requestSource?: string;
 } 

@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsNumber, IsDateString, IsEnum } from 'class-validator';
 
-export class WheelchairStrollerChartDto {
+export class PowerBankChartDto {
   @IsOptional()
   @IsDateString()
   fromDate?: string;

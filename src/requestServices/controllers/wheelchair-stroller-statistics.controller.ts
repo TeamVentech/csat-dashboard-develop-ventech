@@ -15,10 +15,39 @@ import { WheelchairStrollerChartDto } from '../dto/wheelchair-stroller-chart.dto
 export class WheelchairStrollerStatisticsController {
   constructor(private readonly wheelchairStrollerStatisticsService: WheelchairStrollerStatisticsService) {}
 
-  @Post('chart')
+  @Post('chart-data')
   @Permissions('Customer Care Center::read')
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  getWheelchairStrollerChartData(@Body() filters: WheelchairStrollerChartDto) {
-    return this.wheelchairStrollerStatisticsService.getWheelchairStrollerChartData(filters);
+  async getWheelchairStrollerChartData(@Body() chartDto: WheelchairStrollerChartDto) {
+    return this.wheelchairStrollerStatisticsService.getWheelchairStrollerChartData(chartDto);
+  }
+
+  @Post('average-duration')
+  @Permissions('Customer Care Center::read')
+  async getAverageDurationData(@Body() chartDto: WheelchairStrollerChartDto) {
+    return this.wheelchairStrollerStatisticsService.getAverageDurationData(chartDto);
+  }
+
+  @Post('damaged-cases')
+  @Permissions('Customer Care Center::read')
+  async getDamagedCasesData(@Body() chartDto: WheelchairStrollerChartDto) {
+    return this.wheelchairStrollerStatisticsService.getDamagedCasesData(chartDto);
+  }
+
+  @Post('not-returned-items')
+  @Permissions('Customer Care Center::read')
+  async getNotReturnedItemsData(@Body() chartDto: WheelchairStrollerChartDto) {
+    return this.wheelchairStrollerStatisticsService.getNotReturnedItemsData(chartDto);
+  }
+
+  @Post('delivery-pickup-services')
+  @Permissions('Customer Care Center::read')
+  async getDeliveryPickupServicesData(@Body() chartDto: WheelchairStrollerChartDto) {
+    return this.wheelchairStrollerStatisticsService.getDeliveryPickupServicesData(chartDto);
+  }
+
+  @Post('request-source-report')
+  @Permissions('Customer Care Center::read')
+  async getRequestSourceReportData(@Body() chartDto: WheelchairStrollerChartDto) {
+    return this.wheelchairStrollerStatisticsService.getRequestSourceReportData(chartDto);
   }
 } 

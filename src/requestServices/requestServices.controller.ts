@@ -17,6 +17,7 @@ import { CheckActiveServiceDto } from './dto/check-active-service.dto';
 import { LostChildChartDto } from './dto/lost-child-chart.dto';
 import { LostChildLocationChartDto } from './dto/lost-child-location-chart.dto';
 import { LostChildDurationDto } from './dto/lost-child-duration.dto';
+import { SuggestionChartDto } from './dto/suggestion-chart.dto';
 
 @Controller('request-services')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -138,5 +139,12 @@ export class RequestServicesController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   getLostChildDurationData(@Body() filters: LostChildDurationDto) {
     return this.elasticSearchService.getLostChildDurationData(filters);
+  }
+
+  @Post('suggestion/chart')
+  @Permissions('Customer Care Center::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  getSuggestionChartData(@Body() filters: SuggestionChartDto) {
+    return this.elasticSearchService.getSuggestionChartData(filters);
   }
 }

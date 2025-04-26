@@ -3,10 +3,10 @@ import { ElasticService } from '../../ElasticSearch/elasticsearch.service';
 import * as moment from 'moment';
 
 @Injectable()
-export class WheelchairStrollerStatisticsService {
+export class PowerBankStatisticsService {
   constructor(private readonly elasticSearchService: ElasticService) {}
 
-  async getWheelchairStrollerChartData(filters: {
+  async getPowerBankChartData(filters: {
     minAge?: number;
     maxAge?: number;
     gender?: string;
@@ -19,7 +19,7 @@ export class WheelchairStrollerStatisticsService {
       const query: any = {
         bool: {
           must: [
-            { match: { 'type.keyword': 'Wheelchair & Stroller Request' } }
+            { match: { 'type.keyword': 'Power Bank Request' } }
           ],
           filter: []
         }
@@ -59,19 +59,19 @@ export class WheelchairStrollerStatisticsService {
       const hits = result.body.hits.hits.map((hit: any) => hit._source);
       
       // Process data for chart based on the period type
-      const chartData = this.processWheelchairStrollerChartData(hits, filters.period);
+      const chartData = this.processPowerBankChartData(hits, filters.period);
       
       return {
         success: true,
         data: {
-          wheelchairStrollerData: chartData
+          powerBankData: chartData
         }
       };
     } catch (error) {
-      console.error('Error generating wheelchair/stroller chart data:', error);
+      console.error('Error generating power bank chart data:', error);
       return {
         success: false,
-        message: 'Error generating wheelchair/stroller chart data',
+        message: 'Error generating power bank chart data',
         error: error.message || error
       };
     }
@@ -90,7 +90,7 @@ export class WheelchairStrollerStatisticsService {
       const query: any = {
         bool: {
           must: [
-            { match: { 'type.keyword': 'Wheelchair & Stroller Request' } },
+            { match: { 'type.keyword': 'Power Bank Request' } },
             { match: { 'state.keyword': 'Item Returned' } } // Only consider completed requests
           ],
           filter: []
@@ -128,10 +128,7 @@ export class WheelchairStrollerStatisticsService {
         exists: { field: 'metadata.returnTime' }
       });
 
-      // Also make sure metadata.type exists (either Wheelchair or Stroller)
-      query.bool.filter.push({
-        exists: { field: 'metadata.type' }
-      });
+      // Execute search query
 
       // Execute search query
       const result = await this.elasticSearchService.getSearchService().search({
@@ -149,7 +146,7 @@ export class WheelchairStrollerStatisticsService {
         item.metadata.returnDate && 
         item.metadata.returnTime &&
         item.metadata.type &&
-        (item.metadata.type === 'Wheelchair' || item.metadata.type === 'Stroller') &&
+        (item.metadata.type === 'Power Bank') &&
         item.createdAt
       );
       
@@ -159,10 +156,10 @@ export class WheelchairStrollerStatisticsService {
       return {
         success: true,
         data: {
-          wheelchairStrollerStats: {
+          powerBankStats: {
             categories: durationData.categories,
             series: durationData.series,
-            description: "This chart shows both the average duration in minutes and the count of requests for wheelchair and stroller services"
+            description: "This chart shows both the average duration in minutes and the count of requests for power bank services"
           }
         }
       };
@@ -189,11 +186,20 @@ export class WheelchairStrollerStatisticsService {
       const query: any = {
         bool: {
           must: [
-            { match: { 'type.keyword': 'Wheelchair & Stroller Request' } },
-            { match: { 'state.keyword': 'Item Returned' } },
-            { match: { 'metadata.condition.keyword': 'Damaged' } }
+            { match: { 'type.keyword': 'Power Bank Request' } },
+            { match: { 'state.keyword': 'Item Returned' } }
           ],
-          filter: []
+          filter: [
+            {
+              terms: { 
+                'metadata.condition.keyword': [
+                  'Wire damaged',
+                  'Powerbank damaged',
+                  'Powerbank and Wire damaged'
+                ]
+              }
+            }
+          ]
         }
       };
 
@@ -220,16 +226,6 @@ export class WheelchairStrollerStatisticsService {
         query.bool.filter.push(dateRange);
       }
 
-      // Must have damage details
-      query.bool.filter.push({
-        exists: { field: 'metadata.damageDetails' }
-      });
-
-      // Also make sure metadata.type exists (either Wheelchair or Stroller)
-      query.bool.filter.push({
-        exists: { field: 'metadata.type' }
-      });
-
       // Execute search query
       const result = await this.elasticSearchService.getSearchService().search({
         index: 'services',
@@ -243,10 +239,7 @@ export class WheelchairStrollerStatisticsService {
       // Filter out invalid data
       const validData = hits.filter(item => 
         item.metadata && 
-        item.metadata.condition === 'Damaged' &&
-        item.metadata.damageDetails &&
-        item.metadata.type &&
-        (item.metadata.type === 'Wheelchair' || item.metadata.type === 'Stroller') &&
+        (item.metadata.condition === 'Wire damaged' || item.metadata.condition === 'Powerbank damaged' || item.metadata.condition === 'Powerbank and Wire damaged') &&
         item.createdAt
       );
       
@@ -292,7 +285,7 @@ export class WheelchairStrollerStatisticsService {
       const query: any = {
         bool: {
           must: [
-            { match: { 'type.keyword': 'Wheelchair & Stroller Request' } },
+            { match: { 'type.keyword': 'Power Bank Request' } },
             { match: { 'state.keyword': 'Item Not Returned' } }
           ],
           filter: []
@@ -322,11 +315,6 @@ export class WheelchairStrollerStatisticsService {
         query.bool.filter.push(dateRange);
       }
 
-      // Also make sure metadata.type exists (either Wheelchair or Stroller)
-      query.bool.filter.push({
-        exists: { field: 'metadata.type' }
-      });
-
       // Execute search query
       const result = await this.elasticSearchService.getSearchService().search({
         index: 'services',
@@ -341,7 +329,7 @@ export class WheelchairStrollerStatisticsService {
       const validData = hits.filter(item => 
         item.metadata && 
         item.metadata.type &&
-        (item.metadata.type === 'Wheelchair' || item.metadata.type === 'Stroller') &&
+        (item.metadata.type === 'Power Bank') &&
         item.createdAt
       );
       
@@ -374,21 +362,13 @@ export class WheelchairStrollerStatisticsService {
     }
   }
 
-  async getDeliveryPickupServicesData(filters: {
-    minAge?: number;
-    maxAge?: number;
-    gender?: string;
-    fromDate?: string;
-    toDate?: string;
-    period?: string;
-    requestSource?: string;
-  }) {
+  async getDeliveryPickupServicesData(filtersd) {
     try {
       // Build the query
       const query: any = {
         bool: {
           must: [
-            { match: { 'type.keyword': 'Wheelchair & Stroller Request' } }
+            { match: { 'type.keyword': 'Power Bank Request' } }
           ],
           should: [
             { match: { 'metadata.delivery': true } },
@@ -398,7 +378,7 @@ export class WheelchairStrollerStatisticsService {
           filter: []
         }
       };
-
+      const filters = filtersd.params
       // Add age range filter if provided
       if (filters.minAge || filters.maxAge) {
         const ageRange: any = { range: { 'metadata.customer.age': {} } };
@@ -429,11 +409,6 @@ export class WheelchairStrollerStatisticsService {
         query.bool.filter.push(dateRange);
       }
 
-      // Also make sure metadata.type exists (either Wheelchair or Stroller)
-      query.bool.filter.push({
-        exists: { field: 'metadata.type' }
-      });
-
       // Execute search query
       const result = await this.elasticSearchService.getSearchService().search({
         index: 'services',
@@ -447,15 +422,13 @@ export class WheelchairStrollerStatisticsService {
       // Filter out invalid data
       const validData = hits.filter(item => 
         item.metadata && 
-        item.metadata.type &&
-        (item.metadata.type === 'Wheelchair' || item.metadata.type === 'Stroller') &&
         (item.metadata.delivery === true || item.metadata.pickUp === true) &&
         item.createdAt
       );
       
       // Process data for chart based on the period type
       const chartData = this.processDeliveryPickupServicesData(validData, filters.period);
-      
+      // console.log(filters?.params.period)
       // Create the table data
       const tableData = this.createDeliveryPickupServicesTableData(validData, filters.period, {
         minAge: filters.minAge,
@@ -493,8 +466,7 @@ export class WheelchairStrollerStatisticsService {
       deliveryOnlyCount: 0,
       pickupOnlyCount: 0,
       bothDeliveryAndPickupCount: 0,
-      wheelchairCount: 0,
-      strollerCount: 0,
+      powerBankCount: 0,
       requestSources: {
         'QR Code': 0,
         'Hotline': 0,
@@ -519,10 +491,8 @@ export class WheelchairStrollerStatisticsService {
       }
 
       // Count by type
-      if (type === 'Wheelchair') {
-        stats.wheelchairCount++;
-      } else if (type === 'Stroller') {
-        stats.strollerCount++;
+      if (type === 'Power Bank') {
+        stats.powerBankCount++;
       }
 
       // Count by request source
@@ -536,7 +506,7 @@ export class WheelchairStrollerStatisticsService {
     return stats;
   }
 
-  private processWheelchairStrollerChartData(data: any[], periodType: string = 'Monthly') {
+  private processPowerBankChartData(data: any[], periodType: string = 'Monthly') {
     let processedData: any;
     
     switch (periodType) {
@@ -556,14 +526,14 @@ export class WheelchairStrollerStatisticsService {
   }
 
   private processDailyData(data: any[]) {
-    // Group by day and type (Wheelchair or Stroller)
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    // Group by day and type (Power Bank)
+    const groupedByDay: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+      groupedByDay[date] = { PowerBank: 0 };
     }
     
     // Group data
@@ -573,13 +543,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+          groupedByDay[date] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank += 1;
         }
       }
     });
@@ -588,12 +556,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(date => groupedByDay[date].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(date => groupedByDay[date].Stroller)
+        name: 'Power Bank',
+        data: categories.map(date => groupedByDay[date].PowerBank)
       }
     ];
     
@@ -604,15 +568,15 @@ export class WheelchairStrollerStatisticsService {
   }
 
   private processWeeklyData(data: any[]) {
-    // Group by week and type (Wheelchair or Stroller)
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    // Group by week and type (Power Bank)
+    const groupedByWeek: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 weeks
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByWeek[weekLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -624,13 +588,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByWeek[weekLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank += 1;
         }
       }
     });
@@ -639,12 +601,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByWeek);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(week => groupedByWeek[week].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(week => groupedByWeek[week].Stroller)
+        name: 'Power Bank',
+        data: categories.map(week => groupedByWeek[week].PowerBank)
       }
     ];
     
@@ -655,15 +613,15 @@ export class WheelchairStrollerStatisticsService {
   }
 
   private processMonthlyData(data: any[]) {
-    // Group by month and type (Wheelchair or Stroller)
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    // Group by month and type (Power Bank)
+    const groupedByMonth: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 months
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByMonth[monthLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -674,13 +632,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByMonth[monthLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank += 1;
         }
       }
     });
@@ -689,12 +645,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByMonth);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(month => groupedByMonth[month].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(month => groupedByMonth[month].Stroller)
+        name: 'Power Bank',
+        data: categories.map(month => groupedByMonth[month].PowerBank)
       }
     ];
     
@@ -746,10 +698,9 @@ export class WheelchairStrollerStatisticsService {
   }
 
   private processDailyDurationData(data: any[]) {
-    // Group by day and type (Wheelchair or Stroller)
+    // Group by day and type (Power Bank)
     const groupedByDay: Record<string, { 
-      Wheelchair: { totalDuration: number, count: number },
-      Stroller: { totalDuration: number, count: number }
+      PowerBank: { totalDuration: number, count: number }
     }> = {};
     
     // Initialize last 30 days
@@ -757,8 +708,7 @@ export class WheelchairStrollerStatisticsService {
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
       groupedByDay[date] = { 
-        Wheelchair: { totalDuration: 0, count: 0 },
-        Stroller: { totalDuration: 0, count: 0 }
+        PowerBank: { totalDuration: 0, count: 0 }
       };
     }
     
@@ -771,17 +721,13 @@ export class WheelchairStrollerStatisticsService {
       if (durationMinutes && moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
           groupedByDay[date] = { 
-            Wheelchair: { totalDuration: 0, count: 0 },
-            Stroller: { totalDuration: 0, count: 0 }
+            PowerBank: { totalDuration: 0, count: 0 }
           };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair.totalDuration += durationMinutes;
-          groupedByDay[date].Wheelchair.count += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller.totalDuration += durationMinutes;
-          groupedByDay[date].Stroller.count += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank.totalDuration += durationMinutes;
+          groupedByDay[date].PowerBank.count += 1;
         }
       }
     });
@@ -790,27 +736,17 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
     const series = [
       {
-        name: 'Wheelchair - Average Duration (minutes)',
+        name: 'Power Bank - Average Duration (minutes)',
         data: categories.map(date => {
-          const group = groupedByDay[date].Wheelchair;
+          const group = groupedByDay[date].PowerBank;
           return group.count > 0 ? parseFloat((group.totalDuration / group.count).toFixed(1)) : 0;
         })
       },
       {
-        name: 'Stroller - Average Duration (minutes)',
-        data: categories.map(date => {
-          const group = groupedByDay[date].Stroller;
-          return group.count > 0 ? parseFloat((group.totalDuration / group.count).toFixed(1)) : 0;
-        })
-      },
-      {
-        name: 'Wheelchair - Request Count',
-        data: categories.map(date => groupedByDay[date].Wheelchair.count)
-      },
-      {
-        name: 'Stroller - Request Count',
-        data: categories.map(date => groupedByDay[date].Stroller.count)
+        name: 'Power Bank - Request Count',
+        data: categories.map(date => groupedByDay[date].PowerBank.count)
       }
+
     ];
     
     return {
@@ -820,10 +756,9 @@ export class WheelchairStrollerStatisticsService {
   }
 
   private processWeeklyDurationData(data: any[]) {
-    // Group by week and type (Wheelchair or Stroller)
+    // Group by week and type (Power Bank)
     const groupedByWeek: Record<string, { 
-      Wheelchair: { totalDuration: number, count: number },
-      Stroller: { totalDuration: number, count: number }
+      PowerBank: { totalDuration: number, count: number }
     }> = {};
     
     // Initialize last 12 weeks
@@ -832,8 +767,7 @@ export class WheelchairStrollerStatisticsService {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
       groupedByWeek[weekLabel] = { 
-        Wheelchair: { totalDuration: 0, count: 0 },
-        Stroller: { totalDuration: 0, count: 0 }
+        PowerBank: { totalDuration: 0, count: 0 }
       };
     }
     
@@ -848,17 +782,13 @@ export class WheelchairStrollerStatisticsService {
       if (durationMinutes && itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
           groupedByWeek[weekLabel] = { 
-            Wheelchair: { totalDuration: 0, count: 0 },
-            Stroller: { totalDuration: 0, count: 0 }
+            PowerBank: { totalDuration: 0, count: 0 }
           };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair.totalDuration += durationMinutes;
-          groupedByWeek[weekLabel].Wheelchair.count += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller.totalDuration += durationMinutes;
-          groupedByWeek[weekLabel].Stroller.count += 1;
+        if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank.totalDuration += durationMinutes;
+          groupedByWeek[weekLabel].PowerBank.count += 1;
         }
       }
     });
@@ -867,26 +797,15 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByWeek);
     const series = [
       {
-        name: 'Wheelchair - Average Duration (minutes)',
+        name: 'Power Bank - Average Duration (minutes)',
         data: categories.map(week => {
-          const group = groupedByWeek[week].Wheelchair;
+          const group = groupedByWeek[week].PowerBank;
           return group.count > 0 ? parseFloat((group.totalDuration / group.count).toFixed(1)) : 0;
         })
       },
       {
-        name: 'Stroller - Average Duration (minutes)',
-        data: categories.map(week => {
-          const group = groupedByWeek[week].Stroller;
-          return group.count > 0 ? parseFloat((group.totalDuration / group.count).toFixed(1)) : 0;
-        })
-      },
-      {
-        name: 'Wheelchair - Request Count',
-        data: categories.map(week => groupedByWeek[week].Wheelchair.count)
-      },
-      {
-        name: 'Stroller - Request Count',
-        data: categories.map(week => groupedByWeek[week].Stroller.count)
+        name: 'Power Bank - Request Count',
+        data: categories.map(week => groupedByWeek[week].PowerBank.count)
       }
     ];
     
@@ -897,10 +816,9 @@ export class WheelchairStrollerStatisticsService {
   }
 
   private processMonthlyDurationData(data: any[]) {
-    // Group by month and type (Wheelchair or Stroller)
+      // Group by month and type (Power Bank)
     const groupedByMonth: Record<string, { 
-      Wheelchair: { totalDuration: number, count: number },
-      Stroller: { totalDuration: number, count: number }
+      PowerBank: { totalDuration: number, count: number }
     }> = {};
     
     // Initialize last 12 months
@@ -909,8 +827,7 @@ export class WheelchairStrollerStatisticsService {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
       groupedByMonth[monthLabel] = { 
-        Wheelchair: { totalDuration: 0, count: 0 },
-        Stroller: { totalDuration: 0, count: 0 }
+        PowerBank: { totalDuration: 0, count: 0 }
       };
     }
     
@@ -924,17 +841,13 @@ export class WheelchairStrollerStatisticsService {
       if (durationMinutes && moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
           groupedByMonth[monthLabel] = { 
-            Wheelchair: { totalDuration: 0, count: 0 },
-            Stroller: { totalDuration: 0, count: 0 }
+            PowerBank: { totalDuration: 0, count: 0 }
           };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair.totalDuration += durationMinutes;
-          groupedByMonth[monthLabel].Wheelchair.count += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller.totalDuration += durationMinutes;
-          groupedByMonth[monthLabel].Stroller.count += 1;
+        if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank.totalDuration += durationMinutes;
+          groupedByMonth[monthLabel].PowerBank.count += 1;
         }
       }
     });
@@ -943,26 +856,15 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByMonth);
     const series = [
       {
-        name: 'Wheelchair - Average Duration (minutes)',
+        name: 'Power Bank - Average Duration (minutes)',
         data: categories.map(month => {
-          const group = groupedByMonth[month].Wheelchair;
+          const group = groupedByMonth[month].PowerBank;
           return group.count > 0 ? parseFloat((group.totalDuration / group.count).toFixed(1)) : 0;
         })
       },
       {
-        name: 'Stroller - Average Duration (minutes)',
-        data: categories.map(month => {
-          const group = groupedByMonth[month].Stroller;
-          return group.count > 0 ? parseFloat((group.totalDuration / group.count).toFixed(1)) : 0;
-        })
-      },
-      {
-        name: 'Wheelchair - Request Count',
-        data: categories.map(month => groupedByMonth[month].Wheelchair.count)
-      },
-      {
-        name: 'Stroller - Request Count',
-        data: categories.map(month => groupedByMonth[month].Stroller.count)
+        name: 'Power Bank - Request Count',
+        data: categories.map(month => groupedByMonth[month].PowerBank.count)
       }
     ];
     
@@ -996,13 +898,13 @@ export class WheelchairStrollerStatisticsService {
 
   private processDailyDamagedCasesData(data: any[]) {
     // Group by day
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByDay: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+      groupedByDay[date] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1012,13 +914,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+          groupedByDay[date] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank += 1;
         }
       }
     });
@@ -1027,12 +927,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(date => groupedByDay[date].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(date => groupedByDay[date].Stroller)
+        name: 'Power Bank',
+        data: categories.map(date => groupedByDay[date].PowerBank)
       }
     ];
     
@@ -1044,14 +940,14 @@ export class WheelchairStrollerStatisticsService {
 
   private processWeeklyDamagedCasesData(data: any[]) {
     // Group by week
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByWeek: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 weeks
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByWeek[weekLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1063,13 +959,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByWeek[weekLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank += 1;
         }
       }
     });
@@ -1078,12 +972,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByWeek);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(week => groupedByWeek[week].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(week => groupedByWeek[week].Stroller)
+        name: 'Power Bank',
+        data: categories.map(week => groupedByWeek[week].PowerBank)
       }
     ];
     
@@ -1095,14 +985,14 @@ export class WheelchairStrollerStatisticsService {
 
   private processMonthlyDamagedCasesData(data: any[]) {
     // Group by month
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByMonth: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 months
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByMonth[monthLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1113,13 +1003,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByMonth[monthLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank += 1;
         }
       }
     });
@@ -1128,12 +1016,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByMonth);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(month => groupedByMonth[month].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(month => groupedByMonth[month].Stroller)
+        name: 'Power Bank',
+        data: categories.map(month => groupedByMonth[month].PowerBank)
       }
     ];
     
@@ -1152,11 +1036,11 @@ export class WheelchairStrollerStatisticsService {
       { label: '18:00 - 23:59', start: 18, end: 23 }
     ];
     
-    const groupedByTime: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByTime: Record<string, { PowerBank: number }> = {};
     
     // Initialize time slots
     timeSlots.forEach(slot => {
-      groupedByTime[slot.label] = { Wheelchair: 0, Stroller: 0 };
+      groupedByTime[slot.label] = { PowerBank: 0 };
     });
     
     // Group data
@@ -1167,10 +1051,8 @@ export class WheelchairStrollerStatisticsService {
       const timeSlot = timeSlots.find(slot => hour >= slot.start && hour <= slot.end);
       
       if (timeSlot) {
-        if (type === 'Wheelchair') {
-          groupedByTime[timeSlot.label].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByTime[timeSlot.label].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByTime[timeSlot.label].PowerBank += 1;
         }
       }
     });
@@ -1179,12 +1061,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = timeSlots.map(slot => slot.label);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(time => groupedByTime[time].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(time => groupedByTime[time].Stroller)
+        name: 'Power Bank',
+        data: categories.map(time => groupedByTime[time].PowerBank)
       }
     ];
     
@@ -1218,13 +1096,13 @@ export class WheelchairStrollerStatisticsService {
 
   private createDailyDamagedCasesTableData(data: any[], filters: { minAge?: number, maxAge?: number, gender?: string } = {}) {
     // Group by day
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByDay: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+      groupedByDay[date] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1234,29 +1112,25 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+          groupedByDay[date] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank += 1;
         }
       }
     });
     
     // Format for table with filter info
     const ageRangeText = this.getAgeRangeText(filters);
-    const genderText = filters.gender ? `Gender: ${filters.gender}` : '';
+    const genderText = filters.gender ? `${filters.gender}` : '';
     
     return Object.keys(groupedByDay)
       .sort((a, b) => moment(a).diff(moment(b)))
-      .filter(date => groupedByDay[date].Wheelchair > 0 || groupedByDay[date].Stroller > 0)
+      .filter(date => groupedByDay[date].PowerBank > 0)
       .map(date => ({
         period: date,
-        wheelchairCount: groupedByDay[date].Wheelchair,
-        strollerCount: groupedByDay[date].Stroller,
-        totalCount: groupedByDay[date].Wheelchair + groupedByDay[date].Stroller,
+        powerBankCount: groupedByDay[date].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1264,14 +1138,14 @@ export class WheelchairStrollerStatisticsService {
 
   private createWeeklyDamagedCasesTableData(data: any[], filters: { minAge?: number, maxAge?: number, gender?: string } = {}) {
     // Group by week
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByWeek: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 weeks
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByWeek[weekLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1283,28 +1157,24 @@ export class WheelchairStrollerStatisticsService {
       
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByWeek[weekLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
-        }
+        if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank += 1;
+          }
       }
     });
     
     // Format for table with filter info
     const ageRangeText = this.getAgeRangeText(filters);
-    const genderText = filters.gender ? `Gender: ${filters.gender}` : '';
+    const genderText = filters.gender ? `${filters.gender}` : '';
     
     return Object.keys(groupedByWeek)
-      .filter(week => groupedByWeek[week].Wheelchair > 0 || groupedByWeek[week].Stroller > 0)
+      .filter(week => groupedByWeek[week].PowerBank > 0)
       .map(week => ({
         period: week,
-        wheelchairCount: groupedByWeek[week].Wheelchair,
-        strollerCount: groupedByWeek[week].Stroller,
-        totalCount: groupedByWeek[week].Wheelchair + groupedByWeek[week].Stroller,
+        powerBankCount: groupedByWeek[week].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1312,14 +1182,14 @@ export class WheelchairStrollerStatisticsService {
 
   private createMonthlyDamagedCasesTableData(data: any[], filters: { minAge?: number, maxAge?: number, gender?: string } = {}) {
     // Group by month
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByMonth: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 months
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByMonth[monthLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1330,28 +1200,24 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByMonth[monthLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
-        }
+          if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank += 1;
+          }
       }
     });
     
     // Format for table with filter info
     const ageRangeText = this.getAgeRangeText(filters);
-    const genderText = filters.gender ? `Gender: ${filters.gender}` : '';
+    const genderText = filters.gender ? `${filters.gender}` : '';
     
     return Object.keys(groupedByMonth)
-      .filter(month => groupedByMonth[month].Wheelchair > 0 || groupedByMonth[month].Stroller > 0)
+      .filter(month => groupedByMonth[month].PowerBank > 0)
       .map(month => ({
         period: month,
-        wheelchairCount: groupedByMonth[month].Wheelchair,
-        strollerCount: groupedByMonth[month].Stroller,
-        totalCount: groupedByMonth[month].Wheelchair + groupedByMonth[month].Stroller,
+        powerBankCount: groupedByMonth[month].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1366,11 +1232,11 @@ export class WheelchairStrollerStatisticsService {
       { label: '18:00 - 23:59', start: 18, end: 23 }
     ];
     
-    const groupedByTime: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByTime: Record<string, { PowerBank: number }> = {};
     
     // Initialize time slots
     timeSlots.forEach(slot => {
-      groupedByTime[slot.label] = { Wheelchair: 0, Stroller: 0 };
+      groupedByTime[slot.label] = { PowerBank: 0 };
     });
     
     // Group data
@@ -1381,10 +1247,8 @@ export class WheelchairStrollerStatisticsService {
       const timeSlot = timeSlots.find(slot => hour >= slot.start && hour <= slot.end);
       
       if (timeSlot) {
-        if (type === 'Wheelchair') {
-          groupedByTime[timeSlot.label].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByTime[timeSlot.label].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByTime[timeSlot.label].PowerBank += 1;
         }
       }
     });
@@ -1395,12 +1259,10 @@ export class WheelchairStrollerStatisticsService {
     
     return timeSlots
       .map(slot => slot.label)
-      .filter(time => groupedByTime[time].Wheelchair > 0 || groupedByTime[time].Stroller > 0)
+      .filter(time => groupedByTime[time].PowerBank > 0)
       .map(time => ({
         period: time,
-        wheelchairCount: groupedByTime[time].Wheelchair,
-        strollerCount: groupedByTime[time].Stroller,
-        totalCount: groupedByTime[time].Wheelchair + groupedByTime[time].Stroller,
+        powerBankCount: groupedByTime[time].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1442,13 +1304,13 @@ export class WheelchairStrollerStatisticsService {
 
   private processDailyNotReturnedItemsData(data: any[]) {
     // Group by day
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByDay: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+      groupedByDay[date] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1458,13 +1320,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+          groupedByDay[date] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank += 1;
         }
       }
     });
@@ -1473,12 +1333,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(date => groupedByDay[date].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(date => groupedByDay[date].Stroller)
+        name: 'Power Bank',
+        data: categories.map(date => groupedByDay[date].PowerBank)
       }
     ];
     
@@ -1490,14 +1346,14 @@ export class WheelchairStrollerStatisticsService {
 
   private processWeeklyNotReturnedItemsData(data: any[]) {
     // Group by week
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByWeek: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 weeks
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByWeek[weekLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1509,14 +1365,12 @@ export class WheelchairStrollerStatisticsService {
       
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByWeek[weekLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
-        }
+          if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank += 1;
+          }
       }
     });
     
@@ -1524,12 +1378,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByWeek);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(week => groupedByWeek[week].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(week => groupedByWeek[week].Stroller)
+        name: 'Power Bank',
+        data: categories.map(week => groupedByWeek[week].PowerBank)
       }
     ];
     
@@ -1541,14 +1391,14 @@ export class WheelchairStrollerStatisticsService {
 
   private processMonthlyNotReturnedItemsData(data: any[]) {
     // Group by month
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByMonth: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 months
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByMonth[monthLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1559,13 +1409,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByMonth[monthLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank += 1;
         }
       }
     });
@@ -1574,12 +1422,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByMonth);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(month => groupedByMonth[month].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(month => groupedByMonth[month].Stroller)
+        name: 'Power Bank',
+        data: categories.map(month => groupedByMonth[month].PowerBank)
       }
     ];
     
@@ -1598,11 +1442,11 @@ export class WheelchairStrollerStatisticsService {
       { label: '18:00 - 23:59', start: 18, end: 23 }
     ];
     
-    const groupedByTime: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByTime: Record<string, { PowerBank: number }> = {};
     
     // Initialize time slots
     timeSlots.forEach(slot => {
-      groupedByTime[slot.label] = { Wheelchair: 0, Stroller: 0 };
+      groupedByTime[slot.label] = { PowerBank: 0 };
     });
     
     // Group data
@@ -1613,10 +1457,8 @@ export class WheelchairStrollerStatisticsService {
       const timeSlot = timeSlots.find(slot => hour >= slot.start && hour <= slot.end);
       
       if (timeSlot) {
-        if (type === 'Wheelchair') {
-          groupedByTime[timeSlot.label].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByTime[timeSlot.label].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByTime[timeSlot.label].PowerBank += 1;
         }
       }
     });
@@ -1625,12 +1467,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = timeSlots.map(slot => slot.label);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(time => groupedByTime[time].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(time => groupedByTime[time].Stroller)
+        name: 'Power Bank',
+        data: categories.map(time => groupedByTime[time].PowerBank)
       }
     ];
     
@@ -1664,13 +1502,13 @@ export class WheelchairStrollerStatisticsService {
 
   private createDailyNotReturnedItemsTableData(data: any[], filters: { minAge?: number, maxAge?: number, gender?: string } = {}) {
     // Group by day
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByDay: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+      groupedByDay[date] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1680,13 +1518,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+          groupedByDay[date] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank += 1;
         }
       }
     });
@@ -1697,12 +1533,10 @@ export class WheelchairStrollerStatisticsService {
     
     return Object.keys(groupedByDay)
       .sort((a, b) => moment(a).diff(moment(b)))
-      .filter(date => groupedByDay[date].Wheelchair > 0 || groupedByDay[date].Stroller > 0)
+      .filter(date => groupedByDay[date].PowerBank > 0)
       .map(date => ({
         period: date,
-        wheelchairCount: groupedByDay[date].Wheelchair,
-        strollerCount: groupedByDay[date].Stroller,
-        totalCount: groupedByDay[date].Wheelchair + groupedByDay[date].Stroller,
+        powerBankCount: groupedByDay[date].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1710,14 +1544,14 @@ export class WheelchairStrollerStatisticsService {
 
   private createWeeklyNotReturnedItemsTableData(data: any[], filters: { minAge?: number, maxAge?: number, gender?: string } = {}) {
     // Group by week
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByWeek: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 weeks
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByWeek[weekLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1729,14 +1563,12 @@ export class WheelchairStrollerStatisticsService {
       
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByWeek[weekLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
-        }
+        if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank += 1;
+          }
       }
     });
     
@@ -1745,12 +1577,10 @@ export class WheelchairStrollerStatisticsService {
     const genderText = filters.gender ? `${filters.gender}` : '';
     
     return Object.keys(groupedByWeek)
-      .filter(week => groupedByWeek[week].Wheelchair > 0 || groupedByWeek[week].Stroller > 0)
+      .filter(week => groupedByWeek[week].PowerBank > 0)
       .map(week => ({
         period: week,
-        wheelchairCount: groupedByWeek[week].Wheelchair,
-        strollerCount: groupedByWeek[week].Stroller,
-        totalCount: groupedByWeek[week].Wheelchair + groupedByWeek[week].Stroller,
+        powerBankCount: groupedByWeek[week].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1758,14 +1588,14 @@ export class WheelchairStrollerStatisticsService {
 
   private createMonthlyNotReturnedItemsTableData(data: any[], filters: { minAge?: number, maxAge?: number, gender?: string } = {}) {
     // Group by month
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByMonth: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 months
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByMonth[monthLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1776,13 +1606,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByMonth[monthLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank += 1;
         }
       }
     });
@@ -1792,12 +1620,10 @@ export class WheelchairStrollerStatisticsService {
     const genderText = filters.gender ? `${filters.gender}` : '';
     
     return Object.keys(groupedByMonth)
-      .filter(month => groupedByMonth[month].Wheelchair > 0 || groupedByMonth[month].Stroller > 0)
+      .filter(month => groupedByMonth[month].PowerBank > 0)
       .map(month => ({
         period: month,
-        wheelchairCount: groupedByMonth[month].Wheelchair,
-        strollerCount: groupedByMonth[month].Stroller,
-        totalCount: groupedByMonth[month].Wheelchair + groupedByMonth[month].Stroller,
+        powerBankCount: groupedByMonth[month].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1812,11 +1638,11 @@ export class WheelchairStrollerStatisticsService {
       { label: '18:00 - 23:59', start: 18, end: 23 }
     ];
     
-    const groupedByTime: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByTime: Record<string, { PowerBank: number }> = {};
     
     // Initialize time slots
     timeSlots.forEach(slot => {
-      groupedByTime[slot.label] = { Wheelchair: 0, Stroller: 0 };
+      groupedByTime[slot.label] = { PowerBank: 0 };
     });
     
     // Group data
@@ -1827,10 +1653,8 @@ export class WheelchairStrollerStatisticsService {
       const timeSlot = timeSlots.find(slot => hour >= slot.start && hour <= slot.end);
       
       if (timeSlot) {
-        if (type === 'Wheelchair') {
-          groupedByTime[timeSlot.label].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByTime[timeSlot.label].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByTime[timeSlot.label].PowerBank += 1;
         }
       }
     });
@@ -1841,12 +1665,10 @@ export class WheelchairStrollerStatisticsService {
     
     return timeSlots
       .map(slot => slot.label)
-      .filter(time => groupedByTime[time].Wheelchair > 0 || groupedByTime[time].Stroller > 0)
+      .filter(time => groupedByTime[time].PowerBank > 0)
       .map(time => ({
         period: time,
-        wheelchairCount: groupedByTime[time].Wheelchair,
-        strollerCount: groupedByTime[time].Stroller,
-        totalCount: groupedByTime[time].Wheelchair + groupedByTime[time].Stroller,
+        powerBankCount: groupedByTime[time].PowerBank,
         ageRange: ageRangeText,
         gender: genderText
       }));
@@ -1873,13 +1695,13 @@ export class WheelchairStrollerStatisticsService {
 
   private processDailyDeliveryPickupServicesData(data: any[]) {
     // Group by day
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByDay: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+      groupedByDay[date] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1889,13 +1711,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+          groupedByDay[date] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByDay[date].PowerBank += 1;
         }
       }
     });
@@ -1904,12 +1724,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(date => groupedByDay[date].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(date => groupedByDay[date].Stroller)
+        name: 'Power Bank',
+        data: categories.map(date => groupedByDay[date].PowerBank)
       }
     ];
     
@@ -1921,14 +1737,14 @@ export class WheelchairStrollerStatisticsService {
 
   private processWeeklyDeliveryPickupServicesData(data: any[]) {
     // Group by week
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByWeek: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 weeks
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByWeek[weekLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1940,13 +1756,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByWeek[weekLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByWeek[weekLabel].PowerBank += 1;
         }
       }
     });
@@ -1955,12 +1769,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByWeek);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(week => groupedByWeek[week].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(week => groupedByWeek[week].Stroller)
+        name: 'Power Bank',
+        data: categories.map(week => groupedByWeek[week].PowerBank)
       }
     ];
     
@@ -1972,14 +1782,14 @@ export class WheelchairStrollerStatisticsService {
 
   private processMonthlyDeliveryPickupServicesData(data: any[]) {
     // Group by month
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    const groupedByMonth: Record<string, { PowerBank: number }> = {};
     
     // Initialize last 12 months
     const today = moment();
     for (let i = 11; i >= 0; i--) {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      groupedByMonth[monthLabel] = { PowerBank: 0 };
     }
     
     // Group data
@@ -1990,13 +1800,11 @@ export class WheelchairStrollerStatisticsService {
       
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+          groupedByMonth[monthLabel] = { PowerBank: 0 };
         }
         
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
+        if (type === 'Power Bank') {
+          groupedByMonth[monthLabel].PowerBank += 1;
         }
       }
     });
@@ -2005,12 +1813,8 @@ export class WheelchairStrollerStatisticsService {
     const categories = Object.keys(groupedByMonth);
     const series = [
       {
-        name: 'Wheelchair',
-        data: categories.map(month => groupedByMonth[month].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(month => groupedByMonth[month].Stroller)
+        name: 'Power Bank',
+        data: categories.map(month => groupedByMonth[month].PowerBank)
       }
     ];
     
@@ -2027,7 +1831,8 @@ export class WheelchairStrollerStatisticsService {
     requestSource?: string 
   } = {}) {
     let tableData = [];
-    
+    console.log(periodType)
+
     switch (periodType) {
       case 'Daily':
         tableData = this.createDailyDeliveryPickupServicesTableData(data, filters);
@@ -2052,8 +1857,7 @@ export class WheelchairStrollerStatisticsService {
   } = {}) {
     // Group by day
     const groupedByDay: Record<string, { 
-      Wheelchair: { delivery: number, pickup: number, both: number, total: number },
-      Stroller: { delivery: number, pickup: number, both: number, total: number }
+      PowerBank: { delivery: number, pickup: number, both: number, total: number }
     }> = {};
     
     // Initialize last 30 days
@@ -2061,8 +1865,7 @@ export class WheelchairStrollerStatisticsService {
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
       groupedByDay[date] = { 
-        Wheelchair: { delivery: 0, pickup: 0, both: 0, total: 0 },
-        Stroller: { delivery: 0, pickup: 0, both: 0, total: 0 }
+        PowerBank: { delivery: 0, pickup: 0, both: 0, total: 0 }
       };
     }
     
@@ -2076,30 +1879,20 @@ export class WheelchairStrollerStatisticsService {
       if (moment(date).isAfter(moment().subtract(30, 'days'))) {
         if (!groupedByDay[date]) {
           groupedByDay[date] = { 
-            Wheelchair: { delivery: 0, pickup: 0, both: 0, total: 0 },
-            Stroller: { delivery: 0, pickup: 0, both: 0, total: 0 }
+            PowerBank: { delivery: 0, pickup: 0, both: 0, total: 0 }
           };
         }
         
-        if (type === 'Wheelchair') {
+        if (type === 'Power Bank') {
           if (hasDelivery && hasPickup) {
-            groupedByDay[date].Wheelchair.both += 1;
+            groupedByDay[date].PowerBank.both += 1;
           } else if (hasDelivery) {
-            groupedByDay[date].Wheelchair.delivery += 1;
+            groupedByDay[date].PowerBank.delivery += 1;
           } else if (hasPickup) {
-            groupedByDay[date].Wheelchair.pickup += 1;
+            groupedByDay[date].PowerBank.pickup += 1;
           }
-          groupedByDay[date].Wheelchair.total += 1;
-        } else if (type === 'Stroller') {
-          if (hasDelivery && hasPickup) {
-            groupedByDay[date].Stroller.both += 1;
-          } else if (hasDelivery) {
-            groupedByDay[date].Stroller.delivery += 1;
-          } else if (hasPickup) {
-            groupedByDay[date].Stroller.pickup += 1;
-          }
-          groupedByDay[date].Stroller.total += 1;
-        }
+          groupedByDay[date].PowerBank.total += 1;
+        } 
       }
     });
     
@@ -2112,26 +1905,19 @@ export class WheelchairStrollerStatisticsService {
       .sort((a, b) => moment(a).diff(moment(b)))
       .filter(date => {
         const day = groupedByDay[date];
-        return day.Wheelchair.total > 0 || day.Stroller.total > 0;
+        return day.PowerBank.total > 0;
       })
       .map(date => {
         const day = groupedByDay[date];
         return {
           period: date,
-          wheelchair: {
-            deliveryOnly: day.Wheelchair.delivery,
-            pickupOnly: day.Wheelchair.pickup,
-            both: day.Wheelchair.both,
-            total: day.Wheelchair.total
+          powerBank: {
+            deliveryOnly: day.PowerBank.delivery,
+            pickupOnly: day.PowerBank.pickup,
+            both: day.PowerBank.both,
+              total: day.PowerBank.total
           },
-          stroller: {
-            deliveryOnly: day.Stroller.delivery,
-            pickupOnly: day.Stroller.pickup,
-            both: day.Stroller.both,
-            total: day.Stroller.total
-          },
-          totalServices: day.Wheelchair.total + day.Stroller.total,
-          ageRange: ageRangeText,
+            ageRange: ageRangeText,
           gender: genderText,
           requestSource: requestSourceText
         };
@@ -2146,8 +1932,7 @@ export class WheelchairStrollerStatisticsService {
   } = {}) {
     // Group by week
     const groupedByWeek: Record<string, { 
-      Wheelchair: { delivery: number, pickup: number, both: number, total: number },
-      Stroller: { delivery: number, pickup: number, both: number, total: number }
+      PowerBank: { delivery: number, pickup: number, both: number, total: number }
     }> = {};
     
     // Initialize last 12 weeks
@@ -2156,8 +1941,7 @@ export class WheelchairStrollerStatisticsService {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
       groupedByWeek[weekLabel] = { 
-        Wheelchair: { delivery: 0, pickup: 0, both: 0, total: 0 },
-        Stroller: { delivery: 0, pickup: 0, both: 0, total: 0 }
+        PowerBank: { delivery: 0, pickup: 0, both: 0, total: 0 }
       };
     }
     
@@ -2173,29 +1957,19 @@ export class WheelchairStrollerStatisticsService {
       if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
         if (!groupedByWeek[weekLabel]) {
           groupedByWeek[weekLabel] = { 
-            Wheelchair: { delivery: 0, pickup: 0, both: 0, total: 0 },
-            Stroller: { delivery: 0, pickup: 0, both: 0, total: 0 }
+            PowerBank: { delivery: 0, pickup: 0, both: 0, total: 0 }
           };
         }
         
-        if (type === 'Wheelchair') {
+        if (type === 'Power Bank') {
           if (hasDelivery && hasPickup) {
-            groupedByWeek[weekLabel].Wheelchair.both += 1;
+            groupedByWeek[weekLabel].PowerBank.both += 1;
           } else if (hasDelivery) {
-            groupedByWeek[weekLabel].Wheelchair.delivery += 1;
+            groupedByWeek[weekLabel].PowerBank.delivery += 1;
           } else if (hasPickup) {
-            groupedByWeek[weekLabel].Wheelchair.pickup += 1;
+            groupedByWeek[weekLabel].PowerBank.pickup += 1;
           }
-          groupedByWeek[weekLabel].Wheelchair.total += 1;
-        } else if (type === 'Stroller') {
-          if (hasDelivery && hasPickup) {
-            groupedByWeek[weekLabel].Stroller.both += 1;
-          } else if (hasDelivery) {
-            groupedByWeek[weekLabel].Stroller.delivery += 1;
-          } else if (hasPickup) {
-            groupedByWeek[weekLabel].Stroller.pickup += 1;
-          }
-          groupedByWeek[weekLabel].Stroller.total += 1;
+          groupedByWeek[weekLabel].PowerBank.total += 1;
         }
       }
     });
@@ -2208,25 +1982,18 @@ export class WheelchairStrollerStatisticsService {
     return Object.keys(groupedByWeek)
       .filter(week => {
         const weekData = groupedByWeek[week];
-        return weekData.Wheelchair.total > 0 || weekData.Stroller.total > 0;
+        return weekData.PowerBank.total > 0;
       })
       .map(week => {
         const weekData = groupedByWeek[week];
         return {
           period: week,
-          wheelchair: {
-            deliveryOnly: weekData.Wheelchair.delivery,
-            pickupOnly: weekData.Wheelchair.pickup,
-            both: weekData.Wheelchair.both,
-            total: weekData.Wheelchair.total
+          powerBank: {
+            deliveryOnly: weekData.PowerBank.delivery,
+            pickupOnly: weekData.PowerBank.pickup,
+            both: weekData.PowerBank.both,
+            total: weekData.PowerBank.total
           },
-          stroller: {
-            deliveryOnly: weekData.Stroller.delivery,
-            pickupOnly: weekData.Stroller.pickup,
-            both: weekData.Stroller.both,
-            total: weekData.Stroller.total
-          },
-          totalServices: weekData.Wheelchair.total + weekData.Stroller.total,
           ageRange: ageRangeText,
           gender: genderText,
           requestSource: requestSourceText
@@ -2242,8 +2009,7 @@ export class WheelchairStrollerStatisticsService {
   } = {}) {
     // Group by month
     const groupedByMonth: Record<string, { 
-      Wheelchair: { delivery: number, pickup: number, both: number, total: number },
-      Stroller: { delivery: number, pickup: number, both: number, total: number }
+      PowerBank: { delivery: number, pickup: number, both: number, total: number }
     }> = {};
     
     // Initialize last 12 months
@@ -2252,8 +2018,7 @@ export class WheelchairStrollerStatisticsService {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
       groupedByMonth[monthLabel] = { 
-        Wheelchair: { delivery: 0, pickup: 0, both: 0, total: 0 },
-        Stroller: { delivery: 0, pickup: 0, both: 0, total: 0 }
+        PowerBank: { delivery: 0, pickup: 0, both: 0, total: 0 }
       };
     }
     
@@ -2268,29 +2033,19 @@ export class WheelchairStrollerStatisticsService {
       if (moment(month).isAfter(moment().subtract(12, 'months'))) {
         if (!groupedByMonth[monthLabel]) {
           groupedByMonth[monthLabel] = { 
-            Wheelchair: { delivery: 0, pickup: 0, both: 0, total: 0 },
-            Stroller: { delivery: 0, pickup: 0, both: 0, total: 0 }
+            PowerBank: { delivery: 0, pickup: 0, both: 0, total: 0 }
           };
         }
         
-        if (type === 'Wheelchair') {
+        if (type === 'Power Bank') {
           if (hasDelivery && hasPickup) {
-            groupedByMonth[monthLabel].Wheelchair.both += 1;
+            groupedByMonth[monthLabel].PowerBank.both += 1;
           } else if (hasDelivery) {
-            groupedByMonth[monthLabel].Wheelchair.delivery += 1;
+            groupedByMonth[monthLabel].PowerBank.delivery += 1;
           } else if (hasPickup) {
-            groupedByMonth[monthLabel].Wheelchair.pickup += 1;
+            groupedByMonth[monthLabel].PowerBank.pickup += 1;
           }
-          groupedByMonth[monthLabel].Wheelchair.total += 1;
-        } else if (type === 'Stroller') {
-          if (hasDelivery && hasPickup) {
-            groupedByMonth[monthLabel].Stroller.both += 1;
-          } else if (hasDelivery) {
-            groupedByMonth[monthLabel].Stroller.delivery += 1;
-          } else if (hasPickup) {
-            groupedByMonth[monthLabel].Stroller.pickup += 1;
-          }
-          groupedByMonth[monthLabel].Stroller.total += 1;
+          groupedByMonth[monthLabel].PowerBank.total += 1;
         }
       }
     });
@@ -2303,25 +2058,18 @@ export class WheelchairStrollerStatisticsService {
     return Object.keys(groupedByMonth)
       .filter(month => {
         const monthData = groupedByMonth[month];
-        return monthData.Wheelchair.total > 0 || monthData.Stroller.total > 0;
+        return monthData.PowerBank.total > 0;
       })
       .map(month => {
         const monthData = groupedByMonth[month];
         return {
           period: month,
-          wheelchair: {
-            deliveryOnly: monthData.Wheelchair.delivery,
-            pickupOnly: monthData.Wheelchair.pickup,
-            both: monthData.Wheelchair.both,
-            total: monthData.Wheelchair.total
+          powerBank: {
+            deliveryOnly: monthData.PowerBank.delivery,
+            pickupOnly: monthData.PowerBank.pickup,
+            both: monthData.PowerBank.both,
+            total: monthData.PowerBank.total
           },
-          stroller: {
-            deliveryOnly: monthData.Stroller.delivery,
-            pickupOnly: monthData.Stroller.pickup,
-            both: monthData.Stroller.both,
-            total: monthData.Stroller.total
-          },
-          totalServices: monthData.Wheelchair.total + monthData.Stroller.total,
           ageRange: ageRangeText,
           gender: genderText,
           requestSource: requestSourceText
@@ -2342,7 +2090,7 @@ export class WheelchairStrollerStatisticsService {
       const query: any = {
         bool: {
           must: [
-            { match: { 'type.keyword': 'Wheelchair & Stroller Request' } }
+              { match: { 'type.keyword': 'Power Bank Request' } }
           ],
           filter: []
         }
@@ -2427,18 +2175,12 @@ export class WheelchairStrollerStatisticsService {
         'CC Desk': 0,
         'Other': 0
       },
-      wheelchairCounts: {
+      powerBankCounts: {
         'QR Code': 0,
         'Hotline': 0,
         'CC Desk': 0,
         'Other': 0
-      },
-      strollerCounts: {
-        'QR Code': 0,
-        'Hotline': 0,
-        'CC Desk': 0,
-        'Other': 0
-      }
+      } 
     };
 
     data.forEach(item => {
@@ -2450,10 +2192,8 @@ export class WheelchairStrollerStatisticsService {
       summary.sourceCounts[sourceKey]++;
       
       // Count by type and source
-      if (type === 'Wheelchair') {
-        summary.wheelchairCounts[sourceKey]++;
-      } else if (type === 'Stroller') {
-        summary.strollerCounts[sourceKey]++;
+      if (type === 'Power Bank') {
+        summary.powerBankCounts[sourceKey]++;
       }
     });
 
@@ -2650,5 +2390,51 @@ export class WheelchairStrollerStatisticsService {
       categories,
       series
     };
+  }
+
+  async getNotReturnedItemsCount() {
+    try {
+      // Build the query for items not returned without filtration
+      const query: any = {
+        bool: {
+          must: [
+            { match: { 'type.keyword': 'Power Bank Request' } },
+            { match: { 'state.keyword': 'Item Not Returned' } }
+          ]
+        }
+      };
+
+      // Execute search query
+      const result = await this.elasticSearchService.getSearchService().search({
+        index: 'services',
+        body: {
+          query,
+          size: 0, // We only need the count, not the documents
+          track_total_hits: true // Ensure we get the total count
+        }
+      });
+
+      // Get the total count
+      let totalCount: number;
+      if (typeof result.body.hits.total === 'number') {
+        totalCount = result.body.hits.total;
+      } else {
+        totalCount = result.body.hits.total.value;
+      }
+
+      return {
+        success: true,
+        data: {
+          count: totalCount
+        }
+      };
+    } catch (error) {
+      console.error('Error getting not returned items count:', error);
+      return {
+        success: false,
+        message: 'Error getting not returned items count',
+        error: error.message || error
+      };
+    }
   }
 } 

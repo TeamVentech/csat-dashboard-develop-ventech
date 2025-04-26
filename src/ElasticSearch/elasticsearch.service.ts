@@ -3,6 +3,8 @@ import { ElasticsearchService } from '@nestjs/elasticsearch';
 import * as moment from 'moment';
 import { Client } from '@elastic/elasticsearch';
 import { classToPlain } from 'class-transformer';
+import { PeriodType } from '../requestServices/dto/suggestion-chart.dto';
+
 interface ServiceRecord {
     type?: string;
     metadata?: {
@@ -1383,5 +1385,394 @@ export class ElasticService {
                 casesCount: stats.count.toString(),
                 __typename: "DurationBreakdown"
             }));
+    }
+
+    async getSuggestionChartData(
+        filters: {
+            fromDate?: string;
+            toDate?: string;
+            period?: PeriodType;
+            categoryId?: string;
+            touchpointId?: string;
+            departmentId?: string;
+            minAge?: number;
+            maxAge?: number;
+            gender?: string;
+        }
+    ) {
+        try {
+            // Build the query
+            const query: any = {
+                bool: {
+                    must: [
+                        { match: { name: 'Suggestion Box' } }
+                    ],
+                    filter: []
+                }
+            };
+
+            // Add date range filter if provided
+            if (filters.fromDate || filters.toDate) {
+                const dateRange: any = { range: { createdAt: {} } };
+                if (filters.fromDate) dateRange.range.createdAt.gte = filters.fromDate;
+                if (filters.toDate) dateRange.range.createdAt.lte = filters.toDate;
+                query.bool.filter.push(dateRange);
+            }
+
+            // Add category filter if provided
+            if (filters.categoryId) {
+                query.bool.filter.push({
+                    match: { 'metadata.category.id': filters.categoryId }
+                });
+            }
+
+            // Add touchpoint filter if provided
+            if (filters.touchpointId) {
+                query.bool.filter.push({
+                    match: { 'metadata.touchpoint.id': filters.touchpointId }
+                });
+            }
+
+            // Add department filter if provided
+            if (filters.departmentId) {
+                query.bool.filter.push({
+                    match: { 'metadata.department.id': filters.departmentId }
+                });
+            }
+
+            // Add age range filter if provided
+            if (filters.minAge !== undefined || filters.maxAge !== undefined) {
+                const ageRange: any = { range: { 'metadata.customer.age': {} } };
+                if (filters.minAge !== undefined) ageRange.range['metadata.customer.age'].gte = filters.minAge;
+                if (filters.maxAge !== undefined) ageRange.range['metadata.customer.age'].lte = filters.maxAge;
+                query.bool.filter.push(ageRange);
+            }
+
+            // Add gender filter if provided
+            if (filters.gender) {
+                query.bool.filter.push({
+                    match: { 'metadata.customer.gender': filters.gender }
+                });
+            }
+
+            // Execute search query
+            const result = await this.elasticsearchService.search({
+                index: 'services',
+                body: {
+                    query,
+                    size: 10000 // Get all matching documents
+                }
+            });
+
+            const hits = result.body.hits.hits.map((hit: any) => hit._source);
+            
+            // Process data for chart based on the period type
+            const chartData = this.processSuggestionChartData(hits, filters.period);
+            
+            // Process data for table details
+            const tableData = this.processSuggestionTableData(hits);
+            
+            return {
+                success: true,
+                data: {
+                    chartData,
+                    tableData
+                }
+            };
+        } catch (error) {
+            console.error('Error generating suggestion chart data:', error);
+            return {
+                success: false,
+                message: 'Error generating suggestion chart data',
+                error: error.message || error
+            };
+        }
+    }
+
+    private processSuggestionChartData(data: any[], periodType: PeriodType = PeriodType.MONTHLY) {
+        if (!data || data.length === 0) {
+            return [];
+        }
+
+        switch (periodType) {
+            case PeriodType.DAILY:
+                return this.processDailySuggestionData(data);
+            case PeriodType.WEEKLY:
+                return this.processWeeklySuggestionData(data);
+            case PeriodType.MONTHLY:
+            default:
+                return this.processMonthlySuggestionData(data);
+        }
+    }
+
+    private processDailySuggestionData(data: any[]) {
+        // Find date range
+        let minDate: Date | null = null;
+        let maxDate: Date | null = null;
+        
+        data.forEach(item => {
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
+                if (!minDate || date < minDate) minDate = new Date(date);
+                if (!maxDate || date > maxDate) maxDate = new Date(date);
+            }
+        });
+        
+        // If no data or invalid dates, return empty array
+        if (!minDate || !maxDate) {
+            return [];
+        }
+        
+        // Create map of all days in the range
+        const dayMap = new Map();
+        const currentDate = new Date(minDate);
+        
+        // Set time to 00:00:00 for proper day comparison
+        currentDate.setHours(0, 0, 0, 0);
+        maxDate.setHours(23, 59, 59, 999);
+        
+        while (currentDate <= maxDate) {
+            const dayKey = currentDate.toISOString().split('T')[0];
+            dayMap.set(dayKey, {
+                total: 0,
+                categories: {}
+            });
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        // Count suggestions for each day and category
+        data.forEach(item => {
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
+                const dayKey = date.toISOString().split('T')[0];
+                
+                if (dayMap.has(dayKey)) {
+                    const dayData = dayMap.get(dayKey);
+                    dayData.total += 1;
+                    
+                    // Get category name
+                    const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
+                    if (!dayData.categories[categoryName]) {
+                        dayData.categories[categoryName] = 0;
+                    }
+                    dayData.categories[categoryName] += 1;
+                }
+            }
+        });
+        
+        // Convert map to array in the required format
+        return Array.from(dayMap.entries()).map(([period, data]) => {
+            const categories = Object.entries(data.categories).map(([category, count]) => ({
+                category,
+                count
+            }));
+            
+            return {
+                period: period,
+                total: data.total,
+                categories
+            };
+        });
+    }
+
+    private processWeeklySuggestionData(data: any[]) {
+        // Find date range
+        let minDate: Date | null = null;
+        let maxDate: Date | null = null;
+        
+        data.forEach(item => {
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
+                if (!minDate || date < minDate) minDate = new Date(date);
+                if (!maxDate || date > maxDate) maxDate = new Date(date);
+            }
+        });
+        
+        // If no data or invalid dates, return empty array
+        if (!minDate || !maxDate) {
+            return [];
+        }
+        
+        // Get start of the week for minDate
+        const startDay = minDate.getDay();
+        minDate.setDate(minDate.getDate() - startDay);
+        minDate.setHours(0, 0, 0, 0);
+        
+        // Create map of all weeks in the range
+        const weekMap = new Map();
+        const currentDate = new Date(minDate);
+        
+        while (currentDate <= maxDate) {
+            const weekStart = new Date(currentDate);
+            const weekEnd = new Date(currentDate);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            const weekKey = `${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]}`;
+            weekMap.set(weekKey, {
+                total: 0,
+                categories: {}
+            });
+            
+            currentDate.setDate(currentDate.getDate() + 7);
+        }
+        
+        // Count suggestions for each week and category
+        data.forEach(item => {
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
+                
+                // Find the corresponding week
+                for (const [weekKey, weekData] of weekMap.entries()) {
+                    const [startStr, endStr] = weekKey.split(' to ');
+                    const weekStart = new Date(startStr);
+                    const weekEnd = new Date(endStr);
+                    weekEnd.setHours(23, 59, 59, 999);
+                    
+                    if (date >= weekStart && date <= weekEnd) {
+                        weekData.total += 1;
+                        
+                        // Get category name
+                        const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
+                        if (!weekData.categories[categoryName]) {
+                            weekData.categories[categoryName] = 0;
+                        }
+                        weekData.categories[categoryName] += 1;
+                        
+                        break;
+                    }
+                }
+            }
+        });
+        
+        // Convert map to array in the required format
+        return Array.from(weekMap.entries()).map(([period, data]) => {
+            const categories = Object.entries(data.categories).map(([category, count]) => ({
+                category,
+                count
+            }));
+            
+            return {
+                period: period,
+                total: data.total,
+                categories
+            };
+        });
+    }
+
+    private processMonthlySuggestionData(data: any[]) {
+        // Find date range
+        let minDate: Date | null = null;
+        let maxDate: Date | null = null;
+        
+        data.forEach(item => {
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
+                if (!minDate || date < minDate) minDate = new Date(date);
+                if (!maxDate || date > maxDate) maxDate = new Date(date);
+            }
+        });
+        
+        // If no data or invalid dates, return empty array
+        if (!minDate || !maxDate) {
+            return [];
+        }
+        
+        // Create map of all months in the range
+        const monthMap = new Map();
+        const currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+        const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+        
+        while (currentDate <= endDate) {
+            const monthKey = `${currentDate.toLocaleString('default', { month: 'long' })} ${currentDate.getFullYear()}`;
+            monthMap.set(monthKey, {
+                total: 0,
+                categories: {}
+            });
+            
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        
+        // Count suggestions for each month and category
+        data.forEach(item => {
+            if (item.createdAt) {
+                const date = new Date(item.createdAt);
+                const monthKey = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+                
+                if (monthMap.has(monthKey)) {
+                    const monthData = monthMap.get(monthKey);
+                    monthData.total += 1;
+                    
+                    // Get category name
+                    const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
+                    if (!monthData.categories[categoryName]) {
+                        monthData.categories[categoryName] = 0;
+                    }
+                    monthData.categories[categoryName] += 1;
+                }
+            }
+        });
+        
+        // Convert map to array in the required format
+        return Array.from(monthMap.entries()).map(([period, data]) => {
+            const categories = Object.entries(data.categories).map(([category, count]) => ({
+                category,
+                count
+            }));
+            
+            return {
+                period: period,
+                total: data.total,
+                categories
+            };
+        });
+    }
+
+    private processSuggestionTableData(data: any[]) {
+        if (!data || data.length === 0) {
+            return [];
+        }
+        
+        // Create a map to aggregate data by category, touchpoint, and department
+        const aggregatedData = new Map();
+        
+        data.forEach(item => {
+            const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
+            const touchpointName = item.metadata?.touchpoint?.name?.en || 'Uncategorized';
+            const departmentName = item.metadata?.department?.name || 'Uncategorized';
+            const dateStr = new Date(item.createdAt).toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            const key = `${categoryName}|${touchpointName}|${departmentName}`;
+            
+            if (!aggregatedData.has(key)) {
+                aggregatedData.set(key, {
+                    category: categoryName,
+                    touchpoint: touchpointName,
+                    department: departmentName,
+                    total: 0,
+                    dates: {}
+                });
+            }
+            
+            const entry = aggregatedData.get(key);
+            entry.total += 1;
+            
+            if (!entry.dates[dateStr]) {
+                entry.dates[dateStr] = 0;
+            }
+            
+            entry.dates[dateStr] += 1;
+        });
+        
+        // Convert map to array in the required format
+        return Array.from(aggregatedData.values()).map(entry => ({
+            category: entry.category,
+            touchpoint: entry.touchpoint,
+            department: entry.department,
+            total: entry.total,
+            dateBreakdown: Object.entries(entry.dates).map(([date, count]) => ({
+                date,
+                count
+            }))
+        }));
     }
 }
