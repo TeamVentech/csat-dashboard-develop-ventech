@@ -5,6 +5,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
 import * as moment from 'moment-timezone';
 import { AwsParameterStore } from './config/aws-ssm.config';
+import { DateUtil } from './utils/date.util';
+import { TimestampInterceptor } from './interceptors/timestamp.interceptor';
 
 dotenv.config();
 
@@ -23,8 +25,12 @@ async function bootstrap() {
     // Set default timezone to Jordan/Amman
     moment.tz.setDefault('Asia/Amman');
     
+    const serverTime = DateUtil.getCurrentTime();
+    console.log(`Server time (Amman): ${serverTime.format()}`);
+    
     const app = await NestFactory.create(AppModule);
     app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalInterceptors(new TimestampInterceptor());
     app.enableCors();
     const config = new DocumentBuilder()
       .setTitle('CSAT Dashboard API')
