@@ -25,6 +25,8 @@ import { WheelchairStrollerStatisticsService } from './services/wheelchair-strol
 import { WheelchairStrollerStatisticsController } from './controllers/wheelchair-stroller-statistics.controller';
 import { PowerBankStatisticsService } from './services/powerbank-statistics.service';
 import { PowerBankStatisticsController } from './controllers/powerbank-statistics.controller';
+import { HandfreeStatisticsService } from './services/handfree-statistics.service';
+import { HandfreeStatisticsController } from './controllers/handfree-statistics.controller';
 
 @Module({
   imports: [
@@ -43,7 +45,8 @@ import { PowerBankStatisticsController } from './controllers/powerbank-statistic
     IncidentStatisticsController,
     FoundChildStatisticsController,
     WheelchairStrollerStatisticsController,
-    PowerBankStatisticsController
+    PowerBankStatisticsController,
+    HandfreeStatisticsController
   ],
   providers: [
     {
@@ -61,7 +64,8 @@ import { PowerBankStatisticsController } from './controllers/powerbank-statistic
     IncidentStatisticsService,
     FoundChildStatisticsService,
     WheelchairStrollerStatisticsService,
-    PowerBankStatisticsService
+    PowerBankStatisticsService,
+    HandfreeStatisticsService
   ],
   exports: [RequestServicesService]
 })

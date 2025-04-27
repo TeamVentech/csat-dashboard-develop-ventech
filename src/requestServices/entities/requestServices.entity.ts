@@ -1,6 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import moment from 'moment-timezone';
+import * as moment from 'moment-timezone';
 
 @Entity('request-services')
 export class RequestServices {
@@ -31,14 +31,29 @@ export class RequestServices {
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @Column({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @Column({ name: 'updated_at', type: 'timestamp' })
   updatedAt: Date;
 
   @Column({ name: 'service_id', unique: true })
   serviceId: string;
+
+  @BeforeInsert()
+  setCreatedAt() {
+    // Set to current Jordan/Amman time
+    this.createdAt = moment.tz(new Date(), 'Asia/Amman').toDate();
+    console.log('createdAt', this.createdAt);
+    this.updatedAt = this.createdAt;
+  }
+
+  @BeforeUpdate()
+  setUpdatedAt() {
+    // Set to current Jordan/Amman time
+    this.updatedAt = moment.tz(new Date(), 'Asia/Amman').toDate();
+    console.log('updatedAt', this.updatedAt);
+  }
 
   @BeforeInsert()
   generateCustomId() {
@@ -71,7 +86,8 @@ export class RequestServices {
   
     // Final service ID format
     this.serviceId = `${prefix}-${formattedDate}-${formattedNumber}`;
-    }
+  }
+
   isExpiringSoon(): boolean {
     if (this.name === 'Gift Voucher Sales' && this.metadata?.Expiry_date) {
       const expiryDate = new Date(this.metadata.Expiry_date);
@@ -81,5 +97,4 @@ export class RequestServices {
     }
     return false;
   }
-
 }
