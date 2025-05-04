@@ -50,9 +50,6 @@ export class CronsService {
           task.type =  level
           await this.tasksService.update(task.id, task, null)
         }
-        // else{
-        //   console.log(hoursDifference)
-        // }
       } else {
         console.log(`Complaint ID: ${task.id}, createdAt not found`);
       }
@@ -103,7 +100,6 @@ export class CronsService {
   @Cron(CronExpression.EVERY_2_HOURS)
   async updateIncidentReportingStatus() {
     try {
-      console.log('Checking for Incident Reporting cases to update status...');
       
       // Search for all Incident Reporting cases with Open status
       const incidentCases = await this.elasticService.search("services", {
@@ -127,7 +123,6 @@ export class CronsService {
         
         // Only update status if at least 24 hours have passed
         if (hoursDifference >= 24) {
-          console.log(`Updating incident ${incident.id} to 'Pending Internal' status after ${hoursDifference} hours`);
           
           // Prepare update data
           const updateData = {
@@ -177,9 +172,7 @@ export class CronsService {
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async handleVoucherExpiryReminders() {
     try {
-      console.log('Running voucher expiry reminder check...');
       const result = await this.vouchersService.sendExpiryReminders();
-      console.log(`Voucher expiry reminders sent: ${result.extendedCount} extended vouchers and ${result.soldCount} sold vouchers`);
     } catch (error) {
       console.error('Error sending voucher expiry reminders:', error);
     }
@@ -216,8 +209,6 @@ export class CronsService {
           msg: encodeURIComponent(message),
         },
       });
-
-      console.log(`SMS sent successfully to ${number}:`, response.data);
     } catch (error) {
       console.error(`Failed to send SMS to ${number}:`, error);
     }

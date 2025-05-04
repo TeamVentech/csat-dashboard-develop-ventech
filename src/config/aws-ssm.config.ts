@@ -23,7 +23,6 @@ export class AwsParameterStore {
     recursive: boolean = true,
   ): Promise<void> {
     try {
-      console.log(`Fetching parameters from AWS SSM with path prefix: ${path}`);
       
       const params = {
         Path: path,
@@ -56,7 +55,6 @@ export class AwsParameterStore {
       
       // Write parameters to .env file
       fs.writeFileSync('.env', envVars);
-      console.log('.env file created successfully with AWS SSM parameters');
       
       // Reload environment variables
       dotenv.config();

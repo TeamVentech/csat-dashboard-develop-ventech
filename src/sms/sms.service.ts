@@ -20,8 +20,6 @@ export class SmsService {
           msg: encodeURIComponent(message),
         },
       });
-
-      console.log(`SMS sent successfully to ${number}:`, response.data);
       return response.data;
     } catch (error) {
       console.error(`Failed to send SMS to ${number}:`, error);

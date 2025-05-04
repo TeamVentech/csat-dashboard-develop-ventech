@@ -27,7 +27,6 @@ export class AddedValueServiceHandler {
         }
       }
     });
-    console.log(JSON.stringify(existingCases));
     if (existingCases.totalHits > 0) {
       throw new HttpException(
         'You already have a case that is not closed',

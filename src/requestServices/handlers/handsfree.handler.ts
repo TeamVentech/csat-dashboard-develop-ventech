@@ -52,7 +52,6 @@ export class HandsfreeHandler {
     const uniqueIdentifiers = [...new Set(
       metadata?.bagIdentifiers?.map(bag => bag.identifier) || []
     )];
-    console.log(uniqueIdentifiers);
 
     let message ={
         "ar": `زبوننا العزيز،\nشكرا لطلب خدمة الأمانات. تم استلام حقائب عدد (${bagsNumber}) وتأمينها. رقم البطاقة: ${uniqueIdentifiers.join(', ')}.\nيرجى الاستلام قبل الساعة 10م أو طلب توصيلها إلى أي موقع في المول.\nللمساعدة، اتصل على 0798502319.`,

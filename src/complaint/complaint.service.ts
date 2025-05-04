@@ -46,7 +46,6 @@ export class ComplaintsService {
       const survey = await this.SurveyService.findOne(createComplaintsDto.metadata.survey_id)
       const question =  survey.metadata.questions.filter(user => user.id === createComplaintsDto.metadata.question_id)
       createComplaintsDto.metadata.question_label = question[0].question
-      console.log(JSON.stringify(question))
       createComplaintsDto.metadata.workflow = {
         "First_Level": question[0].firstRoles,
         "Level_1": question[0].escalation,
@@ -83,7 +82,6 @@ export class ComplaintsService {
         
         // Update tenant if there are changes
         if (hasChanges) {
-          console.log('Tenant data changed, updating tenant:', tenantUpdates);
           await this.tenantService.update(existingTenant.id, tenantUpdates);
           // Use the updated tenant data
           createComplaintsDto.tenant = await this.tenantService.findOne(existingTenant.id);
@@ -118,8 +116,6 @@ export class ComplaintsService {
     complaint.touchpoint = createComplaintsDto.touchpoint
     complaint.category = createComplaintsDto.category
     const touchpoint = await this.touchpointService.findOne(createComplaintsDto.touchpoint.id)
-    console.log('touchpoint')
-    console.log(JSON.stringify(complaint))
     delete complaint.touchpoint.workflow
     const complaint_response = await this.elasticService.indexData('complaints', complaint.id, complaint);
     let assignedTo = []
@@ -146,10 +142,7 @@ export class ComplaintsService {
     const users = await this.userService.getUsersByRoles(assignedTo)
     const email_user =  [...new Set(users.map(user => user.email).flat())]
     this.emailService.sendEmail(email_user, "nazir.alkahwaji@gmail.com", "Complaint Actions", "Take Actions"," ", complaint.id,  "System", "1",`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint.id}/details`)
-    console.log('tasks_payload')
     await this.taskService.create(tasks_payload, complaint)
-    console.log('complaint')
-    // Send SMS notification for non-survey complaints
     if (createComplaintsDto.type !== "Survey Complaint") {
       const phoneNumber = createComplaintsDto?.customer?.phone_number || createComplaintsDto?.tenant?.phone_number
       if (phoneNumber) {

@@ -15,18 +15,15 @@ async function bootstrap() {
     // Load parameters from AWS SSM Parameter Store if needed
     const env = process.env.NODE_ENV || 'development';
     if (process.env.LOAD_FROM_SSM === 'true') {
-      console.log('Loading parameters from AWS SSM...');
       const parameterStore = new AwsParameterStore();
       // Use path that matches your SSM parameter hierarchy, e.g., '/csat-dashboard/dev/'
       await parameterStore.fetchParametersAndCreateEnvFile(`/csat-dashboard/${env}/`);
-      console.log('Parameters loaded successfully from AWS SSM');
     }
   
     // Set default timezone to Jordan/Amman
     moment.tz.setDefault('Asia/Amman');
     
     const serverTime = DateUtil.getCurrentTime();
-    console.log(`Server time (Amman): ${serverTime.format()}`);
     
     const app = await NestFactory.create(AppModule);
     app.useGlobalPipes(new ValidationPipe());
@@ -43,7 +40,6 @@ async function bootstrap() {
 
     const PORT = process.env.PORT || 3001
     await app.listen(PORT);
-    console.log(`Application is running on port ${PORT}`);
   } catch (error) {
     console.error('Error starting application:', error);
     process.exit(1);

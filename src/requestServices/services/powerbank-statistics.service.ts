@@ -428,8 +428,6 @@ export class PowerBankStatisticsService {
       
       // Process data for chart based on the period type
       const chartData = this.processDeliveryPickupServicesData(validData, filters.period);
-      // console.log(filters?.params.period)
-      // Create the table data
       const tableData = this.createDeliveryPickupServicesTableData(validData, filters.period, {
         minAge: filters.minAge,
         maxAge: filters.maxAge,
@@ -1831,7 +1829,6 @@ export class PowerBankStatisticsService {
     requestSource?: string 
   } = {}) {
     let tableData = [];
-    console.log(periodType)
 
     switch (periodType) {
       case 'Daily':

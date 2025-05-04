@@ -11,13 +11,13 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
-
+import { ElasticService } from '../ElasticSearch/elasticsearch.service';
 @Controller('Transaction_survey')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 @UseInterceptors(TransformInterceptor)
 export class TransactionSurveyController {
-  constructor(private readonly transactionSurveyService: TransactionSurveyService) { }
+  constructor(private readonly transactionSurveyService: TransactionSurveyService, private readonly elasticSearchService: ElasticService) { }
 
   @Post()
   create(@Body() createTransactionSurveyDto: CreateTransactionSurveyDto) {
@@ -48,11 +48,47 @@ export class TransactionSurveyController {
     };
     return this.transactionSurveyService.findAllState(page, perPage, filterOptions, surveyId);
   }
+  
+  @Get('search')
+  async searchSurveyTransactions(
+    @Query('page') page: number = 1,
+    @Query('pageSize') pageSize: number = 10,
+    @Query('state') state?: string,
+    @Query('rating') rating?: string,
+    @Query('surveyId') surveyId?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('touchpointId') touchpointId?: string,
+    @Query('customerId') customerId?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ) {
+    const query = {
+      state,
+      rating,
+      surveyId,
+      categoryId,
+      touchpointId,
+      customerId,
+      fromDate,
+      toDate
+    };
+    
+    return this.transactionSurveyService.searchSurveyTransactions(query, page, pageSize);
+  }
+  
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.transactionSurveyService.findOne(id);
   }
 
+  @Post('search/query')
+  elasticSerchQurey(
+    @Body() data: any,
+  ) {
+    return this.elasticSearchService.search("survey_transactions", data.query, data.page, data.perPage);
+  }
+
+  
   @Get('survey/:id')
   findOneServey(@Param('id') id: string) {
     return this.transactionSurveyService.findOneServey(id);
@@ -138,7 +174,6 @@ export class TransactionSurveyController {
     const filters = {
       cutomerId
     };
-
     return this.transactionSurveyService.getCustomerSurvey(filters);
   }
 

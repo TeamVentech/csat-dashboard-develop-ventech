@@ -18,13 +18,11 @@ export class User {
   email: string;
 
   @Column({ nullable: true })
-  avatar: string; // Store Azure Blob URL
+  avatar: string;
 
   @Column()
   password: string;
 
-  @Column({default:""})
-  message: string;
 
   @Column({ name: 'phone_number', length: 15, nullable: true })
   phoneNumber: string;

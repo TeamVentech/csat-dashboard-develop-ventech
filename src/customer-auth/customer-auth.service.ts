@@ -28,8 +28,6 @@ export class CustomerAuthService {
       timestamp: Date.now(),
     });
 
-    // TODO: Integrate with actual SMS service
-    console.log(`OTP for ${phoneNumber}: ${otp}`);
     await this.sendSms(otp,otp, phoneNumber)
 
     return { message: `OTP sent successfully : ${otp}` };

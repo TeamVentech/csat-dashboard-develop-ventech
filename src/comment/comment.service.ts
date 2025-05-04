@@ -89,8 +89,6 @@ export class CommentService {
     const data = await this.findOne(id);
     // await this.commentRepository.update(id, updateCommentDto);
     if (data.status === "Open" && updateCommentDto.status === "Moved To Complaints") {
-      console.log(JSON.stringify(updateCommentDto))
-      console.log(JSON.stringify(data))
       await this.complaintService.create({
         status: "Open",
         metadata: {

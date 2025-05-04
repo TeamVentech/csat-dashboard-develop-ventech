@@ -106,10 +106,6 @@ export class RequestServicesService {
 
         // Update the total value in metadata
         Service.metadata.value = totalValue;
-        console.log(
-          'Recalculated voucher total value (excluding Refunded):',
-          totalValue,
-        );
 
         for (let i = 0; i < Service.metadata.voucher.length; i++) {
           for (
@@ -490,6 +486,7 @@ export class RequestServicesService {
           updateRequestServicesDto.state
         ][language];
       await this.smsService.sendSms(numbers, message, numbers);
+
     }
     if (
       updateRequestServicesDto.name === 'Gift Voucher Sales' &&
@@ -524,10 +521,6 @@ export class RequestServicesService {
         totalValue += denomination * countedVouchers;
       }
       updateRequestServicesDto.metadata.value = totalValue;
-      console.log(
-        'Recalculated voucher total value on update (excluding Refunded):',
-        totalValue,
-      );
     }
 
     if (
@@ -536,6 +529,22 @@ export class RequestServicesService {
       updateRequestServicesDto.type === 'Lost Item'
     ) {
       const numbers = data?.metadata?.parents?.phone_number;
+      if (updateRequestServicesDto.type === 'Lost Item') {
+        const customers = updateRequestServicesDto.metadata.customer;
+        const customer = await this.customerService.doesEmailOrPhoneExist(
+          customers.email,
+          customers.phone_number,
+        );
+        if (customer) {
+          await this.customerService.update(customer.id, { ...customers });
+        } else {
+          delete updateRequestServicesDto?.metadata?.customer?.id;
+          await this.customerService.create({
+            ...updateRequestServicesDto.metadata.customer,
+          });
+        }
+
+      }
       const language = updateRequestServicesDto?.metadata?.IsArabic
         ? 'ar'
         : 'en';
@@ -543,11 +552,13 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type][
           updateRequestServicesDto.state
         ][language];
+        
       await this.smsService.sendSms(
         numbers,
         `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`,
         numbers,
       );
+      
     }
     if (
       updateRequestServicesDto.name === 'Gift Voucher Sales' &&
@@ -589,7 +600,6 @@ export class RequestServicesService {
     }
 
     if (updateRequestServicesDto?.actions === 'Awaiting Collection Item') {
-      console.log(updateRequestServicesDto.actions);
       const numbers =
         updateRequestServicesDto?.metadata?.customer?.phone_number;
       const language = updateRequestServicesDto?.metadata?.IsArabic
@@ -612,7 +622,6 @@ export class RequestServicesService {
       updateRequestServicesDto.metadata.sendDamageSms = true;
       let message = '';
       if (updateRequestServicesDto.type === 'Power Bank Request') {
-        console.log(updateRequestServicesDto.metadata.condition);
         message =
           SmsMessage[updateRequestServicesDto.type][
             updateRequestServicesDto.metadata.condition
@@ -796,7 +805,6 @@ export class RequestServicesService {
         );
       }
     }
-    console.log(JSON.stringify(updateRequestServicesDto));
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
     await this.elasticService.updateDocument(
       'services',

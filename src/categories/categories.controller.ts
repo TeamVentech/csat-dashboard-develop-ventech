@@ -26,7 +26,6 @@ export class CategoriesController {
   @UseInterceptors(FileInterceptor('file')) // Intercept file upload
   @Permissions('Lookups::write')
   async create(@Body() createCategoryDto: CreateCategoryDto,  @UploadedFile() file: Express.Multer.File) {
-
     return this.categoriesService.create(createCategoryDto, file);
   }
 
@@ -68,8 +67,9 @@ export class CategoriesController {
 
   @Put(':id')
   @Permissions('Lookups::update')
-  async update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
-    return this.categoriesService.update(id, updateCategoryDto);
+  @UseInterceptors(FileInterceptor('file')) // Intercept file upload
+  async update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto, @UploadedFile() file: Express.Multer.File) {
+    return this.categoriesService.update(id, updateCategoryDto, file);
   }
 
   @Delete(':id')

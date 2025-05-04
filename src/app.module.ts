@@ -45,6 +45,7 @@ import { SurveyTouchpointModule } from 'survey-touchpoint/survey-touchpoint.modu
 import { SmsModule } from './sms/sms.module';
 import { ExportModule } from './export/export.module';
 import { AwsParameterStoreModule } from './config/aws-ssm.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { AwsParameterStoreModule } from './config/aws-ssm.module';
     CustomerAuthModule,
     SmsModule,
     ExportModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

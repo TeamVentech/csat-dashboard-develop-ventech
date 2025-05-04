@@ -21,7 +21,6 @@ export class AuthController {
     @Body() changePasswordDto: ChangePasswordDto
   ) {
     const { newPassword, confirmPassword } = changePasswordDto;
-    console.log(changePasswordDto)
     if(confirmPassword !== newPassword){
         throw new HttpException("the password and confirm password  not matched.", HttpStatus.CONFLICT);
     }

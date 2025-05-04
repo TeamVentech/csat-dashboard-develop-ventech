@@ -208,7 +208,6 @@ export class TouchPointsService {
     if (file) {
       avatar = await this.filesAzureService.uploadFile(file, 'users');
     }
-    console.log(JSON.stringify(updateTouchPointDto));
     await this.touchpointRepository.update(id, {
       ...updateTouchPointDto,
       avatar,

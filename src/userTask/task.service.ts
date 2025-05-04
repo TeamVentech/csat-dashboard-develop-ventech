@@ -193,7 +193,6 @@ export class TasksServices {
 		updateTasksDto.complaints.status = "Pending Review (Final Level)";
 		await this.handleFileUpload(file, 'firstLevel', updateTasksDto);
 		updateTasksDto.assignedTo = assignedTo;
-		console.log(status)
 
 		if(status === "Pending (First Level)"){
 			const number = updateTasksDto?.complaints?.customer?.phone_number || updateTasksDto?.complaints?.tenant?.phone_number
@@ -238,6 +237,13 @@ export class TasksServices {
 		updateTasksDto.type = `Escalated ${level}`;
 		updateTasksDto.status = `Escalated (Level ${level})`;
 		updateTasksDto.complaints.status = `Escalated (Level ${level})`;
+		
+		// Add escalation flag to complaint metadata
+		if (!updateTasksDto.complaints.metadata) {
+			updateTasksDto.complaints.metadata = {};
+		}
+		updateTasksDto.complaints.metadata.escalation = true;
+		
 		updateTasksDto.assignedTo = assignedTo;
 	}
 
@@ -424,13 +430,16 @@ export class TasksServices {
 				break;
 		}
 
-		if (updateTasksDto.type === "Escalated (Level 1)") {
+		// Check if the task is being escalated and handle accordingly
+		if (updateTasksDto.type === "Escalated (Level 1)" || 
+		    updateTasksDto.type === "Escalated 1") {
 			await this.handleEscalationAction(updateTasksDto, workflow, 1);
 		} else if (updateTasksDto.type === "Escalated (Level 2)") {
 			await this.handleEscalationAction(updateTasksDto, workflow, 2);
 		} else if (updateTasksDto.type === "Escalated (Level 3)") {
 			await this.handleEscalationAction(updateTasksDto, workflow, 3);
 		}
+		
 		await this.updateComplaintStatus(updateTasksDto.complaints);
 
 		const elastic_data = { ...updateTasksDto };
@@ -516,7 +525,23 @@ export class TasksServices {
 
 	async updateEscalation(id: string, updateTasksDto: UpdateTaskServicesDto) {
 		// const task_data = await this.findOne(id)
-		const data = updateTasksDto.complaints
+		const data = updateTasksDto.complaints;
+		
+		// Ensure metadata exists and set escalation flag
+		if (data) {
+			if (!data.metadata) {
+				data.metadata = {};
+			}
+			data.metadata.escalation = true;
+			
+			// Update complaint in database and elasticsearch
+			await this.complaintsRepository.update(
+				{ id: data.id, customerId: data.customerId, categoryId: data.categoryId, touchpointId: data.touchpointId },
+				data
+			);
+			await this.elasticService.updateDocument('complaints', data.id, data);
+		}
+		
 		const elastic_data = updateTasksDto;
 		delete updateTasksDto.complaints;
 		await this.tasksRepository.update(id, updateTasksDto);

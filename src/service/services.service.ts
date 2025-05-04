@@ -81,7 +81,6 @@ export class ServicesService {
   async findOneByTypeStatus(type: string, status: string) {
     const Services = await this.servicesRepository.findOne({ where: { type, status } });
     if (!Services) {
-      console.log(`Service with Type ${type} & ${status} not found`);
     }
     return Services;
   }
@@ -97,7 +96,6 @@ export class ServicesService {
 
   // Update a department by ID
   async update(id: string, updateServicesDto: UpdateServicesDto) {
-    console.log(updateServicesDto)
     // Check if id is valid
     if (!id || id.trim() === '') {
       throw new HttpException('Invalid service ID', HttpStatus.BAD_REQUEST);

@@ -44,7 +44,6 @@ export class RequestServices {
   setCreatedAt() {
     // Set to current Jordan/Amman time
     this.createdAt = moment.tz(new Date(), 'Asia/Amman').toDate();
-    console.log('createdAt', this.createdAt);
     this.updatedAt = this.createdAt;
   }
 
@@ -52,7 +51,6 @@ export class RequestServices {
   setUpdatedAt() {
     // Set to current Jordan/Amman time
     this.updatedAt = moment.tz(new Date(), 'Asia/Amman').toDate();
-    console.log('updatedAt', this.updatedAt);
   }
 
   @BeforeInsert()

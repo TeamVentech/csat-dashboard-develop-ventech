@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticService } from '../../ElasticSearch/elasticsearch.service';
 import * as moment from 'moment';
+import { filter } from 'rxjs';
 
 @Injectable()
 export class WheelchairStrollerStatisticsService {
@@ -374,17 +375,10 @@ export class WheelchairStrollerStatisticsService {
     }
   }
 
-  async getDeliveryPickupServicesData(filters: {
-    minAge?: number;
-    maxAge?: number;
-    gender?: string;
-    fromDate?: string;
-    toDate?: string;
-    period?: string;
-    requestSource?: string;
-  }) {
+  async getDeliveryPickupServicesData(filter) {
     try {
       // Build the query
+      const filters = filter.params;
       const query: any = {
         bool: {
           must: [
@@ -1854,7 +1848,6 @@ export class WheelchairStrollerStatisticsService {
 
   private processDeliveryPickupServicesData(data: any[], periodType: string = 'Monthly') {
     let processedData: any;
-    
     switch (periodType) {
       case 'Daily':
         processedData = this.processDailyDeliveryPickupServicesData(data);

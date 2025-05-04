@@ -58,7 +58,6 @@ export class EmailService {
 						text,
 						html,
 					});
-					console.log(`Email sent to: ${recipient} via Gmail`);
 					anySuccessful = true;
 				} catch (error) {
 					console.warn(`Failed to send email to ${recipient} via Gmail: ${error.message}`);
@@ -73,7 +72,6 @@ export class EmailService {
 								priority,
 								action_link
 							});
-							console.log(`Email sent to: ${recipient} via Mailtrap (fallback)`);
 							anySuccessful = true;
 						} catch (mailtrapError) {
 							console.error(`Mailtrap fallback also failed for ${recipient}: ${mailtrapError.message}`);

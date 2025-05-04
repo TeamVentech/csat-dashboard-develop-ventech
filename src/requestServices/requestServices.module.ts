@@ -27,6 +27,10 @@ import { PowerBankStatisticsService } from './services/powerbank-statistics.serv
 import { PowerBankStatisticsController } from './controllers/powerbank-statistics.controller';
 import { HandfreeStatisticsService } from './services/handfree-statistics.service';
 import { HandfreeStatisticsController } from './controllers/handfree-statistics.controller';
+import { ComplaintStatisticsService } from './services/complaint-statistics.service';
+import { ComplaintStatisticsController } from './controllers/complaint-statistics.controller';
+import { GiftVoucherStatisticsService } from './services/gift-voucher-statistics.service';
+import { GiftVoucherStatisticsController } from './controllers/gift-voucher-statistics.controller';
 
 @Module({
   imports: [
@@ -46,7 +50,9 @@ import { HandfreeStatisticsController } from './controllers/handfree-statistics.
     FoundChildStatisticsController,
     WheelchairStrollerStatisticsController,
     PowerBankStatisticsController,
-    HandfreeStatisticsController
+    HandfreeStatisticsController,
+    ComplaintStatisticsController,
+    GiftVoucherStatisticsController
   ],
   providers: [
     {
@@ -65,7 +71,9 @@ import { HandfreeStatisticsController } from './controllers/handfree-statistics.
     FoundChildStatisticsService,
     WheelchairStrollerStatisticsService,
     PowerBankStatisticsService,
-    HandfreeStatisticsService
+    HandfreeStatisticsService,
+    ComplaintStatisticsService,
+    GiftVoucherStatisticsService
   ],
   exports: [RequestServicesService]
 })

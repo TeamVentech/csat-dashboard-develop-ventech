@@ -17,22 +17,28 @@ export class CategoriesService {
 
   async create(createCategoryDto: CreateCategoryDto, file) {
     let avatarUrl = null;
-    createCategoryDto.name = {
-      "ar":createCategoryDto.name_ar,
-      "en":createCategoryDto.name_en
-    }
+    
+    // Create proper name object
+    const nameObject = {
+      "ar": createCategoryDto.name_ar,
+      "en": createCategoryDto.name_en
+    };
+    
+    // Remove name_ar and name_en from the DTO
+    const { name_ar, name_en, ...cleanedDto } = createCategoryDto;
+    
     // Upload file to Azure if avatar exists
     if (file) {
       avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
     }
     
     const category = this.categoryRepository.create({
-      ...createCategoryDto,
+      ...cleanedDto,
+      name: nameObject,
       avatar: avatarUrl,
     });
-    // const category = plainToInstance(Category, createCategoryDto);
+    
     return this.categoryRepository.save(category);
-  
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -79,7 +85,6 @@ export class CategoriesService {
   }
 
   async findByType(type: string) {
-    console.log(type)
     let searchTypes = [type];
   
     if (type === 'Complaint') {
@@ -122,9 +127,30 @@ export class CategoriesService {
   }
 
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+  async update(id: string, updateCategoryDto: UpdateCategoryDto, file: Express.Multer.File) {
     await this.findOne(id);
-    await this.categoryRepository.update(id, updateCategoryDto);
+    
+    // Create proper name object
+    const nameObject = {
+      "ar": updateCategoryDto.name_ar,
+      "en": updateCategoryDto.name_en
+    };
+    
+    // Remove name_ar and name_en from the DTO
+    const { name_ar, name_en, ...cleanedDto } = updateCategoryDto;
+    
+    let avatarUrl = null;
+    if (file) {
+      avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 
+    }
+    
+    // Update with cleaned DTO and proper name object
+    await this.categoryRepository.update(id, { 
+      ...cleanedDto, 
+      name: nameObject,
+      avatar: avatarUrl || undefined 
+    });
+    
     return this.findOne(id);
   }
 

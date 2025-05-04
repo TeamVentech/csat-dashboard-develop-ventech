@@ -32,18 +32,9 @@ function testCsvStringify() {
   
   // Wait for the write stream to finish
   writeStream.on('finish', () => {
-    console.log(`CSV created successfully at ${outputPath}`);
-    
-    // Read back the file to verify
     const content = fs.readFileSync(outputPath, 'utf8');
-    console.log('CSV content:', content);
-    
-    // Clean up
     fs.unlinkSync(outputPath);
-    console.log('Test file deleted');
   });
 }
 
-// Run the test
-console.log('Starting CSV stringify test...');
 testCsvStringify(); 

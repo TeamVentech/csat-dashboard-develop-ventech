@@ -107,9 +107,7 @@ export class UsersService {
       updateUserDto.username = updateUserDto.username.toLowerCase()
     }
     if(updateUserDto.email){
-      console.log(updateUserDto.email)
       updateUserDto.email = updateUserDto.email.toLowerCase()
-      console.log(updateUserDto.email)
     }
     await this.userRepository.update(id, updateUserDto);
     return this.findOne(id);
@@ -130,7 +128,6 @@ export class UsersService {
   }
 
   async save(user: User) {
-    console.log(user)
     await this.userRepository.update(user.id ,user);
     return this.findOne(user.id);
 

@@ -58,8 +58,6 @@ export class HandfreeStatisticsService {
         },
       });
       const hits = result.body.hits.hits.map((hit: any) => hit._source);
-      console.log(hits);
-      // Process data for chart based on the period type
       const chartData = this.processHandfreeChartData(hits, filters.period);
 
       return {
@@ -644,8 +642,6 @@ export class HandfreeStatisticsService {
         validData,
         filters.period,
       );
-      // console.log(filters?.params.period)
-      // Create the table data
       const tableData = this.createDeliveryPickupServicesTableData(
         validData,
         filters.period,
@@ -898,7 +894,6 @@ export class HandfreeStatisticsService {
     } = {},
   ) {
     let tableData = [];
-    console.log(periodType);
 
     switch (periodType) {
       case 'Daily':

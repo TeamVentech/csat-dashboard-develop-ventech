@@ -8,7 +8,8 @@ import { Touchpoint } from '../touchpoint/entities/touchpoint.entity';
 import { TouchPointsService } from 'touchpoint/touch-points.service';
 import { ComplaintsService } from 'complaint/complaint.service';
 import { CustomersService } from 'customers/customers.service';
-
+import { ElasticService } from '../ElasticSearch/elasticsearch.service';
+import { CategoriesService } from '../categories/categories.service';
 @Injectable()
 export class TransactionSurveyService {
   constructor(
@@ -20,6 +21,8 @@ export class TransactionSurveyService {
     private readonly touchPointsService: TouchPointsService, // Inject TouchPointsSegrvice
     private readonly complaintsService: ComplaintsService, // Inject TouchPointsSegrvice
     private readonly customerService: CustomersService, // Inject TouchPointsSegrvice
+    private readonly elasticService: ElasticService, // Inject ElasticService
+    private readonly categoryService: CategoriesService, // Inject CategoryService
   ) { }
 
 
@@ -40,9 +43,41 @@ export class TransactionSurveyService {
     const transactionSurvey =  this.transactionSurveyRepository.create(createTransactionSurveyDto);
     const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey);
     
+    // Check if savedSurvey is an array or a single object
+    const surveyData = Array.isArray(savedSurvey) ? savedSurvey[0] : savedSurvey;
+    
+    if (surveyData) {
+      try {
+        // Get complete data with relations
+        const completeData = await this.findOne(surveyData.id);
+        const touchpoint = await this.touchPointsService.findOne(completeData.touchpointId)
+        const category = await this.categoryService.findOne(completeData.categoryId)  
+        const customer = await this.customerService.findOne(completeData.customerId)
+        // Index the data in Elasticsearch
+        await this.elasticService.indexData(
+          'survey_transactions', 
+          surveyData.id,
+          {
+            ...completeData,
+            createdAt: completeData.createdAt,
+            updatedAt: completeData.updatedAt,
+            touchpoint: {...touchpoint},
+            metadata: {
+              surveyName: completeData.survey?.name,
+              rating: completeData.rating,
+              state: completeData.state
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Error indexing survey transaction in Elasticsearch:', error);
+        // Proceed even if indexing fails, don't block the transaction creation
+      }
+    }
+    
     for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
       if(createTransactionSurveyDto.answers[i].type === "multiple"){
-        if(createTransactionSurveyDto.answers[i].answer < 3 ){
+        if(Number(createTransactionSurveyDto.answers[i].answer) < 3 ){
           const touchpoint =  await this.touchPointsService.findOne(createTransactionSurveyDto.touchpointId)
           const customer = await this.customerService.findOne(createTransactionSurveyDto.customerId)
           const category = touchpoint.category
@@ -54,7 +89,7 @@ export class TransactionSurveyService {
               answer: createTransactionSurveyDto.answers[i].answer,
               channel: "survey",
               contact_choices: "",
-              time_incident: savedSurvey[0]?.createdAt,
+              time_incident: surveyData?.createdAt,
               survey_id: createTransactionSurveyDto.surveyId,
               question_id: createTransactionSurveyDto.answers[i].id,
             },
@@ -166,14 +201,52 @@ export class TransactionSurveyService {
       relations: ['customer', 'survey'], // Fetch customer relationship
     });
   }
+  async findOneById(id: string, query: any, page: number, perPage: number) {
+    const transaction = await this.elasticService.search('survey_transactions', query, page, perPage);
+    return transaction;
+  }
   async update(id: string, updateTransactionSurveyDto: any) {
     await this.findOne(id);
     await this.transactionSurveyRepository.update(id, updateTransactionSurveyDto);
-    return this.findOne(id);
+    const updatedSurvey = await this.findOne(id);
+    
+    // Update the document in Elasticsearch
+    try {
+      await this.elasticService.updateDocument(
+        'survey_transactions',
+        id,
+        {
+          ...updatedSurvey,
+          metadata: {
+            surveyName: updatedSurvey.survey?.name,
+            customerName: updatedSurvey.customer?.name,
+            customerGender: updatedSurvey.customer?.gender,
+            customerAge: updatedSurvey.customer?.age,
+            categoryId: updatedSurvey.categoryId,
+            touchpointId: updatedSurvey.touchpointId,
+            rating: updatedSurvey.rating,
+            state: updatedSurvey.state
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error updating survey transaction in Elasticsearch:', error);
+      // Proceed even if indexing fails, don't block the update operation
+    }
+    
+    return updatedSurvey;
   }
   async remove(id: string) {
     const survey = await this.findOne(id);
     await this.transactionSurveyRepository.remove(survey);
+    
+    // Delete the document from Elasticsearch
+    try {
+      await this.elasticService.deleteDocument('survey_transactions', id);
+    } catch (error) {
+      console.error('Error deleting survey transaction from Elasticsearch:', error);
+      // Proceed even if deletion fails
+    }
   }
   async reportData(id: string, from: string, to: string, filter: string, category: string, touchpoint: string) {
     const queryBuilder = this.transactionSurveyRepository.createQueryBuilder('survey');
@@ -427,5 +500,70 @@ export class TransactionSurveyService {
       results
     };
   }
-
+  async searchSurveyTransactions(
+    query: any = {},
+    page: number = 1,
+    pageSize: number = 10
+  ) {
+    try {
+      const searchQuery = {
+        bool: {
+          must: []
+        }
+      };
+      
+      // Add query conditions based on the provided parameters
+      if (query.state) {
+        searchQuery.bool.must.push({ match: { 'metadata.state': query.state } });
+      }
+      
+      if (query.rating) {
+        searchQuery.bool.must.push({ match: { 'metadata.rating': query.rating } });
+      }
+      
+      if (query.surveyId) {
+        searchQuery.bool.must.push({ match: { surveyId: query.surveyId } });
+      }
+      
+      if (query.categoryId) {
+        searchQuery.bool.must.push({ match: { categoryId: query.categoryId } });
+      }
+      
+      if (query.touchpointId) {
+        searchQuery.bool.must.push({ match: { touchpointId: query.touchpointId } });
+      }
+      
+      if (query.customerId) {
+        searchQuery.bool.must.push({ match: { customerId: query.customerId } });
+      }
+      
+      if (query.fromDate && query.toDate) {
+        searchQuery.bool.must.push({
+          range: {
+            createdAt: {
+              gte: query.fromDate,
+              lte: query.toDate
+            }
+          }
+        });
+      }
+      
+      // Execute the search
+      const result = await this.elasticService.searchByQuery(
+        'survey_transactions',
+        { query: searchQuery },
+        page,
+        pageSize
+      );
+      
+      return result;
+    } catch (error) {
+      console.error('Error searching survey transactions:', error);
+      return {
+        success: false,
+        message: 'Error searching survey transactions',
+        error: error.message || error
+      };
+    }
+  }
 }

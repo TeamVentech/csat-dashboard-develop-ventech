@@ -305,13 +305,24 @@ export class ElasticService {
         if (query?.voucherId) {
             must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId } })
         }
+        if(!query.search){
+            query.search = ''
+        }
         const result = await this.elasticsearchService.search({
             index,
             body: {
                 query: {
                     bool: {
-                        must: must.length > 0 ? must : [{ match_all: {} }]
-                    },
+                        must: must.length > 0 ? must : [{ match_all: {} }],
+                        should: query.search ? [
+                            {
+                                query_string: {
+                                    query: query.search
+                                }
+                            }
+                        ] : [],
+                        minimum_should_match: query.search ? 1 : 0
+                    }
                 },
                 sort: [
                     {
@@ -758,7 +769,7 @@ export class ElasticService {
             const query: any = {
                 bool: {
                     must: [
-                        { match: { type: 'Lost Child' } }
+                        { match: { 'type.keyword': 'Lost Child' } }
                     ],
                     filter: []
                 }
@@ -781,9 +792,9 @@ export class ElasticService {
 
             // Add date range filter if provided
             if (filters.fromDate || filters.toDate) {
-                const dateRange: any = { range: { 'metadata.date': {} } };
-                if (filters.fromDate) dateRange.range['metadata.date'].gte = filters.fromDate;
-                if (filters.toDate) dateRange.range['metadata.date'].lte = filters.toDate;
+                const dateRange: any = { range: { 'createdAt': {} } };
+                if (filters.fromDate) dateRange.range['createdAt'].gte = filters.fromDate;
+                if (filters.toDate) dateRange.range['createdAt'].lte = filters.toDate;
                 query.bool.filter.push(dateRange);
             }
 
@@ -1466,8 +1477,14 @@ export class ElasticService {
 
             const hits = result.body.hits.hits.map((hit: any) => hit._source);
             
+            // Create date filter object for chart processing
+            const dateFilters = {
+                fromDate: filters.fromDate,
+                toDate: filters.toDate
+            };
+            
             // Process data for chart based on the period type
-            const chartData = this.processSuggestionChartData(hits, filters.period);
+            const chartData = this.processSuggestionChartData(hits, filters.period, dateFilters);
             
             // Process data for table details
             const tableData = this.processSuggestionTableData(hits);
@@ -1489,34 +1506,37 @@ export class ElasticService {
         }
     }
 
-    private processSuggestionChartData(data: any[], periodType: PeriodType = PeriodType.MONTHLY) {
+    private processSuggestionChartData(data: any[], periodType: PeriodType = PeriodType.MONTHLY, filters?: { fromDate?: string; toDate?: string }) {
         if (!data || data.length === 0) {
             return [];
         }
 
         switch (periodType) {
             case PeriodType.DAILY:
-                return this.processDailySuggestionData(data);
+                return this.processDailySuggestionData(data, filters);
             case PeriodType.WEEKLY:
-                return this.processWeeklySuggestionData(data);
+                return this.processWeeklySuggestionData(data, filters);
             case PeriodType.MONTHLY:
             default:
-                return this.processMonthlySuggestionData(data);
+                return this.processMonthlySuggestionData(data, filters);
         }
     }
 
-    private processDailySuggestionData(data: any[]) {
-        // Find date range
-        let minDate: Date | null = null;
-        let maxDate: Date | null = null;
+    private processDailySuggestionData(data: any[], filters?: { fromDate?: string; toDate?: string }) {
+        // Use fromDate and toDate from filters if available, otherwise find date range from data
+        let minDate: Date | null = filters?.fromDate ? new Date(filters.fromDate) : null;
+        let maxDate: Date | null = filters?.toDate ? new Date(filters.toDate) : null;
         
-        data.forEach(item => {
-            if (item.createdAt) {
-                const date = new Date(item.createdAt);
-                if (!minDate || date < minDate) minDate = new Date(date);
-                if (!maxDate || date > maxDate) maxDate = new Date(date);
-            }
-        });
+        // If filters are not provided, determine range from data
+        if (!minDate || !maxDate) {
+            data.forEach(item => {
+                if (item.createdAt) {
+                    const date = new Date(item.createdAt);
+                    if (!minDate || date < minDate) minDate = new Date(date);
+                    if (!maxDate || date > maxDate) maxDate = new Date(date);
+                }
+            });
+        }
         
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
@@ -1575,18 +1595,21 @@ export class ElasticService {
         });
     }
 
-    private processWeeklySuggestionData(data: any[]) {
-        // Find date range
-        let minDate: Date | null = null;
-        let maxDate: Date | null = null;
+    private processWeeklySuggestionData(data: any[], filters?: { fromDate?: string; toDate?: string }) {
+        // Use fromDate and toDate from filters if available, otherwise find date range from data
+        let minDate: Date | null = filters?.fromDate ? new Date(filters.fromDate) : null;
+        let maxDate: Date | null = filters?.toDate ? new Date(filters.toDate) : null;
         
-        data.forEach(item => {
-            if (item.createdAt) {
-                const date = new Date(item.createdAt);
-                if (!minDate || date < minDate) minDate = new Date(date);
-                if (!maxDate || date > maxDate) maxDate = new Date(date);
-            }
-        });
+        // If filters are not provided, determine range from data
+        if (!minDate || !maxDate) {
+            data.forEach(item => {
+                if (item.createdAt) {
+                    const date = new Date(item.createdAt);
+                    if (!minDate || date < minDate) minDate = new Date(date);
+                    if (!maxDate || date > maxDate) maxDate = new Date(date);
+                }
+            });
+        }
         
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
@@ -1600,6 +1623,7 @@ export class ElasticService {
         
         // Create map of all weeks in the range
         const weekMap = new Map();
+        const weekRanges = []; // Store actual date ranges for matching
         const currentDate = new Date(minDate);
         
         while (currentDate <= maxDate) {
@@ -1607,10 +1631,25 @@ export class ElasticService {
             const weekEnd = new Date(currentDate);
             weekEnd.setDate(weekEnd.getDate() + 6);
             
-            const weekKey = `${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]}`;
+            // Format dates without year for display
+            const formatDateWithoutYear = (date) => {
+                const month = date.toLocaleString('default', { month: 'short' });
+                const day = date.getDate();
+                return `${month} ${day}`;
+            };
+            
+            const weekKey = `${formatDateWithoutYear(weekStart)} to ${formatDateWithoutYear(weekEnd)}`;
+            
             weekMap.set(weekKey, {
                 total: 0,
                 categories: {}
+            });
+            
+            // Store the actual date range for this week
+            weekRanges.push({
+                key: weekKey,
+                start: new Date(weekStart),
+                end: new Date(weekEnd)
             });
             
             currentDate.setDate(currentDate.getDate() + 7);
@@ -1622,13 +1661,15 @@ export class ElasticService {
                 const date = new Date(item.createdAt);
                 
                 // Find the corresponding week
-                for (const [weekKey, weekData] of weekMap.entries()) {
-                    const [startStr, endStr] = weekKey.split(' to ');
-                    const weekStart = new Date(startStr);
-                    const weekEnd = new Date(endStr);
+                for (const range of weekRanges) {
+                    const weekKey = range.key;
+                    const weekStart = range.start;
+                    const weekEnd = range.end;
+                    
                     weekEnd.setHours(23, 59, 59, 999);
                     
                     if (date >= weekStart && date <= weekEnd) {
+                        const weekData = weekMap.get(weekKey);
                         weekData.total += 1;
                         
                         // Get category name
@@ -1659,18 +1700,21 @@ export class ElasticService {
         });
     }
 
-    private processMonthlySuggestionData(data: any[]) {
-        // Find date range
-        let minDate: Date | null = null;
-        let maxDate: Date | null = null;
+    private processMonthlySuggestionData(data: any[], filters?: { fromDate?: string; toDate?: string }) {
+        // Use fromDate and toDate from filters if available, otherwise find date range from data
+        let minDate: Date | null = filters?.fromDate ? new Date(filters.fromDate) : null;
+        let maxDate: Date | null = filters?.toDate ? new Date(filters.toDate) : null;
         
-        data.forEach(item => {
-            if (item.createdAt) {
-                const date = new Date(item.createdAt);
-                if (!minDate || date < minDate) minDate = new Date(date);
-                if (!maxDate || date > maxDate) maxDate = new Date(date);
-            }
-        });
+        // If filters are not provided, determine range from data
+        if (!minDate || !maxDate) {
+            data.forEach(item => {
+                if (item.createdAt) {
+                    const date = new Date(item.createdAt);
+                    if (!minDate || date < minDate) minDate = new Date(date);
+                    if (!maxDate || date > maxDate) maxDate = new Date(date);
+                }
+            });
+        }
         
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
