@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
@@ -15,9 +15,9 @@ export class CommentService {
     @Inject('COMMENT_REPOSITORY')
     private readonly commentRepository: Repository<Comment>,
     private readonly complaintService: ComplaintsService,
+    @Inject(forwardRef(() => RequestServicesService))
     private readonly suggestionService: RequestServicesService,
     private readonly touchPointsService: TouchPointsService
-
   ) { }
 
   async create(createCommentDto: CreateCommentDto) {

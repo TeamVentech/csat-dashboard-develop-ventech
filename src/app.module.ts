@@ -46,9 +46,11 @@ import { SmsModule } from './sms/sms.module';
 import { ExportModule } from './export/export.module';
 import { AwsParameterStoreModule } from './config/aws-ssm.module';
 import { MessagesModule } from './messages/messages.module';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
+    SharedModule,
     AuthModule,
     AwsParameterStoreModule,
     MailerModule.forRoot({

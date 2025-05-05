@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { RequestServicesController } from './requestServices.controller';
 import { RequestServicesService } from './requestServices.service';
 import { RequestServices } from './entities/requestServices.entity';
@@ -31,6 +31,9 @@ import { ComplaintStatisticsService } from './services/complaint-statistics.serv
 import { ComplaintStatisticsController } from './controllers/complaint-statistics.controller';
 import { GiftVoucherStatisticsService } from './services/gift-voucher-statistics.service';
 import { GiftVoucherStatisticsController } from './controllers/gift-voucher-statistics.controller';
+import { DashboardController } from './controllers/dashboard.controller';
+import { DashboardService } from './services/dashboard.service';
+import { CommentModule } from 'comment/comment.module';
 
 @Module({
   imports: [
@@ -42,6 +45,7 @@ import { GiftVoucherStatisticsController } from './controllers/gift-voucher-stat
     ServicesModule,
     CustomersModule,
     ComplaintsModule,
+    forwardRef(() => CommentModule),
   ],
   controllers: [
     RequestServicesController,
@@ -52,7 +56,8 @@ import { GiftVoucherStatisticsController } from './controllers/gift-voucher-stat
     PowerBankStatisticsController,
     HandfreeStatisticsController,
     ComplaintStatisticsController,
-    GiftVoucherStatisticsController
+    GiftVoucherStatisticsController,
+    DashboardController,
   ],
   providers: [
     {
@@ -73,9 +78,10 @@ import { GiftVoucherStatisticsController } from './controllers/gift-voucher-stat
     PowerBankStatisticsService,
     HandfreeStatisticsService,
     ComplaintStatisticsService,
-    GiftVoucherStatisticsService
+    GiftVoucherStatisticsService,
+    DashboardService,
   ],
-  exports: [RequestServicesService]
+  exports: [RequestServicesService, 'REQUEST_SERVICES_REPOSITORY']
 })
 export class RequestServicesModule {}
 
