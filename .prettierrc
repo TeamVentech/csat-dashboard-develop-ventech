@@ -4,5 +4,6 @@
    "useTabs": true,
    "tabWidth": 4,
    "indentContinuationLines": true,
-   "semi": false
+   "semi": false,
+   "endOfLine": "auto"
 }
