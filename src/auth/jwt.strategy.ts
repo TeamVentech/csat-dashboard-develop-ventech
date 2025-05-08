@@ -21,7 +21,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	async validate(payload: any) {
 		if (payload.role === 'customer') {
 			const customer = await this.customersService.findOne(payload.id)
-			console.log(customer)
 			if (!customer) {
 				throw new UnauthorizedException('Customer not found')
 			}

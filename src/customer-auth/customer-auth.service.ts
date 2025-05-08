@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import axios from 'axios'
 import { CustomersService } from '../customers/customers.service'
+import { TenantsService } from '../tenants/tenants.service'
 
 @Injectable()
 export class CustomerAuthService {
@@ -13,6 +14,7 @@ export class CustomerAuthService {
 		private jwtService: JwtService,
 		private configService: ConfigService,
 		private customersService: CustomersService,
+		private tenantsService: TenantsService, // Added TenantsService
 	) {
 	}
 
@@ -36,7 +38,8 @@ export class CustomerAuthService {
 
 	async verifyOTP(phoneNumber: string, otp: string): Promise<{
 		accessToken: string,
-		customer?: any
+		customer?: any,
+		tenant?: any
 	}> {
 		const storedData = this.otpStore.get(phoneNumber)
 
@@ -56,7 +59,9 @@ export class CustomerAuthService {
 		// Clear the OTP after successful verification
 		this.otpStore.delete(phoneNumber)
 
-		// Find customer by phone number
+		// Check if the phone number belongs to a tenant
+		const tenant = await this.tenantsService.findByPhoneNumber(phoneNumber)
+
 		let customer = await this.customersService.doesEmailOrPhoneExist(undefined, phoneNumber)
 
 		// If customer doesn't exist, create a new one with just the phone number
@@ -84,7 +89,7 @@ export class CustomerAuthService {
 
 		const accessToken = this.jwtService.sign(payload)
 
-		// Return both token and customer info
+		// Return both token and customer info, and tenant info if available
 		return {
 			accessToken,
 			customer: {
@@ -96,6 +101,7 @@ export class CustomerAuthService {
 				age: customer.age,
 				dob: customer.dob,
 			},
+			tenant: tenant ? tenant : null,
 		}
 	}
 

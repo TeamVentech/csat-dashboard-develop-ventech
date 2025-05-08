@@ -4,10 +4,12 @@ import { CustomerAuthService } from './customer-auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CustomersModule } from '../customers/customers.module';
+import { TenantsModule } from '../tenants/tenants.module';
 
 @Module({
   imports: [
     CustomersModule,
+    TenantsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -21,4 +23,4 @@ import { CustomersModule } from '../customers/customers.module';
   providers: [CustomerAuthService],
   exports: [CustomerAuthService],
 })
-export class CustomerAuthModule {} 
+export class CustomerAuthModule {}

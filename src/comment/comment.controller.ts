@@ -1,9 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query,
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
   UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
-
- } from '@nestjs/common';
+} from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create.dto';
 import { UpdateCommentDto } from './dto/update.dto';
@@ -21,7 +28,6 @@ export class CommentController {
 
   @Post()
   @Permissions('Customer Care Center::write')
-
   create(@Body() createCommentDto: any) {
     return this.requestServicesService.create(createCommentDto);
   }
@@ -35,14 +41,18 @@ export class CommentController {
     @Query('state') state?: string,
   ) {
     const filterOptions = {
-      search
-  };
-    return this.requestServicesService.findAll(page, perPage, filterOptions, state);
+      search,
+    };
+    return this.requestServicesService.findAll(
+      page,
+      perPage,
+      filterOptions,
+      state,
+    );
   }
 
   @Get(':id')
   @Permissions('Customer Care Center::read')
-
   findOne(@Param('id') id: string) {
     return this.requestServicesService.findOne(id);
   }
