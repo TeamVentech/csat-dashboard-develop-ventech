@@ -11,20 +11,22 @@ import { ElasticSearchModule } from '../ElasticSearch/elasticsearch.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { TransactionReportService } from './services/transaction-report.service';
 import { TransactionReportController } from './controllers/transaction-report.controller';
+import { CommentModule } from '../comment/comment.module';
 
 @Module({
   imports: [
-    DatabaseModule, 
-    TouchPointsModule, 
-    RolesModule, 
-    CustomersModule, 
+    DatabaseModule,
+    TouchPointsModule,
+    RolesModule,
+    CustomersModule,
     ComplaintsModule,
     ElasticSearchModule,
-    CategoriesModule
+    CategoriesModule,
+    CommentModule,
   ],
   controllers: [TransactionSurveyController, TransactionReportController],
   providers: [
-    TransactionSurveyService, 
+    TransactionSurveyService,
     ...TransactionSurveyProvider,
     TransactionReportService
   ],

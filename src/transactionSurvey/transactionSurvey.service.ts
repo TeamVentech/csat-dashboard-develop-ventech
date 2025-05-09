@@ -10,6 +10,8 @@ import { ComplaintsService } from 'complaint/complaint.service'
 import { CustomersService } from 'customers/customers.service'
 import { ElasticService } from '../ElasticSearch/elasticsearch.service'
 import { CategoriesService } from '../categories/categories.service'
+import { CommentService } from '../comment/comment.service'
+import { CreateCommentDto } from '../comment/dto/create.dto'
 
 @Injectable()
 export class TransactionSurveyService {
@@ -19,43 +21,51 @@ export class TransactionSurveyService {
 		@Inject('TOUCHPOINT_REPOSITORY')
 		private readonly touchPointRepository: Repository<Touchpoint>,
 		private readonly dataSource: DataSource,
-		private readonly touchPointsService: TouchPointsService, // Inject TouchPointsSegrvice
-		private readonly complaintsService: ComplaintsService, // Inject TouchPointsSegrvice
-		private readonly customerService: CustomersService, // Inject TouchPointsSegrvice
-		private readonly elasticService: ElasticService, // Inject ElasticService
-		private readonly categoryService: CategoriesService, // Inject CategoryService
+		private readonly touchPointsService: TouchPointsService,
+		private readonly complaintsService: ComplaintsService,
+		private readonly customerService: CustomersService,
+		private readonly elasticService: ElasticService,
+		private readonly categoryService: CategoriesService,
+		private readonly commentService: CommentService,
 	) {
 	}
 
 
-	async create(createTransactionSurveyDto: any) {
-		var count = 0
-		var rateVar = 0
-		for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
-			if (createTransactionSurveyDto.answers[i].type === 'multiple') {
-				count++
-				const rate = Number(createTransactionSurveyDto.answers[i].answer) / 5
-				rateVar = rateVar + rate
+	async create(createTransactionSurveyDto: CreateTransactionSurveyDto) {
+		try {
+			// Calculate rating
+			const ratingAnswers = createTransactionSurveyDto.answers.filter(answer => answer.type === 'multiple')
+
+			const count = ratingAnswers.length
+			if (count > 0) {
+				const totalSum = ratingAnswers.reduce((sum, answer) => sum + Number(answer.answer), 0)
+				createTransactionSurveyDto.rating = ((totalSum / count) / 5).toFixed(1).toString()
+			} else {
+				createTransactionSurveyDto.rating = '0'
 			}
-		}
-		const final_rate = rateVar / count
-		createTransactionSurveyDto.rating = final_rate.toFixed(1).toString()
-		const id = createTransactionSurveyDto.touchPointId
-		await this.touchPointsService.update(id, createTransactionSurveyDto.rating)
-		const transactionSurvey = this.transactionSurveyRepository.create(createTransactionSurveyDto)
-		const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey)
 
-		// Check if savedSurvey is an array or a single object
-		const surveyData = Array.isArray(savedSurvey) ? savedSurvey[0] : savedSurvey
+			// Update touchpoint rating
+			await this.touchPointsService.update(createTransactionSurveyDto.touchpointId, createTransactionSurveyDto.rating)
 
-		if (surveyData) {
+			// Create transaction survey
+			const transactionSurvey = this.transactionSurveyRepository.create(createTransactionSurveyDto)
+			const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey)
+			const surveyData = Array.isArray(savedSurvey) ? savedSurvey[0] : savedSurvey
+
+			if (!surveyData) {
+				throw new Error('Failed to save transaction survey')
+			}
+
+			const completeData = await this.findOne(surveyData.id)
+
+			const [touchpoint, category, customer] = await Promise.all([
+				this.touchPointsService.findOne(completeData.touchpointId),
+				this.categoryService.findOne(completeData.categoryId),
+				this.customerService.findOne(completeData.customerId),
+			])
+
+			// Index in Elasticsearch
 			try {
-				// Get complete data with relations
-				const completeData = await this.findOne(surveyData.id)
-				const touchpoint = await this.touchPointsService.findOne(completeData.touchpointId)
-				const category = await this.categoryService.findOne(completeData.categoryId)
-				const customer = await this.customerService.findOne(completeData.customerId)
-				// Index the data in Elasticsearch
 				await this.elasticService.indexData(
 					'survey_transactions',
 					surveyData.id,
@@ -73,27 +83,25 @@ export class TransactionSurveyService {
 				)
 			} catch (error) {
 				console.error('Error indexing survey transaction in Elasticsearch:', error)
-				// Proceed even if indexing fails, don't block the transaction creation
 			}
-		}
 
-		for (let i = 0; i < createTransactionSurveyDto.answers.length; i++) {
-			if (createTransactionSurveyDto.answers[i].type === 'multiple') {
-				if (Number(createTransactionSurveyDto.answers[i].answer) < 3) {
-					const touchpoint = await this.touchPointsService.findOne(createTransactionSurveyDto.touchpointId)
-					const customer = await this.customerService.findOne(createTransactionSurveyDto.customerId)
-					const category = touchpoint.category
-					delete touchpoint.category
-					const complaint_data = {
+			// Process low ratings and create complaints
+			const lowRatingAnswers = createTransactionSurveyDto.answers.filter(
+				answer => answer.type === 'multiple' && Number(answer.answer) < 3,
+			)
+
+			if (lowRatingAnswers.length > 0) {
+				const complaintPromises = lowRatingAnswers.map(async (answer) => {
+					const complaintData = {
 						status: 'Open',
 						metadata: {
 							additional_information: '',
-							answer: createTransactionSurveyDto.answers[i].answer,
+							answer: answer.answer,
 							channel: 'survey',
 							contact_choices: '',
 							time_incident: surveyData?.createdAt,
 							survey_id: createTransactionSurveyDto.surveyId,
-							question_id: createTransactionSurveyDto.answers[i].id,
+							question_id: answer.id,
 						},
 						name: 'Survey Complaint',
 						customer: { ...customer },
@@ -109,13 +117,41 @@ export class TransactionSurveyService {
 						sections: {},
 						addedBy: 'system',
 						type: 'Survey Complaint',
-
 					}
-					await this.complaintsService.create(complaint_data)
-				}
+					return this.complaintsService.create(complaintData)
+				})
+
+				await Promise.all(complaintPromises)
 			}
+
+			// Process comments
+			const commentsWithAnswers = createTransactionSurveyDto.answers.filter(answer => answer.comment)
+			if (commentsWithAnswers.length > 0) {
+				const commentPromises = commentsWithAnswers.map(answer => {
+					const createCommentDto: CreateCommentDto = {
+						customerId: createTransactionSurveyDto.customerId,
+						categoryId: createTransactionSurveyDto?.categoryId || null,
+						touchpointId: createTransactionSurveyDto.touchpointId,
+						surveyId: createTransactionSurveyDto.surveyId,
+						touchpointName: touchpoint.name,
+						status: 'Open',
+						message: answer.comment,
+						type: 'Survey Comment',
+						metadata: {
+							questionId: answer.id,
+						},
+					}
+					return this.commentService.create(createCommentDto)
+				})
+
+				await Promise.all(commentPromises)
+			}
+
+			return savedSurvey
+		} catch (error) {
+			console.error('Error creating transaction survey:', error)
+			throw error
 		}
-		return savedSurvey
 	}
 
 	async findAlls(): Promise<TransactionSurvey[]> {
