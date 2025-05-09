@@ -1,115 +1,125 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { CustomersService } from '../customers/customers.service';
+import { Injectable, BadRequestException } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import { ConfigService } from '@nestjs/config'
+import axios from 'axios'
+import { CustomersService } from '../customers/customers.service'
+import { TenantsService } from '../tenants/tenants.service'
 
 @Injectable()
 export class CustomerAuthService {
-  private otpStore: Map<string, { otp: string; timestamp: number }> = new Map();
-  private readonly OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
+	private otpStore: Map<string, { otp: string; timestamp: number }> = new Map()
+	private readonly OTP_EXPIRY = 5 * 60 * 1000 // 5 minutes in milliseconds
 
-  constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private customersService: CustomersService,
-  ) {}
+	constructor(
+		private jwtService: JwtService,
+		private configService: ConfigService,
+		private customersService: CustomersService,
+		private tenantsService: TenantsService, // Added TenantsService
+	) {
+	}
 
-  generateOTP(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
+	generateOTP(): string {
+		return Math.floor(100000 + Math.random() * 900000).toString()
+	}
 
-  async sendOTP(phoneNumber: string): Promise<{ message: string }> {
-    // In a real application, you would integrate with an SMS service here
-    // For now, we'll just store the OTP in memory
-    const otp = this.generateOTP();
-    this.otpStore.set(phoneNumber, {
-      otp,
-      timestamp: Date.now(),
-    });
+	async sendOTP(phoneNumber: string): Promise<{ message: string }> {
+		// In a real application, you would integrate with an SMS service here
+		// For now, we'll just store the OTP in memory
+		const otp = this.generateOTP()
+		this.otpStore.set(phoneNumber, {
+			otp,
+			timestamp: Date.now(),
+		})
 
-    await this.sendSms(otp,otp, phoneNumber)
+		await this.sendSms(otp, otp, phoneNumber)
 
-    return { message: `OTP sent successfully : ${otp}` };
-  }
+		return { message: `OTP sent successfully : ${otp}` }
+	}
 
-  async verifyOTP(phoneNumber: string, otp: string): Promise<{ accessToken: string, customer?: any }> {
-    const storedData = this.otpStore.get(phoneNumber);
-    
-    if (!storedData) {
-      throw new BadRequestException('No OTP request found for this phone number');
-    }
+	async verifyOTP(phoneNumber: string, otp: string): Promise<{
+		accessToken: string,
+		customer?: any,
+		tenant?: any
+	}> {
+		const storedData = this.otpStore.get(phoneNumber)
 
-    if (Date.now() - storedData.timestamp > this.OTP_EXPIRY) {
-      this.otpStore.delete(phoneNumber);
-      throw new BadRequestException('OTP has expired');
-    }
+		if (!storedData) {
+			throw new BadRequestException('No OTP request found for this phone number')
+		}
 
-    if (storedData.otp !== otp) {
-      throw new BadRequestException('Invalid OTP');
-    }
+		if (Date.now() - storedData.timestamp > this.OTP_EXPIRY) {
+			this.otpStore.delete(phoneNumber)
+			throw new BadRequestException('OTP has expired')
+		}
 
-    // Clear the OTP after successful verification
-    this.otpStore.delete(phoneNumber);
+		if (storedData.otp !== otp) {
+			throw new BadRequestException('Invalid OTP')
+		}
 
-    // Find customer by phone number
-    let customer = await this.customersService.doesEmailOrPhoneExist(undefined, phoneNumber);
-    
-    // If customer doesn't exist, create a new one with just the phone number
-    if (!customer) {
-      const newCustomerData = { 
-        phone_number: phoneNumber,
-        name: '',
-        email: '',
-      };
-      
-      customer = await this.customersService.create(newCustomerData);
-    }
+		// Clear the OTP after successful verification
+		this.otpStore.delete(phoneNumber)
 
-    // Generate JWT token with customer details
-    const payload = {
-      id: customer.id,
-      name: customer.name,
-      email: customer.email,
-      phone_number: customer.phone_number,
-      gender: customer.gender,
-      age: customer.age,
-      dob: customer.dob,
-      role: 'customer'
-    };
-    
-    const accessToken = this.jwtService.sign(payload);
+		// Check if the phone number belongs to a tenant
+		const tenant = await this.tenantsService.findByPhoneNumber(phoneNumber)
 
-    // Return both token and customer info
-    return { 
-      accessToken,
-      customer: {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone_number: customer.phone_number,
-        gender: customer.gender,
-        age: customer.age,
-        dob: customer.dob
-      } 
-    };
-  }
+		let customer = await this.customersService.doesEmailOrPhoneExist(undefined, phoneNumber)
 
-  async sendSms(data: any, message: any, number: string) {
-    const senderId = 'City Mall';
-    const numbers = number
-    const accName = 'CityMall';
-    const accPass = 'G_PAXDujRvrw_KoD';
+		// If customer doesn't exist, create a new one with just the phone number
+		if (!customer) {
+			const newCustomerData = {
+				phone_number: phoneNumber,
+				name: '',
+				email: '',
+			}
 
-    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-    const response = await axios.get(smsUrl, {
-      params: {
-        senderid: senderId,
-        numbers: numbers,
-        accname: accName,
-        AccPass: accPass,
-        msg: encodeURIComponent(message)
-      },
-    });
-  }
-} 
+			customer = await this.customersService.create(newCustomerData)
+		}
+
+		// Generate JWT token with customer details
+		const payload = {
+			id: customer.id,
+			name: customer.name,
+			email: customer.email,
+			phone_number: customer.phone_number,
+			gender: customer.gender,
+			age: customer.age,
+			dob: customer.dob,
+			role: 'customer',
+		}
+
+		const accessToken = this.jwtService.sign(payload)
+
+		// Return both token and customer info, and tenant info if available
+		return {
+			accessToken,
+			customer: {
+				id: customer.id,
+				name: customer.name,
+				email: customer.email,
+				phone_number: customer.phone_number,
+				gender: customer.gender,
+				age: customer.age,
+				dob: customer.dob,
+			},
+			tenant: tenant ? tenant : null,
+		}
+	}
+
+	async sendSms(data: any, message: any, number: string) {
+		const senderId = 'City Mall'
+		const numbers = number
+		const accName = 'CityMall'
+		const accPass = 'G_PAXDujRvrw_KoD'
+
+		const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`
+		const response = await axios.get(smsUrl, {
+			params: {
+				senderid: senderId,
+				numbers: numbers,
+				accname: accName,
+				AccPass: accPass,
+				msg: encodeURIComponent(message),
+			},
+		})
+	}
+}
