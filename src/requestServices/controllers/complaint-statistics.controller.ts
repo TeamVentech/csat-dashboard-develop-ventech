@@ -101,6 +101,12 @@ export class ComplaintStatisticsController {
     return this.complaintStatisticsService.getComplaintsKpiReportData(chartDto);
   }
 
+  @Post('shops-complaints-report')
+  @Permissions('Customer Care Center::read')
+  async getShopsComplaintsReportData(@Body() chartDto: ComplaintChartDto) {
+    return this.complaintStatisticsService.getShopsComplaintsReportData(chartDto);
+  }
+
   @Post('rating-statistics')
   @Permissions('Customer Care Center::read')
   getRatingStatistics(@Body() filters: any) {

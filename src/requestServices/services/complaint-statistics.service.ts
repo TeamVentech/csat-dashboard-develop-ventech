@@ -4861,4 +4861,244 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
   private processNonEscalatedComplaintsData(data: any[], periodType: string = 'Monthly') {
     // ... existing code ...
   }
+
+  async getShopsComplaintsReportData(filters: ComplaintChartDto) {
+    try {
+      // Build the query
+      const query: any = {
+        bool: {
+          filter: [
+            // Filter for shop complaints only - using the category.name.en field
+            {
+              match: {
+                'type': 'Shops Complaint'
+              }
+            }
+          ]
+        }
+      };
+
+      // Add age range filter if provided
+      if (filters.minAge || filters.maxAge) {
+        const ageRange: any = { range: { 'customer.age': {} } };
+        if (filters.minAge) ageRange.range['customer.age'].gte = filters.minAge;
+        if (filters.maxAge) ageRange.range['customer.age'].lte = filters.maxAge;
+        query.bool.filter.push(ageRange);
+      }
+
+      // Add gender filter if provided
+      if (filters.gender) {
+        query.bool.filter.push({
+          match: { 'customer.gender.keyword': filters.gender }
+        });
+      }
+
+      // Add date range filter if provided
+      if (filters.fromDate || filters.toDate) {
+        const dateRange: any = { range: { 'createdAt': {} } };
+        if (filters.fromDate) dateRange.range['createdAt'].gte = filters.fromDate;
+        if (filters.toDate) dateRange.range['createdAt'].lte = filters.toDate;
+        query.bool.filter.push(dateRange);
+      }
+
+      // Execute search query
+      const result = await this.elasticSearchService.getSearchService().search({
+        index: 'complaints',
+        body: {
+          query,
+          size: 10000 // Get all matching documents
+        }
+      });
+
+      const hits = result.body.hits.hits.map((hit: any) => hit._source);
+      
+      // Process data based on the period type
+      const chartData = this.processShopsChartData(hits, filters.period);
+      
+      return {
+        success: true,
+        data: {
+          shopsComplaintData: chartData
+        }
+      };
+    } catch (error) {
+      console.error('Error generating shop complaints report data:', error);
+      return {
+        success: false,
+        message: 'Error generating shop complaints report data',
+        error: error.message || error
+      };
+    }
+  }
+
+  private processShopsChartData(data: any[], periodType: string = 'Monthly') {
+    let processedData: any;
+    
+    switch (periodType) {
+      case 'Daily':
+        processedData = this.processShopsDailyData(data);
+        break;
+      case 'Weekly':
+        processedData = this.processShopsWeeklyData(data);
+        break;
+      case 'Monthly':
+      default:
+        processedData = this.processShopsMonthlyData(data);
+        break;
+    }
+    
+    return processedData;
+  }
+
+  private processShopsDailyData(data: any[]) {
+    // Group by day
+    const groupedByDay: Record<string, Record<string, number>> = {};
+    const shopNames = new Set<string>();
+    
+    // Initialize last 30 days
+    const today = moment();
+    for (let i = 29; i >= 0; i--) {
+      const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
+      groupedByDay[date] = {};
+    }
+    
+    // Group data by shop and day
+    data.forEach(item => {
+      if (item.touchpoint && item.touchpoint.name) {
+        const date = moment(item.createdAt).format('YYYY-MM-DD');
+        const shopName = item.touchpoint.name.en || item.touchpoint.name.ar || 'Unknown Shop';
+        
+        shopNames.add(shopName);
+        
+        if (moment(date).isAfter(moment().subtract(30, 'days'))) {
+          if (!groupedByDay[date]) {
+            groupedByDay[date] = {};
+          }
+          
+          if (!groupedByDay[date][shopName]) {
+            groupedByDay[date][shopName] = 0;
+          }
+          
+          groupedByDay[date][shopName] += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
+    const series = Array.from(shopNames).map(shopName => {
+      return {
+        name: shopName,
+        data: categories.map(date => groupedByDay[date][shopName] || 0)
+      };
+    });
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private processShopsWeeklyData(data: any[]) {
+    // Group by week and shop
+    const groupedByWeek: Record<string, Record<string, number>> = {};
+    const shopNames = new Set<string>();
+    
+    // Initialize last 12 weeks
+    const today = moment();
+    for (let i = 11; i >= 0; i--) {
+      const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
+      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+      groupedByWeek[weekLabel] = {};
+    }
+    
+    // Group data by shop and week
+    data.forEach(item => {
+      if (item.touchpoint && item.touchpoint.name) {
+        const itemDate = moment(item.createdAt);
+        const startOfWeek = moment(itemDate).startOf('week');
+        const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+        const shopName = item.touchpoint.name.en || item.touchpoint.name.ar || 'Unknown Shop';
+        
+        shopNames.add(shopName);
+        
+        if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
+          if (!groupedByWeek[weekLabel]) {
+            groupedByWeek[weekLabel] = {};
+          }
+          
+          if (!groupedByWeek[weekLabel][shopName]) {
+            groupedByWeek[weekLabel][shopName] = 0;
+          }
+          
+          groupedByWeek[weekLabel][shopName] += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByWeek);
+    const series = Array.from(shopNames).map(shopName => {
+      return {
+        name: shopName,
+        data: categories.map(week => groupedByWeek[week][shopName] || 0)
+      };
+    });
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private processShopsMonthlyData(data: any[]) {
+    // Group by month and shop
+    const groupedByMonth: Record<string, Record<string, number>> = {};
+    const shopNames = new Set<string>();
+    
+    // Initialize last 12 months
+    const today = moment();
+    for (let i = 11; i >= 0; i--) {
+      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
+      const monthLabel = moment(month).format('MMM YYYY');
+      groupedByMonth[monthLabel] = {};
+    }
+    
+    // Group data by shop and month
+    data.forEach(item => {
+      if (item.touchpoint && item.touchpoint.name) {
+        const month = moment(item.createdAt).format('YYYY-MM');
+        const monthLabel = moment(month).format('MMM YYYY');
+        const shopName = item.touchpoint.name.en || item.touchpoint.name.ar || 'Unknown Shop';
+        
+        shopNames.add(shopName);
+        
+        if (moment(month).isAfter(moment().subtract(12, 'months'))) {
+          if (!groupedByMonth[monthLabel]) {
+            groupedByMonth[monthLabel] = {};
+          }
+          
+          if (!groupedByMonth[monthLabel][shopName]) {
+            groupedByMonth[monthLabel][shopName] = 0;
+          }
+          
+          groupedByMonth[monthLabel][shopName] += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByMonth);
+    const series = Array.from(shopNames).map(shopName => {
+      return {
+        name: shopName,
+        data: categories.map(month => groupedByMonth[month][shopName] || 0)
+      };
+    });
+    
+    return {
+      categories,
+      series
+    };
+  }
 } 
