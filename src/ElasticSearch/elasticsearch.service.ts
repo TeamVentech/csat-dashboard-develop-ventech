@@ -164,6 +164,7 @@ export class ElasticService {
             };
         } catch (error) {
             console.error('Error updating document:', error);
+	        throw new Error(error.message || 'Error updating document');
             return {
                 success: false,
                 message: 'Error updating document',
@@ -654,9 +655,9 @@ export class ElasticService {
         const hits = response.body.hits.hits.map((hit) => hit._source as ServiceRecord);
 
         const today = moment().format('YYYY-MM-DD'); // Get today's date
-    
+
         const counts: Record<string, { total: number; new: number; active: number }> = {};
-        
+
         const excludedStates = new Set([
             'Closed',
             'Article Found',
@@ -665,33 +666,33 @@ export class ElasticService {
             'Item Not Returned',
             'Bags Returned'
         ]);
-        
+
         for (const record of hits) {
           if (!record) continue; // Ensure record exists
-    
+
           const type = record.type || 'Unknown';
           const recordDate = record.metadata?.date ? moment(record.metadata.date).format('YYYY-MM-DD') : '';
-    
+
           // Initialize if not present
           if (!counts[type]) {
             counts[type] = { total: 0, new: 0, active: 0 };
           }
-    
+
           // Count total records by type
           counts[type].total++;
-    
+
           // Count new records (created today)
           if (recordDate === today) {
             counts[type].new++;
           }
-         
+
           // Count active cases (state is NOT in the excluded list)
           if (!excludedStates.has(record.state)) {
             counts[type].active++;
-          } 
-            
+          }
+
         }
-    
+
         return counts;
     }
 
@@ -815,10 +816,10 @@ export class ElasticService {
             });
 
             const hits = result.body.hits.hits.map((hit: any) => hit._source);
-            
+
             // Process data for chart based on the period type
             const chartData = this.processLostChildChartData(hits, filters.period);
-            
+
             return {
                 success: true,
                 data: {
@@ -856,7 +857,7 @@ export class ElasticService {
         // Find date range
         let minDate = null;
         let maxDate = null;
-        
+
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
@@ -864,40 +865,40 @@ export class ElasticService {
                 if (!maxDate || date > maxDate) maxDate = new Date(date);
             }
         });
-        
+
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
             return [];
         }
-        
+
         // Create map of all days in the range
         const dayMap = new Map();
         const currentDate = new Date(minDate);
-        
+
         // Set time to 00:00:00 for proper day comparison
         currentDate.setHours(0, 0, 0, 0);
         maxDate.setHours(23, 59, 59, 999);
-        
+
         while (currentDate <= maxDate) {
-            const dayKey = currentDate.getDate().toString().padStart(2, '0') + ' ' + 
+            const dayKey = currentDate.getDate().toString().padStart(2, '0') + ' ' +
                           currentDate.toLocaleString('default', { month: 'long' });
             dayMap.set(dayKey, 0);
             currentDate.setDate(currentDate.getDate() + 1);
         }
-        
+
         // Count cases for each day
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
-                const dayKey = date.getDate().toString().padStart(2, '0') + ' ' + 
+                const dayKey = date.getDate().toString().padStart(2, '0') + ' ' +
                               date.toLocaleString('default', { month: 'long' });
-                
+
                 if (dayMap.has(dayKey)) {
                     dayMap.set(dayKey, dayMap.get(dayKey) + 1);
                 }
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(dayMap.entries()).map(([period, count]) => ({
             period,
@@ -910,7 +911,7 @@ export class ElasticService {
         // Find date range
         let minDate = null;
         let maxDate = null;
-        
+
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
@@ -918,37 +919,37 @@ export class ElasticService {
                 if (!maxDate || date > maxDate) maxDate = new Date(date);
             }
         });
-        
+
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
             return [];
         }
-        
+
         // Create map of all months in the range
         const monthMap = new Map();
         const currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
-        
+
         while (currentDate <= endDate) {
-            const monthKey = currentDate.toLocaleString('default', { month: 'long' }) + ' ' + 
+            const monthKey = currentDate.toLocaleString('default', { month: 'long' }) + ' ' +
                             currentDate.getFullYear();
             monthMap.set(monthKey, 0);
             currentDate.setMonth(currentDate.getMonth() + 1);
         }
-        
+
         // Count cases for each month
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
-                const monthKey = date.toLocaleString('default', { month: 'long' }) + ' ' + 
+                const monthKey = date.toLocaleString('default', { month: 'long' }) + ' ' +
                                 date.getFullYear();
-                
+
                 if (monthMap.has(monthKey)) {
                     monthMap.set(monthKey, monthMap.get(monthKey) + 1);
                 }
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(monthMap.entries()).map(([period, count]) => ({
             period,
@@ -961,7 +962,7 @@ export class ElasticService {
         // Find date range
         let minDate = null;
         let maxDate = null;
-        
+
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
@@ -969,24 +970,24 @@ export class ElasticService {
                 if (!maxDate || date > maxDate) maxDate = new Date(date);
             }
         });
-        
+
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
             return [];
         }
-        
+
         // Calculate min and max week numbers
         const startOfMinYear = new Date(minDate.getFullYear(), 0, 1);
         const daysMin = Math.floor((minDate.getTime() - startOfMinYear.getTime()) / (24 * 60 * 60 * 1000));
         const minWeek = Math.ceil(daysMin / 7);
-        
+
         const startOfMaxYear = new Date(maxDate.getFullYear(), 0, 1);
         const daysMax = Math.floor((maxDate.getTime() - startOfMaxYear.getTime()) / (24 * 60 * 60 * 1000));
         const maxWeek = Math.ceil(daysMax / 7);
-        
+
         // Create map of all weeks in the range
         const weekMap = new Map();
-        
+
         // Handle case where min and max dates span different years
         if (minDate.getFullYear() === maxDate.getFullYear()) {
             // Same year
@@ -1001,7 +1002,7 @@ export class ElasticService {
                 const weekKey = week.toString() + ' ' + minDate.getFullYear();
                 weekMap.set(weekKey, 0);
             }
-            
+
             // Add weeks for years in between (if any)
             for (let year = minDate.getFullYear() + 1; year < maxDate.getFullYear(); year++) {
                 for (let week = 1; week <= 52; week++) {
@@ -1009,14 +1010,14 @@ export class ElasticService {
                     weekMap.set(weekKey, 0);
                 }
             }
-            
+
             // Add weeks for last year
             for (let week = 1; week <= maxWeek; week++) {
                 const weekKey = week.toString() + ' ' + maxDate.getFullYear();
                 weekMap.set(weekKey, 0);
             }
         }
-        
+
         // Count cases for each week
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
@@ -1024,15 +1025,15 @@ export class ElasticService {
                 const startOfYear = new Date(date.getFullYear(), 0, 1);
                 const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
                 const weekNumber = Math.ceil(days / 7);
-                
+
                 const weekKey = weekNumber.toString() + ' ' + date.getFullYear();
-                
+
                 if (weekMap.has(weekKey)) {
                     weekMap.set(weekKey, weekMap.get(weekKey) + 1);
                 }
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(weekMap.entries()).map(([period, count]) => ({
             period,
@@ -1095,10 +1096,10 @@ export class ElasticService {
             });
 
             const hits = result.body.hits.hits.map((hit: any) => hit._source);
-            
+
             // Process location data
             const locationData = this.processLocationData(hits, filters.locationType);
-            
+
             return {
                 success: true,
                 data: {
@@ -1122,13 +1123,13 @@ export class ElasticService {
 
         // Maps to track location counts
         const locationCountMap = new Map<string, number>();
-        
+
         // Process data based on location type
         data.forEach(item => {
             if (!item.metadata) return;
 
             let location = null;
-            
+
             if (locationType === 'found' && item.metadata.Foundlocations) {
                 // Use found location
                 location = item.metadata.Foundlocations;
@@ -1136,18 +1137,18 @@ export class ElasticService {
                 // Default to lost location
                 location = item.metadata.location;
             }
-            
+
             if (location && location.tenant) {
                 const locationName = `${location.floor} - ${location.tenant}`;
-                
+
                 if (!locationCountMap.has(locationName)) {
                     locationCountMap.set(locationName, 0);
                 }
-                
+
                 locationCountMap.set(locationName, locationCountMap.get(locationName) + 1);
             }
         });
-        
+
         // Convert map to array and sort by count in descending order
         const sortedLocations = Array.from(locationCountMap.entries())
             .sort((a, b) => b[1] - a[1])
@@ -1157,7 +1158,7 @@ export class ElasticService {
                 count: count.toString(),
                 __typename: "LocationDistribution"
             }));
-            
+
         return sortedLocations;
     }
 
@@ -1218,10 +1219,10 @@ export class ElasticService {
             });
 
             const hits = result.body.hits.hits.map((hit: any) => hit._source);
-            
+
             // Calculate duration statistics
             const durationData = this.processDurationData(hits, filters.period);
-            
+
             return {
                 success: true,
                 data: {
@@ -1250,11 +1251,11 @@ export class ElasticService {
         const recordsWithDuration = data.map(item => {
             const createdDate = new Date(item.createdAt);
             const foundDate = new Date(item.metadata?.dateFound);
-            
+
             if (!isNaN(createdDate.getTime()) && !isNaN(foundDate.getTime())) {
                 // Calculate duration in minutes
                 const durationMinutes = Math.round((foundDate.getTime() - createdDate.getTime()) / (1000 * 60));
-                
+
                 return {
                     ...item,
                     durationMinutes
@@ -1265,13 +1266,13 @@ export class ElasticService {
 
         // Calculate overall average duration
         const totalMinutes = recordsWithDuration.reduce((sum, item) => sum + item.durationMinutes, 0);
-        const averageDuration = recordsWithDuration.length > 0 
+        const averageDuration = recordsWithDuration.length > 0
             ? (totalMinutes / recordsWithDuration.length).toFixed(0)
             : "0";
 
         // Group by period for breakdown
         let breakdown = [];
-        
+
         switch (periodType) {
             case 'TimeOfDay':
                 breakdown = this.getTimeOfDayDurationBreakdown(recordsWithDuration);
@@ -1295,27 +1296,27 @@ export class ElasticService {
     private getTimeOfDayDurationBreakdown(data: any[]) {
         // Group by day
         const periodMap = new Map();
-        
+
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
-                const periodKey = date.getDate().toString().padStart(2, '0') + ' ' + 
+                const periodKey = date.getDate().toString().padStart(2, '0') + ' ' +
                                 date.toLocaleString('default', { month: 'long' });
-                
+
                 if (!periodMap.has(periodKey)) {
                     periodMap.set(periodKey, {
                         totalMinutes: 0,
                         count: 0
                     });
                 }
-                
+
                 const periodData = periodMap.get(periodKey);
                 periodData.totalMinutes += item.durationMinutes;
                 periodData.count += 1;
                 periodMap.set(periodKey, periodData);
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(periodMap.entries())
             .map(([period, stats]) => ({
@@ -1329,27 +1330,27 @@ export class ElasticService {
     private getMonthlyDurationBreakdown(data: any[]) {
         // Group by month and year
         const periodMap = new Map();
-        
+
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
-                const periodKey = date.toLocaleString('default', { month: 'long' }) + ' ' + 
+                const periodKey = date.toLocaleString('default', { month: 'long' }) + ' ' +
                                 date.getFullYear();
-                
+
                 if (!periodMap.has(periodKey)) {
                     periodMap.set(periodKey, {
                         totalMinutes: 0,
                         count: 0
                     });
                 }
-                
+
                 const periodData = periodMap.get(periodKey);
                 periodData.totalMinutes += item.durationMinutes;
                 periodData.count += 1;
                 periodMap.set(periodKey, periodData);
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(periodMap.entries())
             .map(([period, stats]) => ({
@@ -1363,7 +1364,7 @@ export class ElasticService {
     private getWeeklyDurationBreakdown(data: any[]) {
         // Group by week number and year
         const periodMap = new Map();
-        
+
         data.forEach(item => {
             if (item.metadata && item.metadata.date) {
                 const date = new Date(item.metadata.date);
@@ -1371,23 +1372,23 @@ export class ElasticService {
                 const startOfYear = new Date(date.getFullYear(), 0, 1);
                 const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
                 const weekNumber = Math.ceil(days / 7);
-                
+
                 const periodKey = weekNumber.toString() + ' ' + date.getFullYear();
-                
+
                 if (!periodMap.has(periodKey)) {
                     periodMap.set(periodKey, {
                         totalMinutes: 0,
                         count: 0
                     });
                 }
-                
+
                 const periodData = periodMap.get(periodKey);
                 periodData.totalMinutes += item.durationMinutes;
                 periodData.count += 1;
                 periodMap.set(periodKey, periodData);
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(periodMap.entries())
             .map(([period, stats]) => ({
@@ -1476,19 +1477,19 @@ export class ElasticService {
             });
 
             const hits = result.body.hits.hits.map((hit: any) => hit._source);
-            
+
             // Create date filter object for chart processing
             const dateFilters = {
                 fromDate: filters.fromDate,
                 toDate: filters.toDate
             };
-            
+
             // Process data for chart based on the period type
             const chartData = this.processSuggestionChartData(hits, filters.period, dateFilters);
-            
+
             // Process data for table details
             const tableData = this.processSuggestionTableData(hits);
-            
+
             return {
                 success: true,
                 data: {
@@ -1526,7 +1527,7 @@ export class ElasticService {
         // Use fromDate and toDate from filters if available, otherwise find date range from data
         let minDate: Date | null = filters?.fromDate ? new Date(filters.fromDate) : null;
         let maxDate: Date | null = filters?.toDate ? new Date(filters.toDate) : null;
-        
+
         // If filters are not provided, determine range from data
         if (!minDate || !maxDate) {
             data.forEach(item => {
@@ -1537,20 +1538,20 @@ export class ElasticService {
                 }
             });
         }
-        
+
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
             return [];
         }
-        
+
         // Create map of all days in the range
         const dayMap = new Map();
         const currentDate = new Date(minDate);
-        
+
         // Set time to 00:00:00 for proper day comparison
         currentDate.setHours(0, 0, 0, 0);
         maxDate.setHours(23, 59, 59, 999);
-        
+
         while (currentDate <= maxDate) {
             const dayKey = currentDate.toISOString().split('T')[0];
             dayMap.set(dayKey, {
@@ -1559,17 +1560,17 @@ export class ElasticService {
             });
             currentDate.setDate(currentDate.getDate() + 1);
         }
-        
+
         // Count suggestions for each day and category
         data.forEach(item => {
             if (item.createdAt) {
                 const date = new Date(item.createdAt);
                 const dayKey = date.toISOString().split('T')[0];
-                
+
                 if (dayMap.has(dayKey)) {
                     const dayData = dayMap.get(dayKey);
                     dayData.total += 1;
-                    
+
                     // Get category name
                     const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
                     if (!dayData.categories[categoryName]) {
@@ -1579,14 +1580,14 @@ export class ElasticService {
                 }
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(dayMap.entries()).map(([period, data]) => {
             const categories = Object.entries(data.categories).map(([category, count]) => ({
                 category,
                 count
             }));
-            
+
             return {
                 period: period,
                 total: data.total,
@@ -1599,7 +1600,7 @@ export class ElasticService {
         // Use fromDate and toDate from filters if available, otherwise find date range from data
         let minDate: Date | null = filters?.fromDate ? new Date(filters.fromDate) : null;
         let maxDate: Date | null = filters?.toDate ? new Date(filters.toDate) : null;
-        
+
         // If filters are not provided, determine range from data
         if (!minDate || !maxDate) {
             data.forEach(item => {
@@ -1610,88 +1611,88 @@ export class ElasticService {
                 }
             });
         }
-        
+
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
             return [];
         }
-        
+
         // Get start of the week for minDate
         const startDay = minDate.getDay();
         minDate.setDate(minDate.getDate() - startDay);
         minDate.setHours(0, 0, 0, 0);
-        
+
         // Create map of all weeks in the range
         const weekMap = new Map();
         const weekRanges = []; // Store actual date ranges for matching
         const currentDate = new Date(minDate);
-        
+
         while (currentDate <= maxDate) {
             const weekStart = new Date(currentDate);
             const weekEnd = new Date(currentDate);
             weekEnd.setDate(weekEnd.getDate() + 6);
-            
+
             // Format dates without year for display
             const formatDateWithoutYear = (date) => {
                 const month = date.toLocaleString('default', { month: 'short' });
                 const day = date.getDate();
                 return `${month} ${day}`;
             };
-            
+
             const weekKey = `${formatDateWithoutYear(weekStart)} to ${formatDateWithoutYear(weekEnd)}`;
-            
+
             weekMap.set(weekKey, {
                 total: 0,
                 categories: {}
             });
-            
+
             // Store the actual date range for this week
             weekRanges.push({
                 key: weekKey,
                 start: new Date(weekStart),
                 end: new Date(weekEnd)
             });
-            
+
             currentDate.setDate(currentDate.getDate() + 7);
         }
-        
+
         // Count suggestions for each week and category
         data.forEach(item => {
             if (item.createdAt) {
                 const date = new Date(item.createdAt);
-                
+
                 // Find the corresponding week
                 for (const range of weekRanges) {
                     const weekKey = range.key;
                     const weekStart = range.start;
                     const weekEnd = range.end;
-                    
+
                     weekEnd.setHours(23, 59, 59, 999);
-                    
+
                     if (date >= weekStart && date <= weekEnd) {
                         const weekData = weekMap.get(weekKey);
                         weekData.total += 1;
-                        
+
                         // Get category name
                         const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
                         if (!weekData.categories[categoryName]) {
                             weekData.categories[categoryName] = 0;
                         }
                         weekData.categories[categoryName] += 1;
-                        
+
                         break;
                     }
                 }
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(weekMap.entries()).map(([period, data]) => {
             const categories = Object.entries(data.categories).map(([category, count]) => ({
                 category,
                 count
             }));
-            
+
             return {
                 period: period,
                 total: data.total,
@@ -1704,7 +1705,7 @@ export class ElasticService {
         // Use fromDate and toDate from filters if available, otherwise find date range from data
         let minDate: Date | null = filters?.fromDate ? new Date(filters.fromDate) : null;
         let maxDate: Date | null = filters?.toDate ? new Date(filters.toDate) : null;
-        
+
         // If filters are not provided, determine range from data
         if (!minDate || !maxDate) {
             data.forEach(item => {
@@ -1715,37 +1716,37 @@ export class ElasticService {
                 }
             });
         }
-        
+
         // If no data or invalid dates, return empty array
         if (!minDate || !maxDate) {
             return [];
         }
-        
+
         // Create map of all months in the range
         const monthMap = new Map();
         const currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
         const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
-        
+
         while (currentDate <= endDate) {
             const monthKey = `${currentDate.toLocaleString('default', { month: 'long' })} ${currentDate.getFullYear()}`;
             monthMap.set(monthKey, {
                 total: 0,
                 categories: {}
             });
-            
+
             currentDate.setMonth(currentDate.getMonth() + 1);
         }
-        
+
         // Count suggestions for each month and category
         data.forEach(item => {
             if (item.createdAt) {
                 const date = new Date(item.createdAt);
                 const monthKey = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
-                
+
                 if (monthMap.has(monthKey)) {
                     const monthData = monthMap.get(monthKey);
                     monthData.total += 1;
-                    
+
                     // Get category name
                     const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
                     if (!monthData.categories[categoryName]) {
@@ -1755,14 +1756,14 @@ export class ElasticService {
                 }
             }
         });
-        
+
         // Convert map to array in the required format
         return Array.from(monthMap.entries()).map(([period, data]) => {
             const categories = Object.entries(data.categories).map(([category, count]) => ({
                 category,
                 count
             }));
-            
+
             return {
                 period: period,
                 total: data.total,
@@ -1775,18 +1776,18 @@ export class ElasticService {
         if (!data || data.length === 0) {
             return [];
         }
-        
+
         // Create a map to aggregate data by category, touchpoint, and department
         const aggregatedData = new Map();
-        
+
         data.forEach(item => {
             const categoryName = item.metadata?.category?.name?.en || 'Uncategorized';
             const touchpointName = item.metadata?.touchpoint?.name?.en || 'Uncategorized';
             const departmentName = item.metadata?.department?.name || 'Uncategorized';
             const dateStr = new Date(item.createdAt).toISOString().split('T')[0]; // YYYY-MM-DD
-            
+
             const key = `${categoryName}|${touchpointName}|${departmentName}`;
-            
+
             if (!aggregatedData.has(key)) {
                 aggregatedData.set(key, {
                     category: categoryName,
@@ -1796,17 +1797,17 @@ export class ElasticService {
                     dates: {}
                 });
             }
-            
+
             const entry = aggregatedData.get(key);
             entry.total += 1;
-            
+
             if (!entry.dates[dateStr]) {
                 entry.dates[dateStr] = 0;
             }
-            
+
             entry.dates[dateStr] += 1;
         });
-        
+
         // Convert map to array in the required format
         return Array.from(aggregatedData.values()).map(entry => ({
             category: entry.category,
