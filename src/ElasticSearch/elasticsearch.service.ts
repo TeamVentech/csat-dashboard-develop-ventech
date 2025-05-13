@@ -303,6 +303,7 @@ export class ElasticService {
         if (query?.date) {
             must.push({ match: { "createdAt": query.date } });
         }
+
 	    if (query?.from && query?.to) {
 		    const range: any = { range: { createdAt: {} } };
 		    if (query.from === query.to) {
