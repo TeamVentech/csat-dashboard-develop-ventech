@@ -303,6 +303,18 @@ export class ElasticService {
         if (query?.date) {
             must.push({ match: { "createdAt": query.date } });
         }
+	    if (query?.from && query?.to) {
+		    const range: any = { range: { createdAt: {} } };
+		    if (query.from === query.to) {
+			    range.range.createdAt.gte = `${query.from}T00:00:00.000Z`;
+			    range.range.createdAt.lte = `${query.to}T23:59:59.999Z`;
+		    } else {
+			    if (query.from) range.range.createdAt.gte = query.from;
+			    if (query.to) range.range.createdAt.lte = query.to;
+		    }
+
+		    must.push(range);
+	    }
         if (query?.voucherId) {
             must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId } })
         }
