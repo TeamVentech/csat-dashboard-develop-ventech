@@ -1,17 +1,21 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator'
 
 export class UpdateMessageDto {
-  @IsOptional()
-  @IsString()
-  content_ar?: string;
+	@IsOptional()
+	@IsString()
+	content_ar?: string
 
-  @IsOptional()
-  @IsString()
-  content_en?: string;
+	@IsOptional()
+	@IsString()
+	content_en?: string
 
 
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+	@IsOptional()
+	@IsBoolean()
+	isActive?: boolean
 
-} 
+	@IsOptional()
+	@IsString()
+	alias?: string
+
+}
