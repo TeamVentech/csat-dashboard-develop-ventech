@@ -87,7 +87,7 @@ export class TransactionSurveyService {
 
 			// Process low ratings and create complaints
 			const lowRatingAnswers = createTransactionSurveyDto.answers.filter(
-				answer => answer.type === 'multiple' && Number(answer.answer) < 3,
+				answer => ['multiple', 'evaluate', 'rating'].includes(answer.type) && Number(answer.answer) < 3,
 			)
 
 			if (lowRatingAnswers.length > 0) {
@@ -118,6 +118,9 @@ export class TransactionSurveyService {
 						addedBy: 'system',
 						type: 'Survey Complaint',
 					}
+					if (answer.comment) {
+						complaintData.metadata.additional_information = answer.comment
+					}
 					return this.complaintsService.create(complaintData)
 				})
 
@@ -125,27 +128,27 @@ export class TransactionSurveyService {
 			}
 
 			// Process comments
-			const commentsWithAnswers = createTransactionSurveyDto.answers.filter(answer => answer.comment)
-			if (commentsWithAnswers.length > 0) {
-				const commentPromises = commentsWithAnswers.map(answer => {
-					const createCommentDto: CreateCommentDto = {
-						customerId: createTransactionSurveyDto.customerId,
-						categoryId: createTransactionSurveyDto?.categoryId || null,
-						touchpointId: createTransactionSurveyDto.touchpointId,
-						surveyId: createTransactionSurveyDto.surveyId,
-						touchpointName: touchpoint.name,
-						status: 'Open',
-						message: answer.comment,
-						type: 'Survey Comment',
-						metadata: {
-							questionId: answer.id,
-						},
-					}
-					return this.commentService.create(createCommentDto)
-				})
+			/*			const commentsWithAnswers = createTransactionSurveyDto.answers.filter(answer => answer.comment)
+						if (commentsWithAnswers.length > 0) {
+							const commentPromises = commentsWithAnswers.map(answer => {
+								const createCommentDto: CreateCommentDto = {
+									customerId: createTransactionSurveyDto.customerId,
+									categoryId: createTransactionSurveyDto?.categoryId || null,
+									touchpointId: createTransactionSurveyDto.touchpointId,
+									surveyId: createTransactionSurveyDto.surveyId,
+									touchpointName: touchpoint.name,
+									status: 'Open',
+									message: answer.comment,
+									type: 'Survey Comment',
+									metadata: {
+										questionId: answer.id,
+									},
+								}
+								return this.commentService.create(createCommentDto)
+							})
 
-				await Promise.all(commentPromises)
-			}
+							await Promise.all(commentPromises)
+						}*/
 
 			return savedSurvey
 		} catch (error) {
