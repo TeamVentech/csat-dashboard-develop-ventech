@@ -898,8 +898,8 @@ export class RequestServicesService {
               { match: { 'metadata.customer.phone_number': phoneNumber } },
             ],
             must_not: [
-              { match: { state: completedState } },
-              { match: { state: 'Closed' } }
+              { match: { 'state.keyword': completedState } },
+              { match: { 'state.keyword': 'Closed' } }
             ]
           }
         }
