@@ -97,6 +97,7 @@ export class CustomerAuthService {
 				name: customer.name,
 				email: customer.email,
 				phone_number: customer.phone_number,
+				passport_number: customer.passport_number,
 				gender: customer.gender,
 				age: customer.age,
 				dob: customer.dob,
