@@ -147,7 +147,7 @@ export class RequestServicesService {
           // Check if solve_date is not in the future
           const solveDate = new Date(createRequestServicesDto.metadata.solve_date);
           const currentDate = new Date();
-          
+
           if(solveDate > currentDate) {
             throw new HttpException(
               'Solve date cannot be in the future',
@@ -641,13 +641,13 @@ export class RequestServicesService {
         SmsMessage[updateRequestServicesDto.type][
           updateRequestServicesDto.state
         ][language];
-        
+
       await this.smsService.sendSms(
         numbers,
         `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`,
         numbers,
       );
-      
+
     }
     if (
       updateRequestServicesDto.name === 'Gift Voucher Sales' &&
@@ -894,6 +894,7 @@ export class RequestServicesService {
         );
       }
     }
+	try{
     await this.requestServicesRepository.update(id, updateRequestServicesDto);
     await this.elasticService.updateDocument(
       'services',
@@ -901,6 +902,13 @@ export class RequestServicesService {
       updateRequestServicesDto,
     );
     return this.requestServicesRepository.findOne({ where: { id } });
+	} catch (error) {
+		console.error('Error in update method:', error.message);
+		throw new HttpException(
+			error.message || 'Failed to update service',
+			HttpStatus.INTERNAL_SERVER_ERROR,
+		);
+	}
   }
 
   async rating(id: string, rate: any) {
@@ -963,7 +971,7 @@ export class RequestServicesService {
     try {
       // Determine the completed state based on service type
       let completedState = 'Closed';
-      
+
       if (type === 'Handsfree Request') {
         completedState = 'Bags Returned';
       } else if (type === 'Wheelchair & Stroller Request' || type === 'Power Bank Request') {
@@ -979,8 +987,8 @@ export class RequestServicesService {
               { match: { 'metadata.customer.phone_number': phoneNumber } },
             ],
             must_not: [
-              { match: { state: completedState } },
-              { match: { state: 'Closed' } }
+              { match: { 'state.keyword': completedState } },
+              { match: { 'state.keyword': 'Closed' } }
             ]
           }
         }
