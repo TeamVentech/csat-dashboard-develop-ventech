@@ -46,8 +46,12 @@ export class TransactionSurveyService {
 
 			// Update touchpoint rating
 			await this.touchPointsService.update(createTransactionSurveyDto.touchpointId, createTransactionSurveyDto.rating)
-
+			const touchpoints = await this.touchPointsService.findOne(createTransactionSurveyDto.touchpointId)
 			// Create transaction survey
+			createTransactionSurveyDto.touchpoint = {
+				name: {...touchpoints.name},
+				id: touchpoints.id,
+			}
 			const transactionSurvey = this.transactionSurveyRepository.create(createTransactionSurveyDto)
 			const savedSurvey = await this.transactionSurveyRepository.save(transactionSurvey)
 			const surveyData = Array.isArray(savedSurvey) ? savedSurvey[0] : savedSurvey
@@ -57,7 +61,6 @@ export class TransactionSurveyService {
 			}
 
 			const completeData = await this.findOne(surveyData.id)
-
 			const [touchpoint, category, customer] = await Promise.all([
 				this.touchPointsService.findOne(completeData.touchpointId),
 				this.categoryService.findOne(completeData.categoryId),
@@ -69,17 +72,7 @@ export class TransactionSurveyService {
 				await this.elasticService.indexData(
 					'survey_transactions',
 					surveyData.id,
-					{
-						...completeData,
-						createdAt: completeData.createdAt,
-						updatedAt: completeData.updatedAt,
-						touchpoint: { ...touchpoint },
-						metadata: {
-							surveyName: completeData.survey?.name,
-							rating: completeData.rating,
-							state: completeData.state,
-						},
-					},
+					completeData,
 				)
 			} catch (error) {
 				console.error('Error indexing survey transaction in Elasticsearch:', error)
@@ -227,6 +220,8 @@ export class TransactionSurveyService {
 				}
 			})
 		}
+		queryBuilder.orderBy('transactionSurvey.createdAt', 'DESC');
+
 		queryBuilder.andWhere('transactionSurvey.surveyId = :surveyId', { surveyId })
 
 		const [categories, total] = await queryBuilder
@@ -531,19 +526,36 @@ export class TransactionSurveyService {
 		filterOptions: {
 			cutomerId?: string;
 		},
+		page: number = 1,
+		pageSize: number = 10,
 	) {
-		const queryBuilder = this.transactionSurveyRepository.createQueryBuilder('transactionSurvey')
-			.leftJoinAndSelect('transactionSurvey.customer', 'customer')
-			.leftJoinAndSelect('transactionSurvey.category', 'categories')
+		try {
+			const searchQuery = {
+				bool: {
+					must: [],
+				},
+			}
 
-		if (filterOptions.cutomerId) {
-			queryBuilder.andWhere('customer.id = :cutomerId', {
-				cutomerId: filterOptions.cutomerId,
-			})
-		}
-		const results = await queryBuilder.getRawMany()
-		return {
-			results,
+			if (filterOptions.cutomerId) {
+				searchQuery.bool.must.push({ match: { customerId: filterOptions.cutomerId } })
+			}
+
+			// Execute the search
+			const results = await this.elasticService.searchByQuery(
+				'survey_transactions',
+				{ query: searchQuery },
+				page,
+				pageSize,
+			)
+
+			return results
+		} catch (error) {
+			console.error('Error searching customer surveys:', error)
+			return {
+				success: false,
+				message: 'Error searching customer surveys',
+				error: error.message || error,
+			}
 		}
 	}
 

@@ -47,12 +47,99 @@ export class RequestServicesService {
     private readonly addedValueServiceHandler: AddedValueServiceHandler,
   ) {}
 
+  // Helper method to handle customer data
+  private async handleCustomerData(customerData: any) {
+    if (!customerData || (!customerData.email && !customerData.phone_number)) {
+      return;
+    }
+
+    try {
+      // First check if customer exists by email
+      let customer = null;
+      if (customerData.email) {
+        customer = await this.customerService.doesEmailOrPhoneExist(
+          customerData.email,
+          null,
+        );
+        
+        // If customer exists with the same email, check phone number match
+        if (customer && customerData.phone_number) {
+          if (customer.phone_number !== customerData.phone_number) {
+            // Phone number is different - throw error to stop execution
+            throw new HttpException(
+              'Cannot update phone number for existing customer. Phone number must remain the same.',
+              HttpStatus.BAD_REQUEST
+            );
+          }
+          
+          // Phone numbers match, proceed with update
+          await this.customerService.update(customer.id, { ...customerData });
+          return;
+        }
+      }
+      
+      // If no match by email, check by phone number
+      if (customerData.phone_number) {
+        customer = await this.customerService.doesEmailOrPhoneExist(
+          null,
+          customerData.phone_number,
+        );
+        
+        if (customer) {
+          // If customer exists with different email, check if trying to change email
+          if (customerData.email && customer.email !== customerData.email) {
+            throw new HttpException(
+              'Cannot update email for existing customer with this phone number.',
+              HttpStatus.BAD_REQUEST
+            );
+          }
+          
+          // No email change, proceed with update
+          await this.customerService.update(customer.id, { ...customerData });
+        } else {
+          // Customer doesn't exist, create a new one
+          delete customerData?.id;
+          await this.customerService.create({ ...customerData });
+        }
+      }
+    } catch (error) {
+      // Re-throw HttpException errors but wrap other errors
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        console.error('Error handling customer data:', error);
+        throw new HttpException(
+          'Error processing customer data',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+    }
+  }
+
   async create(createRequestServicesDto: CreateRequestServicesDto) {
+    let Service;
+    let savedService;
+    
+    // Get a query runner to manage transactions
+    const queryRunner = this.requestServicesRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
       const numbers =
         createRequestServicesDto?.metadata?.parents?.phone_number ||
         createRequestServicesDto?.metadata?.customer?.phone_number ||
         createRequestServicesDto?.metadata?.Company?.phone_number;
+
+      // Process customer data for any service type that includes customer data
+      if (createRequestServicesDto?.metadata?.customer) {
+        await this.handleCustomerData(createRequestServicesDto.metadata.customer);
+      }
+      
+      // Process parents data for lost children services
+      if (createRequestServicesDto?.metadata?.parents) {
+        await this.handleCustomerData(createRequestServicesDto.metadata.parents);
+      }
 
       if (createRequestServicesDto.type === 'Incident Reporting') {
         createRequestServicesDto.state = 'Open';
@@ -78,9 +165,11 @@ export class RequestServicesService {
       }
 
       if (createRequestServicesDto.name === 'Gift Voucher Sales') {
-        const Service = this.requestServicesRepository.create(
+        // Create service instance but don't save it yet
+        Service = this.requestServicesRepository.create(
           createRequestServicesDto,
         );
+        savedService = await queryRunner.manager.save(Service);
 
         // Recalculate the total value based on vouchers
         let totalValue = 0;
@@ -107,6 +196,7 @@ export class RequestServicesService {
         // Update the total value in metadata
         Service.metadata.value = totalValue;
 
+        // Update vouchers first - if this fails, we won't save the service
         for (let i = 0; i < Service.metadata.voucher.length; i++) {
           for (
             let j = 0;
@@ -125,6 +215,8 @@ export class RequestServicesService {
               Service.id;
             Service.metadata.voucher[i].vouchers[j].metadata.expired_date =
               Service.metadata.Expiry_date;
+            Service.metadata.voucher[i].vouchers[j].metadata.transactionSubId =
+            savedService.serviceId;
             Service.metadata.voucher[i].vouchers[j].metadata.type_sale =
               Service.type === 'Corporate Voucher Sale'
                 ? 'Company'
@@ -135,9 +227,20 @@ export class RequestServicesService {
             );
           }
         }
-        // const Service = this.requestServicesRepository.create(createRequestServicesDto);
-        var savedService = await this.requestServicesRepository.save(Service);
-        await this.elasticService.indexData('services', Service.id, Service);
+        
+        // Try to index in Elasticsearch
+        try {
+          await this.elasticService.indexData('services', savedService.id, savedService);
+        } catch (elasticError) {
+          // If Elasticsearch indexing fails, roll back the transaction
+          await queryRunner.rollbackTransaction();
+          throw new HttpException(
+            'Failed to index service in Elasticsearch',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+        
+        // SMS is now sent only after both database and Elasticsearch operations succeed
         if (createRequestServicesDto.type === 'Individual Voucher Sale') {
           const numbers =
             createRequestServicesDto?.metadata?.customer?.phone_number;
@@ -162,6 +265,33 @@ export class RequestServicesService {
           await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`, numbers);
         }
       } else {
+        // Create and save the service
+        Service = this.requestServicesRepository.create(
+          createRequestServicesDto,
+        );
+
+
+        
+        // Save using transaction
+        savedService = await queryRunner.manager.save(Service);
+        // Try to index in Elasticsearch
+        try {
+          const transformedData = instanceToPlain(savedService);
+          await this.elasticService.indexData(
+            'services',
+            savedService.id,
+            transformedData,
+          );
+        } catch (elasticError) {
+          // If Elasticsearch indexing fails, roll back the transaction
+          await queryRunner.rollbackTransaction();
+          throw new HttpException(
+            'Failed to index service in Elasticsearch',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+        
+        // Send SMS messages only after both database and Elasticsearch operations succeed
         if (createRequestServicesDto.type === 'Found Child') {
           if (createRequestServicesDto.metadata.parents.phone_number) {
             const numbers =
@@ -170,7 +300,6 @@ export class RequestServicesService {
               ? 'تم العثور على طفلكم تم العثور على طفلكم المفقود.\n يرجى التوجه لمكتب خدمة الزبائن في الطابق الأرضي لاستلام الطفل وإبراز هويتكم.'
               : 'Dear Customer,\n Your missing child was found. Please head immediately to Customer Care desk at Ground Floor to collect child and present your ID.';
             await this.smsService.sendSms(numbers, message, numbers);
-            createRequestServicesDto.state = 'Awaiting Collection';
           }
         } else if (
           createRequestServicesDto.name !== 'Gift Voucher Sales' &&
@@ -186,62 +315,22 @@ export class RequestServicesService {
             ][language];
           await this.smsService.sendSms(numbers, message, numbers);
         }
-        if (createRequestServicesDto.name === 'Lost Children Management') {
-          if (createRequestServicesDto.type === 'Lost Child') {
-            const customers = createRequestServicesDto.metadata.parents;
-            const customer = await this.customerService.doesEmailOrPhoneExist(
-              customers.email,
-              customers.phone_number,
-            );
-            if (customer) {
-              await this.customerService.update(customer.id, { ...customers });
-            } else {
-              delete createRequestServicesDto?.metadata?.parents?.id;
-              await this.customerService.create({
-                ...createRequestServicesDto.metadata.parents,
-              });
-            }
-          }
-        }
-        if (
-          createRequestServicesDto.name === 'Suggestion Box' ||
-          createRequestServicesDto.name === 'Incident Reporting' ||
-          createRequestServicesDto.name === 'Lost Item Management' ||
-          createRequestServicesDto.type === 'Individual Voucher Sale'
-        ) {
-          const customers = createRequestServicesDto.metadata.customer;
-          const customer = await this.customerService.doesEmailOrPhoneExist(
-            customers.email,
-            customers.phone_number,
-          );
-          if (customer) {
-            await this.customerService.update(customer.id, { ...customers });
-          } else {
-            delete createRequestServicesDto?.metadata?.customer?.id;
-            await this.customerService.create({
-              ...createRequestServicesDto.metadata.customer,
-            });
-          }
-        }
-        if (createRequestServicesDto.name === 'Added-Value Services') {
-        }
-        const Service = this.requestServicesRepository.create(
-          createRequestServicesDto,
-        );
-        var savedService = await this.requestServicesRepository.save(Service);
-        const transformedData = instanceToPlain(Service);
-        await this.elasticService.indexData(
-          'services',
-          Service.id,
-          transformedData,
-        );
       }
+      
+      // If everything is successful, commit the transaction
+      await queryRunner.commitTransaction();
+      
     } catch (error) {
-      console.error('Error sending SMS :', error.message);
+      // Roll back the transaction on any error
+      await queryRunner.rollbackTransaction();
+      console.error('Error in service creation flow:', error.message);
       throw new HttpException(
-        error.message || 'Failed to create added value service',
+        error.message || 'Failed to create service',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    } finally {
+      // Release the query runner
+      await queryRunner.release();
     }
 
     return savedService;
@@ -758,23 +847,23 @@ export class RequestServicesService {
       data.state !== 'Closed' &&
       updateRequestServicesDto.state === 'Closed'
     ) {
-      if (
-        data.type === 'Incident Reporting' &&
-        data.state === 'Pending Internal'
-      ) {
-        const now = moment();
-        const createdAt = moment(data.createdAt);
-        const hoursDifference = now.diff(createdAt, 'hours');
-        if (
-          hoursDifference < 24 ||
-          !updateRequestServicesDto.metadata?.callCompleted
-        ) {
-          throw new HttpException(
-            'Cannot close incident case. Must wait 24 hours and mark call as completed.',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      }
+      // if (
+      //   data.type === 'Incident Reporting' &&
+      //   data.state === 'Pending Internal'
+      // ) {
+      //   const now = moment();
+      //   const createdAt = moment(data.createdAt);
+      //   const hoursDifference = now.diff(createdAt, 'hours');
+      //   if (
+      //     hoursDifference < 24 ||
+      //     !updateRequestServicesDto.metadata?.callCompleted
+      //   ) {
+      //     throw new HttpException(
+      //       'Cannot close incident case. Must wait 24 hours and mark call as completed.',
+      //       HttpStatus.BAD_REQUEST,
+      //     );
+      //   }
+      // }
       const numbers =
         data?.metadata?.parents?.phone_number ||
         data?.metadata?.customer?.phone_number ||

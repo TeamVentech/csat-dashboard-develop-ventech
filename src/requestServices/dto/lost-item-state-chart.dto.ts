@@ -2,6 +2,7 @@ import { IsEnum, IsOptional, IsDateString, IsString } from 'class-validator';
 
 export enum PeriodType {
   TIME_OF_DAY = 'TimeOfDay',
+  DAILY = 'Daily',
   MONTHLY = 'Monthly',
   WEEKLY = 'Weekly'
 }

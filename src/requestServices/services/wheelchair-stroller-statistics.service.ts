@@ -60,7 +60,7 @@ export class WheelchairStrollerStatisticsService {
       const hits = result.body.hits.hits.map((hit: any) => hit._source);
       
       // Process data for chart based on the period type
-      const chartData = this.processWheelchairStrollerChartData(hits, filters.period);
+      const chartData = this.processWheelchairStrollerChartData(hits, filters.period, filters.fromDate, filters.toDate);
       
       return {
         success: true,
@@ -76,6 +76,180 @@ export class WheelchairStrollerStatisticsService {
         error: error.message || error
       };
     }
+  }
+
+  private processWheelchairStrollerChartData(data: any[], periodType: string = 'Monthly', fromDate?: string, toDate?: string) {
+    let processedData: any;
+    
+    switch (periodType) {
+      case 'Daily':
+        processedData = this.processDailyData(data, fromDate, toDate);
+        break;
+      case 'Weekly':
+        processedData = this.processWeeklyData(data, fromDate, toDate);
+        break;
+      case 'Monthly':
+      default:
+        processedData = this.processMonthlyData(data, fromDate, toDate);
+        break;
+    }
+    
+    return processedData;
+  }
+
+  private processDailyData(data: any[], fromDate?: string, toDate?: string) {
+    // Group by day and type (Wheelchair or Stroller)
+    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate) : moment().subtract(30, 'days');
+    const endDate = toDate ? moment(toDate) : moment();
+    
+    // Calculate days difference between start and end dates
+    const daysDiff = endDate.diff(startDate, 'days') + 1; // +1 to include the end date
+    
+    // Initialize days based on date range
+    for (let i = 0; i < daysDiff; i++) {
+      const date = moment(startDate).add(i, 'days').format('YYYY-MM-DD');
+      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const date = moment(moment(item.createdAt).format('YYYY-MM-DD')).format('YYYY-MM-DD');
+      const type = item.metadata?.type || 'Unknown';
+      
+      if (groupedByDay[date]) {
+        if (type === 'Wheelchair') {
+          groupedByDay[date].Wheelchair += 1;
+        } else if (type === 'Stroller') {
+          groupedByDay[date].Stroller += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
+    const series = [
+      {
+        name: 'Wheelchair',
+        data: categories.map(date => groupedByDay[date].Wheelchair)
+      },
+      {
+        name: 'Stroller',
+        data: categories.map(date => groupedByDay[date].Stroller)
+      }
+    ];
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private processWeeklyData(data: any[], fromDate?: string, toDate?: string) {
+    // Group by week and type (Wheelchair or Stroller)
+    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('week') : moment().subtract(12, 'weeks').startOf('week');
+    const endDate = toDate ? moment(toDate).endOf('week') : moment().endOf('week');
+    
+    // Calculate weeks difference
+    let currentWeekStart = moment(startDate);
+    
+    // Initialize weeks based on date range
+    while (currentWeekStart.isSameOrBefore(endDate)) {
+      const weekLabel = `${currentWeekStart.format('MMM DD')} - ${moment(currentWeekStart).endOf('week').format('MMM DD')}`;
+      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      currentWeekStart.add(1, 'week');
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const itemDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const startOfWeek = moment(itemDate).startOf('week');
+      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+      const type = item.metadata?.type || 'Unknown';
+      
+      if (groupedByWeek[weekLabel]) {
+        if (type === 'Wheelchair') {
+          groupedByWeek[weekLabel].Wheelchair += 1;
+        } else if (type === 'Stroller') {
+          groupedByWeek[weekLabel].Stroller += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByWeek);
+    const series = [
+      {
+        name: 'Wheelchair',
+        data: categories.map(week => groupedByWeek[week].Wheelchair)
+      },
+      {
+        name: 'Stroller',
+        data: categories.map(week => groupedByWeek[week].Stroller)
+      }
+    ];
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private processMonthlyData(data: any[], fromDate?: string, toDate?: string) {
+    // Group by month and type (Wheelchair or Stroller)
+    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('month') : moment().subtract(12, 'months').startOf('month');
+    const endDate = toDate ? moment(toDate).endOf('month') : moment().endOf('month');
+    
+    // Calculate months difference
+    let currentMonth = moment(startDate);
+    
+    // Initialize months based on date range
+    while (currentMonth.isSameOrBefore(endDate, 'month')) {
+      const monthLabel = currentMonth.format('MMM YYYY');
+      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      currentMonth.add(1, 'month');
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const normalizedDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const monthLabel = normalizedDate.format('MMM YYYY');
+      const type = item.metadata?.type || 'Unknown';
+      
+      if (groupedByMonth[monthLabel]) {
+        if (type === 'Wheelchair') {
+          groupedByMonth[monthLabel].Wheelchair += 1;
+        } else if (type === 'Stroller') {
+          groupedByMonth[monthLabel].Stroller += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByMonth);
+    const series = [
+      {
+        name: 'Wheelchair',
+        data: categories.map(month => groupedByMonth[month].Wheelchair)
+      },
+      {
+        name: 'Stroller',
+        data: categories.map(month => groupedByMonth[month].Stroller)
+      }
+    ];
+    
+    return {
+      categories,
+      series
+    };
   }
 
   async getAverageDurationData(filters: {
@@ -154,8 +328,11 @@ export class WheelchairStrollerStatisticsService {
         item.createdAt
       );
       
+      // Check duration calculations
+      const validDurations = validData.filter(item => this.calculateDurationInMinutes(item) !== null);
+      
       // Process data for chart based on the period type
-      const durationData = this.processAverageDurationData(validData, filters.period);
+      const durationData = this.processAverageDurationData(validDurations, filters.period, filters.fromDate, filters.toDate);
       
       return {
         success: true,
@@ -174,6 +351,31 @@ export class WheelchairStrollerStatisticsService {
         message: 'Error generating average duration data',
         error: error.message || error
       };
+    }
+  }
+
+  private calculateDurationInMinutes(item: any): number {
+    try {
+      const returnDate = item.metadata.returnDate;
+      const returnTime = item.metadata.returnTime;
+      
+      // Combine return date and time
+      const returnDateTime = moment(`${returnDate} ${returnTime}`, 'YYYY-MM-DD HH:mm');
+      const startMomentTime = moment(item.createdAt, 'YYYY-MM-DD HH:mm');
+      
+      // Calculate duration in minutes
+      const durationMinutes = returnDateTime.diff(startMomentTime, 'minutes');
+      
+
+      // Filter out negative or unreasonably large durations (more than 30 days)
+      if (durationMinutes < 0 || durationMinutes > 43200) {
+        return null;
+      }
+      
+      return durationMinutes;
+    } catch (error) {
+      console.error('Error calculating duration:', error);
+      return null;
     }
   }
 
@@ -252,7 +454,7 @@ export class WheelchairStrollerStatisticsService {
       );
       
       // Process data for chart based on the period type
-      const chartData = this.processDamagedCasesData(validData, filters.period);
+      const chartData = this.processDamagedCasesData(validData, filters.period, filters.fromDate, filters.toDate);
       
       // Create the table data
       const tableData = this.createDamagedCasesTableData(validData, filters.period, {
@@ -347,7 +549,7 @@ export class WheelchairStrollerStatisticsService {
       );
       
       // Process data for chart based on the period type
-      const chartData = this.processNotReturnedItemsData(validData, filters.period);
+      const chartData = this.processNotReturnedItemsData(validData, filters.period, filters.fromDate, filters.toDate);
       
       // Create the table data
       const tableData = this.createNotReturnedItemsTableData(validData, filters.period, {
@@ -448,7 +650,7 @@ export class WheelchairStrollerStatisticsService {
       );
       
       // Process data for chart based on the period type
-      const chartData = this.processDeliveryPickupServicesData(validData, filters.period);
+      const chartData = this.processDeliveryPickupServicesData(validData, filters.period, filters.fromDate, filters.toDate);
       
       // Create the table data
       const tableData = this.createDeliveryPickupServicesTableData(validData, filters.period, {
@@ -479,6 +681,179 @@ export class WheelchairStrollerStatisticsService {
         error: error.message || error
       };
     }
+  }
+
+  private processDeliveryPickupServicesData(data: any[], periodType: string = 'Monthly', fromDate?: string, toDate?: string) {
+    let processedData: any;
+    switch (periodType) {
+      case 'Daily':
+        processedData = this.processDailyDeliveryPickupServicesData(data, fromDate, toDate);
+        break;
+      case 'Weekly':
+        processedData = this.processWeeklyDeliveryPickupServicesData(data, fromDate, toDate);
+        break;
+      case 'Monthly':
+      default:
+        processedData = this.processMonthlyDeliveryPickupServicesData(data, fromDate, toDate);
+        break;
+    }
+    
+    return processedData;
+  }
+
+  private processDailyDeliveryPickupServicesData(data: any[], fromDate?: string, toDate?: string) {
+    // Group by day
+    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate) : moment().subtract(30, 'days');
+    const endDate = toDate ? moment(toDate) : moment();
+    
+    // Calculate days difference between start and end dates
+    const daysDiff = endDate.diff(startDate, 'days') + 1; // +1 to include the end date
+    
+    // Initialize days based on date range
+    for (let i = 0; i < daysDiff; i++) {
+      const date = moment(startDate).add(i, 'days').format('YYYY-MM-DD');
+      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const date = moment(moment(item.createdAt).format('YYYY-MM-DD')).format('YYYY-MM-DD');
+      const type = item.metadata?.type || 'Unknown';
+      
+      if (groupedByDay[date]) {
+        if (type === 'Wheelchair') {
+          groupedByDay[date].Wheelchair += 1;
+        } else if (type === 'Stroller') {
+          groupedByDay[date].Stroller += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
+    const series = [
+      {
+        name: 'Wheelchair',
+        data: categories.map(date => groupedByDay[date].Wheelchair)
+      },
+      {
+        name: 'Stroller',
+        data: categories.map(date => groupedByDay[date].Stroller)
+      }
+    ];
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private processWeeklyDeliveryPickupServicesData(data: any[], fromDate?: string, toDate?: string) {
+    // Group by week
+    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('week') : moment().subtract(12, 'weeks').startOf('week');
+    const endDate = toDate ? moment(toDate).endOf('week') : moment().endOf('week');
+    
+    // Calculate weeks difference
+    let currentWeekStart = moment(startDate);
+    
+    // Initialize weeks based on date range
+    while (currentWeekStart.isSameOrBefore(endDate)) {
+      const weekLabel = `${currentWeekStart.format('MMM DD')} - ${moment(currentWeekStart).endOf('week').format('MMM DD')}`;
+      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
+      currentWeekStart.add(1, 'week');
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const itemDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const startOfWeek = moment(itemDate).startOf('week');
+      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+      const type = item.metadata?.type || 'Unknown';
+      
+      if (groupedByWeek[weekLabel]) {
+        if (type === 'Wheelchair') {
+          groupedByWeek[weekLabel].Wheelchair += 1;
+        } else if (type === 'Stroller') {
+          groupedByWeek[weekLabel].Stroller += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByWeek);
+    const series = [
+      {
+        name: 'Wheelchair',
+        data: categories.map(week => groupedByWeek[week].Wheelchair)
+      },
+      {
+        name: 'Stroller',
+        data: categories.map(week => groupedByWeek[week].Stroller)
+      }
+    ];
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private processMonthlyDeliveryPickupServicesData(data: any[], fromDate?: string, toDate?: string) {
+    // Group by month
+    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
+    
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('month') : moment().subtract(12, 'months').startOf('month');
+    const endDate = toDate ? moment(toDate).endOf('month') : moment().endOf('month');
+    
+    // Calculate months difference
+    let currentMonth = moment(startDate);
+    
+    // Initialize months based on date range
+    while (currentMonth.isSameOrBefore(endDate, 'month')) {
+      const monthLabel = currentMonth.format('MMM YYYY');
+      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      currentMonth.add(1, 'month');
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const normalizedDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const monthLabel = normalizedDate.format('MMM YYYY');
+      const type = item.metadata?.type || 'Unknown';
+      
+      if (groupedByMonth[monthLabel]) {
+        if (type === 'Wheelchair') {
+          groupedByMonth[monthLabel].Wheelchair += 1;
+        } else if (type === 'Stroller') {
+          groupedByMonth[monthLabel].Stroller += 1;
+        }
+      }
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByMonth);
+    const series = [
+      {
+        name: 'Wheelchair',
+        data: categories.map(month => groupedByMonth[month].Wheelchair)
+      },
+      {
+        name: 'Stroller',
+        data: categories.map(month => groupedByMonth[month].Stroller)
+      }
+    ];
+    
+    return {
+      categories,
+      series
+    };
   }
 
   private calculateDeliveryPickupStats(data: any[]) {
@@ -530,226 +905,42 @@ export class WheelchairStrollerStatisticsService {
     return stats;
   }
 
-  private processWheelchairStrollerChartData(data: any[], periodType: string = 'Monthly') {
+  private processAverageDurationData(data: any[], periodType: string = 'Monthly', fromDate?: string, toDate?: string) {
     let processedData: any;
     
     switch (periodType) {
       case 'Daily':
-        processedData = this.processDailyData(data);
+        processedData = this.processDailyDurationData(data, fromDate, toDate);
         break;
       case 'Weekly':
-        processedData = this.processWeeklyData(data);
+        processedData = this.processWeeklyDurationData(data, fromDate, toDate);
         break;
       case 'Monthly':
       default:
-        processedData = this.processMonthlyData(data);
+        processedData = this.processMonthlyDurationData(data, fromDate, toDate);
         break;
     }
     
     return processedData;
   }
 
-  private processDailyData(data: any[]) {
-    // Group by day and type (Wheelchair or Stroller)
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
-    
-    // Initialize last 30 days
-    const today = moment();
-    for (let i = 29; i >= 0; i--) {
-      const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
-    }
-    
-    // Group data
-    data.forEach(item => {
-      const date = moment(item.createdAt).format('YYYY-MM-DD');
-      const type = item.metadata?.type || 'Unknown';
-      
-      if (moment(date).isAfter(moment().subtract(30, 'days'))) {
-        if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
-        }
-      }
-    });
-    
-    // Format for chart
-    const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
-    const series = [
-      {
-        name: 'Wheelchair',
-        data: categories.map(date => groupedByDay[date].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(date => groupedByDay[date].Stroller)
-      }
-    ];
-    
-    return {
-      categories,
-      series
-    };
-  }
-
-  private processWeeklyData(data: any[]) {
-    // Group by week and type (Wheelchair or Stroller)
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
-    
-    // Initialize last 12 weeks
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
-      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
-    }
-    
-    // Group data
-    data.forEach(item => {
-      const itemDate = moment(item.createdAt);
-      const startOfWeek = moment(itemDate).startOf('week');
-      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      const type = item.metadata?.type || 'Unknown';
-      
-      if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
-        if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
-        }
-      }
-    });
-    
-    // Format for chart
-    const categories = Object.keys(groupedByWeek);
-    const series = [
-      {
-        name: 'Wheelchair',
-        data: categories.map(week => groupedByWeek[week].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(week => groupedByWeek[week].Stroller)
-      }
-    ];
-    
-    return {
-      categories,
-      series
-    };
-  }
-
-  private processMonthlyData(data: any[]) {
-    // Group by month and type (Wheelchair or Stroller)
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
-    
-    // Initialize last 12 months
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
-    }
-    
-    // Group data
-    data.forEach(item => {
-      const month = moment(item.createdAt).format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
-      const type = item.metadata?.type || 'Unknown';
-      
-      if (moment(month).isAfter(moment().subtract(12, 'months'))) {
-        if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
-        }
-      }
-    });
-    
-    // Format for chart
-    const categories = Object.keys(groupedByMonth);
-    const series = [
-      {
-        name: 'Wheelchair',
-        data: categories.map(month => groupedByMonth[month].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(month => groupedByMonth[month].Stroller)
-      }
-    ];
-    
-    return {
-      categories,
-      series
-    };
-  }
-
-  private processAverageDurationData(data: any[], periodType: string = 'Monthly') {
-    let processedData: any;
-    
-    switch (periodType) {
-      case 'Daily':
-        processedData = this.processDailyDurationData(data);
-        break;
-      case 'Weekly':
-        processedData = this.processWeeklyDurationData(data);
-        break;
-      case 'Monthly':
-      default:
-        processedData = this.processMonthlyDurationData(data);
-        break;
-    }
-    
-    return processedData;
-  }
-
-  private calculateDurationInMinutes(item: any): number {
-    try {
-      const returnDate = item.metadata.returnDate;
-      const returnTime = item.metadata.returnTime;
-      
-      // Combine return date and time
-      const returnDateTime = moment(`${returnDate} ${returnTime}`, 'YYYY-MM-DD HH:mm');
-      const startMomentTime = moment(item.createdAt, 'YYYY-MM-DD HH:mm');
-      // Calculate duration in minutes
-      const durationMinutes = returnDateTime.diff(startMomentTime, 'minutes');
-      // Filter out negative or unreasonably large durations (more than 30 days)
-      if (durationMinutes < 0 || durationMinutes > 43200) {
-        return null;
-      }
-      
-      return durationMinutes;
-    } catch (error) {
-      console.error('Error calculating duration:', error);
-      return null;
-    }
-  }
-
-  private processDailyDurationData(data: any[]) {
+  private processDailyDurationData(data: any[], fromDate?: string, toDate?: string) {
     // Group by day and type (Wheelchair or Stroller)
     const groupedByDay: Record<string, { 
       Wheelchair: { totalDuration: number, count: number },
       Stroller: { totalDuration: number, count: number }
     }> = {};
     
-    // Initialize last 30 days
-    const today = moment();
-    for (let i = 29; i >= 0; i--) {
-      const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate) : moment().subtract(30, 'days');
+    const endDate = toDate ? moment(toDate) : moment();
+    
+    // Calculate days difference between start and end dates
+    const daysDiff = endDate.diff(startDate, 'days') + 1; // +1 to include the end date
+    
+    // Initialize days based on date range
+    for (let i = 0; i < daysDiff; i++) {
+      const date = moment(startDate).add(i, 'days').format('YYYY-MM-DD');
       groupedByDay[date] = { 
         Wheelchair: { totalDuration: 0, count: 0 },
         Stroller: { totalDuration: 0, count: 0 }
@@ -758,23 +949,20 @@ export class WheelchairStrollerStatisticsService {
     
     // Group data
     data.forEach(item => {
-      const date = moment(item.createdAt).format('YYYY-MM-DD');
+      // Normalize date without timezone to avoid timezone issues
+      const date = moment(moment(item.createdAt).format('YYYY-MM-DD')).format('YYYY-MM-DD');
       const type = item.metadata?.type || 'Unknown';
       const durationMinutes = this.calculateDurationInMinutes(item);
+      console.log(JSON.stringify(item));
+      // Always include the duration value, even if it's 0
+      const actualDuration = durationMinutes !== null ? durationMinutes : 0;
       
-      if (durationMinutes && moment(date).isAfter(moment().subtract(30, 'days'))) {
-        if (!groupedByDay[date]) {
-          groupedByDay[date] = { 
-            Wheelchair: { totalDuration: 0, count: 0 },
-            Stroller: { totalDuration: 0, count: 0 }
-          };
-        }
-        
+      if (groupedByDay[date]) {
         if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair.totalDuration += durationMinutes;
+          groupedByDay[date].Wheelchair.totalDuration += actualDuration;
           groupedByDay[date].Wheelchair.count += 1;
         } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller.totalDuration += durationMinutes;
+          groupedByDay[date].Stroller.totalDuration += actualDuration;
           groupedByDay[date].Stroller.count += 1;
         }
       }
@@ -813,45 +1001,49 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processWeeklyDurationData(data: any[]) {
+  private processWeeklyDurationData(data: any[], fromDate?: string, toDate?: string) {
     // Group by week and type (Wheelchair or Stroller)
     const groupedByWeek: Record<string, { 
       Wheelchair: { totalDuration: number, count: number },
       Stroller: { totalDuration: number, count: number }
     }> = {};
     
-    // Initialize last 12 weeks
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
-      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('week') : moment().subtract(12, 'weeks').startOf('week');
+    const endDate = toDate ? moment(toDate).endOf('week') : moment().endOf('week');
+    
+    // Calculate weeks difference
+    let currentWeekStart = moment(startDate);
+    
+    // Initialize weeks based on date range
+    while (currentWeekStart.isSameOrBefore(endDate)) {
+      const weekLabel = `${currentWeekStart.format('MMM DD')} - ${moment(currentWeekStart).endOf('week').format('MMM DD')}`;
       groupedByWeek[weekLabel] = { 
         Wheelchair: { totalDuration: 0, count: 0 },
         Stroller: { totalDuration: 0, count: 0 }
       };
+      currentWeekStart.add(1, 'week');
     }
     
     // Group data
     data.forEach(item => {
-      const itemDate = moment(item.createdAt);
+      // Parse createdAt consistently, stripping timezone info to prevent timezone-based grouping issues
+      const itemDate = moment(moment(item.createdAt).format('YYYY-MM-DD HH:mm'));
       const startOfWeek = moment(itemDate).startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
       const type = item.metadata?.type || 'Unknown';
       const durationMinutes = this.calculateDurationInMinutes(item);
       
-      if (durationMinutes && itemDate.isAfter(moment().subtract(12, 'weeks'))) {
-        if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { 
-            Wheelchair: { totalDuration: 0, count: 0 },
-            Stroller: { totalDuration: 0, count: 0 }
-          };
-        }
-        
+      // Always include the duration value, even if it's 0
+      const actualDuration = durationMinutes !== null ? durationMinutes : 0;
+      
+      // Check if the week label exists in our pre-initialized weeks
+      if (groupedByWeek[weekLabel]) {
         if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair.totalDuration += durationMinutes;
+          groupedByWeek[weekLabel].Wheelchair.totalDuration += actualDuration;
           groupedByWeek[weekLabel].Wheelchair.count += 1;
         } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller.totalDuration += durationMinutes;
+          groupedByWeek[weekLabel].Stroller.totalDuration += actualDuration;
           groupedByWeek[weekLabel].Stroller.count += 1;
         }
       }
@@ -890,44 +1082,48 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processMonthlyDurationData(data: any[]) {
+  private processMonthlyDurationData(data: any[], fromDate?: string, toDate?: string) {
     // Group by month and type (Wheelchair or Stroller)
     const groupedByMonth: Record<string, { 
       Wheelchair: { totalDuration: number, count: number },
       Stroller: { totalDuration: number, count: number }
     }> = {};
     
-    // Initialize last 12 months
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('month') : moment().subtract(12, 'months').startOf('month');
+    const endDate = toDate ? moment(toDate).endOf('month') : moment().endOf('month');
+    
+    // Calculate months difference
+    let currentMonth = moment(startDate);
+    
+    // Initialize months based on date range
+    while (currentMonth.isSameOrBefore(endDate, 'month')) {
+      const monthLabel = currentMonth.format('MMM YYYY');
       groupedByMonth[monthLabel] = { 
         Wheelchair: { totalDuration: 0, count: 0 },
         Stroller: { totalDuration: 0, count: 0 }
       };
+      currentMonth.add(1, 'month');
     }
     
     // Group data
     data.forEach(item => {
-      const month = moment(item.createdAt).format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+      // Normalize date without timezone to avoid timezone issues
+      const normalizedDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const monthLabel = normalizedDate.format('MMM YYYY');
       const type = item.metadata?.type || 'Unknown';
       const durationMinutes = this.calculateDurationInMinutes(item);
+      console.log(JSON.stringify(item));
+
+      // Always include the duration value, even if it's 0
+      const actualDuration = durationMinutes !== null ? durationMinutes : 0;
       
-      if (durationMinutes && moment(month).isAfter(moment().subtract(12, 'months'))) {
-        if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { 
-            Wheelchair: { totalDuration: 0, count: 0 },
-            Stroller: { totalDuration: 0, count: 0 }
-          };
-        }
-        
+      if (groupedByMonth[monthLabel]) {
         if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair.totalDuration += durationMinutes;
+          groupedByMonth[monthLabel].Wheelchair.totalDuration += actualDuration;
           groupedByMonth[monthLabel].Wheelchair.count += 1;
         } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller.totalDuration += durationMinutes;
+          groupedByMonth[monthLabel].Stroller.totalDuration += actualDuration;
           groupedByMonth[monthLabel].Stroller.count += 1;
         }
       }
@@ -966,29 +1162,29 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processDamagedCasesData(data: any[], periodType: string = 'Monthly') {
+  private processDamagedCasesData(data: any[], periodType: string = 'Monthly', fromDate?: string, toDate?: string) {
     let processedData: any;
     
     switch (periodType) {
       case 'Daily':
-        processedData = this.processDailyDamagedCasesData(data);
+        processedData = this.processDailyDamagedCasesData(data, fromDate, toDate);
         break;
       case 'Weekly':
-        processedData = this.processWeeklyDamagedCasesData(data);
+        processedData = this.processWeeklyDamagedCasesData(data, fromDate, toDate);
         break;
       case 'Time of Day':
         processedData = this.processTimeOfDayDamagedCasesData(data);
         break;
       case 'Monthly':
       default:
-        processedData = this.processMonthlyDamagedCasesData(data);
+        processedData = this.processMonthlyDamagedCasesData(data, fromDate, toDate);
         break;
     }
     
     return processedData;
   }
 
-  private processDailyDamagedCasesData(data: any[]) {
+  private processDailyDamagedCasesData(data: any[], fromDate?: string, toDate?: string) {
     // Group by day
     const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
     
@@ -1036,7 +1232,7 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processWeeklyDamagedCasesData(data: any[]) {
+  private processWeeklyDamagedCasesData(data: any[], fromDate?: string, toDate?: string) {
     // Group by week
     const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
     
@@ -1087,29 +1283,31 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processMonthlyDamagedCasesData(data: any[]) {
+  private processMonthlyDamagedCasesData(data: any[], fromDate?: string, toDate?: string) {
     // Group by month
     const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
     
-    // Initialize last 12 months
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('month') : moment().subtract(12, 'months').startOf('month');
+    const endDate = toDate ? moment(toDate).endOf('month') : moment().endOf('month');
+    
+    // Calculate months difference
+    let currentMonth = moment(startDate);
+    
+    // Initialize months based on date range
+    while (currentMonth.isSameOrBefore(endDate, 'month')) {
+      const monthLabel = currentMonth.format('MMM YYYY');
       groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      currentMonth.add(1, 'month');
     }
     
     // Group data
     data.forEach(item => {
-      const month = moment(item.createdAt).format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+      const normalizedDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const monthLabel = normalizedDate.format('MMM YYYY');
       const type = item.metadata?.type || 'Unknown';
       
-      if (moment(month).isAfter(moment().subtract(12, 'months'))) {
-        if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
+      if (groupedByMonth[monthLabel]) {
         if (type === 'Wheelchair') {
           groupedByMonth[monthLabel].Wheelchair += 1;
         } else if (type === 'Stroller') {
@@ -1412,29 +1610,29 @@ export class WheelchairStrollerStatisticsService {
     }
   }
 
-  private processNotReturnedItemsData(data: any[], periodType: string = 'Monthly') {
+  private processNotReturnedItemsData(data: any[], periodType: string = 'Monthly', fromDate?: string, toDate?: string) {
     let processedData: any;
     
     switch (periodType) {
       case 'Daily':
-        processedData = this.processDailyNotReturnedItemsData(data);
+        processedData = this.processDailyNotReturnedItemsData(data, fromDate, toDate);
         break;
       case 'Weekly':
-        processedData = this.processWeeklyNotReturnedItemsData(data);
+        processedData = this.processWeeklyNotReturnedItemsData(data, fromDate, toDate);
         break;
       case 'Time of Day':
         processedData = this.processTimeOfDayNotReturnedItemsData(data);
         break;
       case 'Monthly':
       default:
-        processedData = this.processMonthlyNotReturnedItemsData(data);
+        processedData = this.processMonthlyNotReturnedItemsData(data, fromDate, toDate);
         break;
     }
     
     return processedData;
   }
 
-  private processDailyNotReturnedItemsData(data: any[]) {
+  private processDailyNotReturnedItemsData(data: any[], fromDate?: string, toDate?: string) {
     // Group by day
     const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
     
@@ -1482,7 +1680,7 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processWeeklyNotReturnedItemsData(data: any[]) {
+  private processWeeklyNotReturnedItemsData(data: any[], fromDate?: string, toDate?: string) {
     // Group by week
     const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
     
@@ -1533,29 +1731,31 @@ export class WheelchairStrollerStatisticsService {
     };
   }
 
-  private processMonthlyNotReturnedItemsData(data: any[]) {
+  private processMonthlyNotReturnedItemsData(data: any[], fromDate?: string, toDate?: string) {
     // Group by month
     const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
     
-    // Initialize last 12 months
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('month') : moment().subtract(12, 'months').startOf('month');
+    const endDate = toDate ? moment(toDate).endOf('month') : moment().endOf('month');
+    
+    // Calculate months difference
+    let currentMonth = moment(startDate);
+    
+    // Initialize months based on date range
+    while (currentMonth.isSameOrBefore(endDate, 'month')) {
+      const monthLabel = currentMonth.format('MMM YYYY');
       groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
+      currentMonth.add(1, 'month');
     }
     
     // Group data
     data.forEach(item => {
-      const month = moment(item.createdAt).format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+      const normalizedDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const monthLabel = normalizedDate.format('MMM YYYY');
       const type = item.metadata?.type || 'Unknown';
       
-      if (moment(month).isAfter(moment().subtract(12, 'months'))) {
-        if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
+      if (groupedByMonth[monthLabel]) {
         if (type === 'Wheelchair') {
           groupedByMonth[monthLabel].Wheelchair += 1;
         } else if (type === 'Stroller') {
@@ -1844,173 +2044,6 @@ export class WheelchairStrollerStatisticsService {
         ageRange: ageRangeText,
         gender: genderText
       }));
-  }
-
-  private processDeliveryPickupServicesData(data: any[], periodType: string = 'Monthly') {
-    let processedData: any;
-    switch (periodType) {
-      case 'Daily':
-        processedData = this.processDailyDeliveryPickupServicesData(data);
-        break;
-      case 'Weekly':
-        processedData = this.processWeeklyDeliveryPickupServicesData(data);
-        break;
-      case 'Monthly':
-      default:
-        processedData = this.processMonthlyDeliveryPickupServicesData(data);
-        break;
-    }
-    
-    return processedData;
-  }
-
-  private processDailyDeliveryPickupServicesData(data: any[]) {
-    // Group by day
-    const groupedByDay: Record<string, { Wheelchair: number, Stroller: number }> = {};
-    
-    // Initialize last 30 days
-    const today = moment();
-    for (let i = 29; i >= 0; i--) {
-      const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
-      groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
-    }
-    
-    // Group data
-    data.forEach(item => {
-      const date = moment(item.createdAt).format('YYYY-MM-DD');
-      const type = item.metadata?.type || 'Unknown';
-      
-      if (moment(date).isAfter(moment().subtract(30, 'days'))) {
-        if (!groupedByDay[date]) {
-          groupedByDay[date] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
-        if (type === 'Wheelchair') {
-          groupedByDay[date].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByDay[date].Stroller += 1;
-        }
-      }
-    });
-    
-    // Format for chart
-    const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
-    const series = [
-      {
-        name: 'Wheelchair',
-        data: categories.map(date => groupedByDay[date].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(date => groupedByDay[date].Stroller)
-      }
-    ];
-    
-    return {
-      categories,
-      series
-    };
-  }
-
-  private processWeeklyDeliveryPickupServicesData(data: any[]) {
-    // Group by week
-    const groupedByWeek: Record<string, { Wheelchair: number, Stroller: number }> = {};
-    
-    // Initialize last 12 weeks
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
-      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
-    }
-    
-    // Group data
-    data.forEach(item => {
-      const itemDate = moment(item.createdAt);
-      const startOfWeek = moment(itemDate).startOf('week');
-      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-      const type = item.metadata?.type || 'Unknown';
-      
-      if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
-        if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
-        if (type === 'Wheelchair') {
-          groupedByWeek[weekLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByWeek[weekLabel].Stroller += 1;
-        }
-      }
-    });
-    
-    // Format for chart
-    const categories = Object.keys(groupedByWeek);
-    const series = [
-      {
-        name: 'Wheelchair',
-        data: categories.map(week => groupedByWeek[week].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(week => groupedByWeek[week].Stroller)
-      }
-    ];
-    
-    return {
-      categories,
-      series
-    };
-  }
-
-  private processMonthlyDeliveryPickupServicesData(data: any[]) {
-    // Group by month
-    const groupedByMonth: Record<string, { Wheelchair: number, Stroller: number }> = {};
-    
-    // Initialize last 12 months
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
-      groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
-    }
-    
-    // Group data
-    data.forEach(item => {
-      const month = moment(item.createdAt).format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
-      const type = item.metadata?.type || 'Unknown';
-      
-      if (moment(month).isAfter(moment().subtract(12, 'months'))) {
-        if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { Wheelchair: 0, Stroller: 0 };
-        }
-        
-        if (type === 'Wheelchair') {
-          groupedByMonth[monthLabel].Wheelchair += 1;
-        } else if (type === 'Stroller') {
-          groupedByMonth[monthLabel].Stroller += 1;
-        }
-      }
-    });
-    
-    // Format for chart
-    const categories = Object.keys(groupedByMonth);
-    const series = [
-      {
-        name: 'Wheelchair',
-        data: categories.map(month => groupedByMonth[month].Wheelchair)
-      },
-      {
-        name: 'Stroller',
-        data: categories.map(month => groupedByMonth[month].Stroller)
-      }
-    ];
-    
-    return {
-      categories,
-      series
-    };
   }
 
   private createDeliveryPickupServicesTableData(data: any[], periodType: string = 'Monthly', filters: { 
@@ -2387,7 +2420,7 @@ export class WheelchairStrollerStatisticsService {
       );
       
       // Process data for chart based on the period type
-      const chartData = this.processRequestSourceReportData(validData, filters.period);
+      const chartData = this.processRequestSourceReportData(validData, filters.period, filters.fromDate, filters.toDate);
       
       // Generate summary data for each request source
       const summary = this.generateRequestSourceSummary(validData);
@@ -2453,46 +2486,48 @@ export class WheelchairStrollerStatisticsService {
     return summary;
   }
 
-  private processRequestSourceReportData(data: any[], periodType: string = 'Monthly') {
+  private processRequestSourceReportData(data: any[], periodType: string = 'Monthly', fromDate?: string, toDate?: string) {
     let processedData: any;
     
     switch (periodType) {
       case 'Daily':
-        processedData = this.processDailyRequestSourceData(data);
+        processedData = this.processDailyRequestSourceData(data, fromDate, toDate);
         break;
       case 'Weekly':
-        processedData = this.processWeeklyRequestSourceData(data);
+        processedData = this.processWeeklyRequestSourceData(data, fromDate, toDate);
         break;
       case 'Monthly':
       default:
-        processedData = this.processMonthlyRequestSourceData(data);
+        processedData = this.processMonthlyRequestSourceData(data, fromDate, toDate);
         break;
     }
     
     return processedData;
   }
 
-  private processDailyRequestSourceData(data: any[]) {
+  private processDailyRequestSourceData(data: any[], fromDate?: string, toDate?: string) {
     // Group by day and request source
     const groupedByDay: Record<string, { 'QR Code': number, 'Hotline': number, 'CC Desk': number, 'Other': number }> = {};
     
-    // Initialize last 30 days
-    const today = moment();
-    for (let i = 29; i >= 0; i--) {
-      const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate) : moment().subtract(30, 'days');
+    const endDate = toDate ? moment(toDate) : moment();
+    
+    // Calculate days difference between start and end dates
+    const daysDiff = endDate.diff(startDate, 'days') + 1; // +1 to include the end date
+    
+    // Initialize days based on date range
+    for (let i = 0; i < daysDiff; i++) {
+      const date = moment(startDate).add(i, 'days').format('YYYY-MM-DD');
       groupedByDay[date] = { 'QR Code': 0, 'Hotline': 0, 'CC Desk': 0, 'Other': 0 };
     }
     
     // Group data
     data.forEach(item => {
-      const date = moment(item.createdAt).format('YYYY-MM-DD');
+      const date = moment(moment(item.createdAt).format('YYYY-MM-DD')).format('YYYY-MM-DD');
       const requestSource = item.metadata?.request_source || 'Other';
       
-      if (moment(date).isAfter(moment().subtract(30, 'days'))) {
-        if (!groupedByDay[date]) {
-          groupedByDay[date] = { 'QR Code': 0, 'Hotline': 0, 'CC Desk': 0, 'Other': 0 };
-        }
-        
+      if (groupedByDay[date]) {
         if (['QR Code', 'Hotline', 'CC Desk'].includes(requestSource)) {
           groupedByDay[date][requestSource] += 1;
         } else {
@@ -2527,31 +2562,33 @@ export class WheelchairStrollerStatisticsService {
       series
     };
   }
-
-  private processWeeklyRequestSourceData(data: any[]) {
+  
+  private processWeeklyRequestSourceData(data: any[], fromDate?: string, toDate?: string) {
     // Group by week and request source
     const groupedByWeek: Record<string, { 'QR Code': number, 'Hotline': number, 'CC Desk': number, 'Other': number }> = {};
     
-    // Initialize last 12 weeks
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
-      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('week') : moment().subtract(12, 'weeks').startOf('week');
+    const endDate = toDate ? moment(toDate).endOf('week') : moment().endOf('week');
+    
+    // Calculate weeks difference
+    let currentWeekStart = moment(startDate);
+    
+    // Initialize weeks based on date range
+    while (currentWeekStart.isSameOrBefore(endDate)) {
+      const weekLabel = `${currentWeekStart.format('MMM DD')} - ${moment(currentWeekStart).endOf('week').format('MMM DD')}`;
       groupedByWeek[weekLabel] = { 'QR Code': 0, 'Hotline': 0, 'CC Desk': 0, 'Other': 0 };
+      currentWeekStart.add(1, 'week');
     }
     
     // Group data
     data.forEach(item => {
-      const itemDate = moment(item.createdAt);
+      const itemDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
       const startOfWeek = moment(itemDate).startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
       const requestSource = item.metadata?.request_source || 'Other';
       
-      if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
-        if (!groupedByWeek[weekLabel]) {
-          groupedByWeek[weekLabel] = { 'QR Code': 0, 'Hotline': 0, 'CC Desk': 0, 'Other': 0 };
-        }
-        
+      if (groupedByWeek[weekLabel]) {
         if (['QR Code', 'Hotline', 'CC Desk'].includes(requestSource)) {
           groupedByWeek[weekLabel][requestSource] += 1;
         } else {
@@ -2586,30 +2623,32 @@ export class WheelchairStrollerStatisticsService {
       series
     };
   }
-
-  private processMonthlyRequestSourceData(data: any[]) {
+  
+  private processMonthlyRequestSourceData(data: any[], fromDate?: string, toDate?: string) {
     // Group by month and request source
     const groupedByMonth: Record<string, { 'QR Code': number, 'Hotline': number, 'CC Desk': number, 'Other': number }> = {};
     
-    // Initialize last 12 months
-    const today = moment();
-    for (let i = 11; i >= 0; i--) {
-      const month = moment(today).subtract(i, 'months').format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+    // Parse fromDate and toDate, defaulting to appropriate values if not provided
+    const startDate = fromDate ? moment(fromDate).startOf('month') : moment().subtract(12, 'months').startOf('month');
+    const endDate = toDate ? moment(toDate).endOf('month') : moment().endOf('month');
+    
+    // Calculate months difference
+    let currentMonth = moment(startDate);
+    
+    // Initialize months based on date range
+    while (currentMonth.isSameOrBefore(endDate, 'month')) {
+      const monthLabel = currentMonth.format('MMM YYYY');
       groupedByMonth[monthLabel] = { 'QR Code': 0, 'Hotline': 0, 'CC Desk': 0, 'Other': 0 };
+      currentMonth.add(1, 'month');
     }
     
     // Group data
     data.forEach(item => {
-      const month = moment(item.createdAt).format('YYYY-MM');
-      const monthLabel = moment(month).format('MMM YYYY');
+      const normalizedDate = moment(moment(item.createdAt).format('YYYY-MM-DD'));
+      const monthLabel = normalizedDate.format('MMM YYYY');
       const requestSource = item.metadata?.request_source || 'Other';
       
-      if (moment(month).isAfter(moment().subtract(12, 'months'))) {
-        if (!groupedByMonth[monthLabel]) {
-          groupedByMonth[monthLabel] = { 'QR Code': 0, 'Hotline': 0, 'CC Desk': 0, 'Other': 0 };
-        }
-        
+      if (groupedByMonth[monthLabel]) {
         if (['QR Code', 'Hotline', 'CC Desk'].includes(requestSource)) {
           groupedByMonth[monthLabel][requestSource] += 1;
         } else {

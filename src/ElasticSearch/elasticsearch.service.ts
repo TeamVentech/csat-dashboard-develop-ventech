@@ -305,23 +305,33 @@ export class ElasticService {
         if (query?.voucherId) {
             must.push({ "term": { "metadata.voucher.vouchers.serialNumber": query.voucherId } })
         }
-        if(!query.search){
-            query.search = ''
+        if(query?.search) {
+            // Check if search starts with any service ID prefix
+            const prefixes = ['LC-', 'FC-', 'LF-', 'CMP-', 'SUG-', 'CMT-', 'GVS-C-', 'GVS-I-', 'W-S-', 'PB-', 'HF-', 'INC-', 'SRV-'];
+            
+            if (prefixes.some(prefix => query.search.startsWith(prefix))) {
+                // If search term looks like a service ID, use term query on serviceId field
+                must.push({ 
+                    term: { 
+                        "serviceId.keyword": query.search 
+                    } 
+                });
+            } else {
+                // Otherwise, use the standard query_string search
+                must.push({
+                    query_string: {
+                        query: query.search
+                    }
+                });
+            }
         }
+        console.log(JSON.stringify(query))
         const result = await this.elasticsearchService.search({
             index,
             body: {
                 query: {
                     bool: {
-                        must: must.length > 0 ? must : [{ match_all: {} }],
-                        should: query.search ? [
-                            {
-                                query_string: {
-                                    query: query.search
-                                }
-                            }
-                        ] : [],
-                        minimum_should_match: query.search ? 1 : 0
+                        must: must.length > 0 ? must : [{ match_all: {} }]
                     }
                 },
                 sort: [

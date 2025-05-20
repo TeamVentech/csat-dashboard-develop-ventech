@@ -31,7 +31,11 @@ export class DepartmentsController {
     @Query('perPage') perPage: number,
     @Query('search') search?: any,
   ) {
-
+    console.log(search)
+    if(!search){
+      search = {
+      }
+    }
     return this.departmentsService.findAll(page, perPage, search);
   }
 

@@ -3,6 +3,7 @@ import { Transform } from 'class-transformer';
 
 export enum PeriodType {
   TIME_OF_DAY = 'TimeOfDay',
+  DAILY = 'Daily',
   MONTHLY = 'Monthly',
   WEEKLY = 'Weekly'
 }

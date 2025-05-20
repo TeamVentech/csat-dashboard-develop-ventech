@@ -51,11 +51,11 @@ export class ComplaintsService {
 		if (createComplaintsDto.type === 'Survey Complaint') {
 			const survey = await this.SurveyService.findOne(createComplaintsDto.metadata.survey_id)
 			const question = survey.metadata.questions.filter(user => user.id === createComplaintsDto.metadata.question_id)
-			createComplaintsDto.metadata.question_label = question[0].question
+			createComplaintsDto.metadata.question_label = question[0]?.question
 			createComplaintsDto.metadata.workflow = {
-				'First_Level': question[0].firstRoles,
-				'Level_1': question[0].escalation,
-				'Final_Level': question[0].FinalRoles,
+				'First_Level': question[0]?.firstRoles,
+				'Level_1': question[0]?.escalation,
+				'Final_Level': question[0]?.FinalRoles,
 			}
 			// createComplaintsDto.metadata.workflow[
 			//   {
@@ -65,7 +65,7 @@ export class ComplaintsService {
 			//     actions: {}
 			//   }
 			// ]
-			createComplaintsDto.metadata.answer_label = question[0].choices[createComplaintsDto.metadata.answer - 1]
+			createComplaintsDto.metadata.answer_label = question[0]?.choices[createComplaintsDto.metadata.answer - 1]
 		}
 
 		// Check if this is a tenant complaint and if tenant data needs to be updated
@@ -145,7 +145,7 @@ export class ComplaintsService {
 		}
 		const users = await this.userService.getUsersByRoles(assignedTo)
 		const email_user = [...new Set(users.map(user => user.email).flat())]
-		this.emailService.sendEmail(email_user, 'nazir.alkahwaji@gmail.com', 'Complaint Actions', 'Take Actions', ' ', complaint.id, 'System', '1', `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint.id}/details`)
+		this.emailService.sendEmail(email_user, 'nazir.alkahwaji@gmail.com', 'Complaint Actions', 'Take Actions', ' ', complaint.id, 'System', '1', `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/complaint/${complaint.id}/details`)
 		await this.taskService.create(tasks_payload, complaint)
 		if (createComplaintsDto.type !== 'Survey Complaint') {
 			const phoneNumber = createComplaintsDto?.customer?.phone_number || createComplaintsDto?.tenant?.phone_number

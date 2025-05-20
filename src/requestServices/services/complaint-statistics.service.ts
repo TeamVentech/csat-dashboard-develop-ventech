@@ -4862,17 +4862,14 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
     // ... existing code ...
   }
 
-  async getShopsComplaintsReportData(filters: ComplaintChartDto) {
+  async getShopsComplaintReport(filters: ComplaintChartDto) {
     try {
       // Build the query
       const query: any = {
         bool: {
           filter: [
-            // Filter for shop complaints only - using the category.name.en field
             {
-              match: {
-                'type': 'Shops Complaint'
-              }
+              match: { 'type.keyword': 'Shops Complaint' }
             }
           ]
         }
@@ -4909,89 +4906,162 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
           size: 10000 // Get all matching documents
         }
       });
-
+      
       const hits = result.body.hits.hits.map((hit: any) => hit._source);
       
-      // Process data based on the period type
-      const chartData = this.processShopsChartData(hits, filters.period);
+      // Process data focused on tenant complaints
+      const tenantData = this.processTenantComplaintData(hits);
+      const timeSeriesData = this.processShopsComplaintData(hits, filters.period);
       
       return {
         success: true,
         data: {
-          shopsComplaintData: chartData
+          complaintData: {
+            timeSeriesData,
+            tenantData
+          }
         }
       };
     } catch (error) {
-      console.error('Error generating shop complaints report data:', error);
+      console.error('Error generating shops complaint report:', error);
       return {
         success: false,
-        message: 'Error generating shop complaints report data',
+        message: 'Error generating shops complaint report',
         error: error.message || error
       };
     }
   }
 
-  private processShopsChartData(data: any[], periodType: string = 'Monthly') {
-    let processedData: any;
+  private processTenantComplaintData(data: any[]) {
+    // Group complaints by tenant
+    const tenantCounts = {};
     
+    data.forEach(item => {
+      // Check both possible tenant locations
+      console.log(item?.metadata)
+      console.log('--------------')
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      const tenantId = item.metadata?.tenant?.id || null;
+      
+      const tenantKey = tenantId ? tenantId : tenantName;
+      
+      if (!tenantCounts[tenantKey]) {
+        tenantCounts[tenantKey] = {
+          name: tenantName,
+          id: tenantId,
+          count: 0
+        };
+      }
+      
+      tenantCounts[tenantKey].count++;
+    });
+    
+    // Convert to array and sort by count (descending)
+    const sortedTenants = Object.values(tenantCounts)
+      .map((tenant: any) => ({ 
+        tenant: tenant.name,
+        tenantId: tenant.id,
+        count: tenant.count,
+        percentage: (tenant.count / data.length * 100).toFixed(1)
+      }))
+      .sort((a, b) => b.count - a.count);
+    
+    // Prepare chart data
+    const categories = sortedTenants.map(t => t.tenant);
+    const series = [{
+      name: 'Complaints',
+      data: sortedTenants.map(t => t.count)
+    }];
+    
+    return {
+      tenantRanking: sortedTenants,
+      chart: {
+        categories,
+        series
+      },
+      totalComplaints: data.length
+    };
+  }
+
+  private processShopsComplaintData(data: any[], periodType: string = 'Monthly') {
     switch (periodType) {
       case 'Daily':
-        processedData = this.processShopsDailyData(data);
-        break;
+        return this.processShopsDailyData(data);
       case 'Weekly':
-        processedData = this.processShopsWeeklyData(data);
-        break;
+        return this.processShopsWeeklyData(data);
+      case 'Hourly':
+        return this.processShopsHourlyData(data);
       case 'Monthly':
       default:
-        processedData = this.processShopsMonthlyData(data);
-        break;
+        return this.processShopsMonthlyData(data);
     }
-    
-    return processedData;
   }
 
   private processShopsDailyData(data: any[]) {
-    // Group by day
+    // Group by day and tenant
     const groupedByDay: Record<string, Record<string, number>> = {};
-    const shopNames = new Set<string>();
+    const tenants = new Set<string>();
+    
+    // Get top 5 tenants
+    const tenantCounts: Record<string, number> = {};
+    data.forEach(item => {
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      if (!tenantCounts[tenantName]) {
+        tenantCounts[tenantName] = 0;
+      }
+      
+      tenantCounts[tenantName]++;
+    });
+    
+    const topTenants = Object.entries(tenantCounts)
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, 5)
+      .map(([tenant]) => tenant);
     
     // Initialize last 30 days
     const today = moment();
     for (let i = 29; i >= 0; i--) {
       const date = moment(today).subtract(i, 'days').format('YYYY-MM-DD');
       groupedByDay[date] = {};
+      topTenants.forEach(tenant => {
+        groupedByDay[date][tenant] = 0;
+        tenants.add(tenant);
+      });
     }
     
-    // Group data by shop and day
+    // Group data
     data.forEach(item => {
-      if (item.touchpoint && item.touchpoint.name) {
-        const date = moment(item.createdAt).format('YYYY-MM-DD');
-        const shopName = item.touchpoint.name.en || item.touchpoint.name.ar || 'Unknown Shop';
-        
-        shopNames.add(shopName);
-        
-        if (moment(date).isAfter(moment().subtract(30, 'days'))) {
-          if (!groupedByDay[date]) {
-            groupedByDay[date] = {};
-          }
-          
-          if (!groupedByDay[date][shopName]) {
-            groupedByDay[date][shopName] = 0;
-          }
-          
-          groupedByDay[date][shopName] += 1;
+      const date = moment(item.createdAt).format('YYYY-MM-DD');
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      // Only process top tenants
+      if (!topTenants.includes(tenantName)) return;
+      
+      if (moment(date).isAfter(moment().subtract(30, 'days'))) {
+        if (!groupedByDay[date]) {
+          groupedByDay[date] = {};
+          topTenants.forEach(tenant => {
+            groupedByDay[date][tenant] = 0;
+          });
         }
+        
+        if (groupedByDay[date][tenantName] === undefined) {
+          groupedByDay[date][tenantName] = 0;
+        }
+        
+        groupedByDay[date][tenantName] += 1;
       }
     });
     
     // Format for chart
     const categories = Object.keys(groupedByDay).sort((a, b) => moment(a).diff(moment(b)));
-    const series = Array.from(shopNames).map(shopName => {
-      return {
-        name: shopName,
-        data: categories.map(date => groupedByDay[date][shopName] || 0)
-      };
-    });
+    const series = Array.from(tenants).map(tenant => ({
+      name: tenant,
+      data: categories.map(date => groupedByDay[date][tenant] || 0)
+    }));
     
     return {
       categories,
@@ -5000,9 +5070,27 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
   }
 
   private processShopsWeeklyData(data: any[]) {
-    // Group by week and shop
+    // Group by week and tenant
     const groupedByWeek: Record<string, Record<string, number>> = {};
-    const shopNames = new Set<string>();
+    const tenants = new Set<string>();
+    
+    // Get top 5 tenants
+    const tenantCounts: Record<string, number> = {};
+    data.forEach(item => {
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      if (!tenantCounts[tenantName]) {
+        tenantCounts[tenantName] = 0;
+      }
+      
+      tenantCounts[tenantName]++;
+    });
+    
+    const topTenants = Object.entries(tenantCounts)
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, 5)
+      .map(([tenant]) => tenant);
     
     // Initialize last 12 weeks
     const today = moment();
@@ -5010,40 +5098,45 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
       const startOfWeek = moment(today).subtract(i, 'weeks').startOf('week');
       const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
       groupedByWeek[weekLabel] = {};
+      topTenants.forEach(tenant => {
+        groupedByWeek[weekLabel][tenant] = 0;
+        tenants.add(tenant);
+      });
     }
     
-    // Group data by shop and week
+    // Group data
     data.forEach(item => {
-      if (item.touchpoint && item.touchpoint.name) {
-        const itemDate = moment(item.createdAt);
-        const startOfWeek = moment(itemDate).startOf('week');
-        const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
-        const shopName = item.touchpoint.name.en || item.touchpoint.name.ar || 'Unknown Shop';
-        
-        shopNames.add(shopName);
-        
-        if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
-          if (!groupedByWeek[weekLabel]) {
-            groupedByWeek[weekLabel] = {};
-          }
-          
-          if (!groupedByWeek[weekLabel][shopName]) {
-            groupedByWeek[weekLabel][shopName] = 0;
-          }
-          
-          groupedByWeek[weekLabel][shopName] += 1;
+      const itemDate = moment(item.createdAt);
+      const startOfWeek = moment(itemDate).startOf('week');
+      const weekLabel = `${startOfWeek.format('MMM DD')} - ${moment(startOfWeek).endOf('week').format('MMM DD')}`;
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      // Only process top tenants
+      if (!topTenants.includes(tenantName)) return;
+      
+      if (itemDate.isAfter(moment().subtract(12, 'weeks'))) {
+        if (!groupedByWeek[weekLabel]) {
+          groupedByWeek[weekLabel] = {};
+          topTenants.forEach(tenant => {
+            groupedByWeek[weekLabel][tenant] = 0;
+          });
         }
+        
+        if (groupedByWeek[weekLabel][tenantName] === undefined) {
+          groupedByWeek[weekLabel][tenantName] = 0;
+        }
+        
+        groupedByWeek[weekLabel][tenantName] += 1;
       }
     });
     
     // Format for chart
     const categories = Object.keys(groupedByWeek);
-    const series = Array.from(shopNames).map(shopName => {
-      return {
-        name: shopName,
-        data: categories.map(week => groupedByWeek[week][shopName] || 0)
-      };
-    });
+    const series = Array.from(tenants).map(tenant => ({
+      name: tenant,
+      data: categories.map(week => groupedByWeek[week][tenant] || 0)
+    }));
     
     return {
       categories,
@@ -5052,9 +5145,27 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
   }
 
   private processShopsMonthlyData(data: any[]) {
-    // Group by month and shop
+    // Group by month and tenant
     const groupedByMonth: Record<string, Record<string, number>> = {};
-    const shopNames = new Set<string>();
+    const tenants = new Set<string>();
+    
+    // Get top 5 tenants
+    const tenantCounts: Record<string, number> = {};
+    data.forEach(item => {
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      if (!tenantCounts[tenantName]) {
+        tenantCounts[tenantName] = 0;
+      }
+      
+      tenantCounts[tenantName]++;
+    });
+    
+    const topTenants = Object.entries(tenantCounts)
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, 5)
+      .map(([tenant]) => tenant);
     
     // Initialize last 12 months
     const today = moment();
@@ -5062,43 +5173,174 @@ private formatPeriodLabel(periodKey: string, periodType: string): string {
       const month = moment(today).subtract(i, 'months').format('YYYY-MM');
       const monthLabel = moment(month).format('MMM YYYY');
       groupedByMonth[monthLabel] = {};
+      topTenants.forEach(tenant => {
+        groupedByMonth[monthLabel][tenant] = 0;
+        tenants.add(tenant);
+      });
     }
     
-    // Group data by shop and month
+    // Group data
     data.forEach(item => {
-      if (item.touchpoint && item.touchpoint.name) {
-        const month = moment(item.createdAt).format('YYYY-MM');
-        const monthLabel = moment(month).format('MMM YYYY');
-        const shopName = item.touchpoint.name.en || item.touchpoint.name.ar || 'Unknown Shop';
-        
-        shopNames.add(shopName);
-        
-        if (moment(month).isAfter(moment().subtract(12, 'months'))) {
-          if (!groupedByMonth[monthLabel]) {
-            groupedByMonth[monthLabel] = {};
-          }
-          
-          if (!groupedByMonth[monthLabel][shopName]) {
-            groupedByMonth[monthLabel][shopName] = 0;
-          }
-          
-          groupedByMonth[monthLabel][shopName] += 1;
+      const month = moment(item.createdAt).format('YYYY-MM');
+      const monthLabel = moment(month).format('MMM YYYY');
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      // Only process top tenants
+      if (!topTenants.includes(tenantName)) return;
+      
+      if (moment(month).isAfter(moment().subtract(12, 'months'))) {
+        if (!groupedByMonth[monthLabel]) {
+          groupedByMonth[monthLabel] = {};
+          topTenants.forEach(tenant => {
+            groupedByMonth[monthLabel][tenant] = 0;
+          });
         }
+        
+        if (groupedByMonth[monthLabel][tenantName] === undefined) {
+          groupedByMonth[monthLabel][tenantName] = 0;
+        }
+        
+        groupedByMonth[monthLabel][tenantName] += 1;
       }
     });
     
     // Format for chart
     const categories = Object.keys(groupedByMonth);
-    const series = Array.from(shopNames).map(shopName => {
-      return {
-        name: shopName,
-        data: categories.map(month => groupedByMonth[month][shopName] || 0)
-      };
-    });
+    const series = Array.from(tenants).map(tenant => ({
+      name: tenant,
+      data: categories.map(month => groupedByMonth[month][tenant] || 0)
+    }));
     
     return {
       categories,
       series
     };
+  }
+
+  private processShopsHourlyData(data: any[]) {
+    // Group by hour of day and tenant
+    const groupedByHour: Record<string, Record<string, number>> = {};
+    const tenants = new Set<string>();
+    
+    // Get top 5 tenants
+    const tenantCounts: Record<string, number> = {};
+    data.forEach(item => {
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      if (!tenantCounts[tenantName]) {
+        tenantCounts[tenantName] = 0;
+      }
+      
+      tenantCounts[tenantName]++;
+    });
+    
+    const topTenants = Object.entries(tenantCounts)
+      .sort((a, b) => Number(b[1]) - Number(a[1]))
+      .slice(0, 5)
+      .map(([tenant]) => tenant);
+    
+    // Initialize hours
+    for (let i = 0; i < 24; i++) {
+      const hour = i.toString().padStart(2, '0') + ':00';
+      groupedByHour[hour] = {};
+      topTenants.forEach(tenant => {
+        groupedByHour[hour][tenant] = 0;
+        tenants.add(tenant);
+      });
+    }
+    
+    // Group data
+    data.forEach(item => {
+      const hour = moment(item.createdAt).format('HH:00');
+      // Check both possible tenant locations
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      
+      // Only process top tenants
+      if (!topTenants.includes(tenantName)) return;
+      
+      if (!groupedByHour[hour]) {
+        groupedByHour[hour] = {};
+        topTenants.forEach(tenant => {
+          groupedByHour[hour][tenant] = 0;
+        });
+      }
+      
+      if (groupedByHour[hour][tenantName] === undefined) {
+        groupedByHour[hour][tenantName] = 0;
+      }
+      
+      groupedByHour[hour][tenantName] += 1;
+    });
+    
+    // Format for chart
+    const categories = Object.keys(groupedByHour).sort();
+    const series = Array.from(tenants).map(tenant => ({
+      name: tenant,
+      data: categories.map(hour => groupedByHour[hour][tenant] || 0)
+    }));
+    
+    return {
+      categories,
+      series
+    };
+  }
+
+  private generateTenantSummary(data: any[]) {
+    // Group complaints by tenant
+    const tenantSummary: Record<string, {
+      count: number,
+      byGender: Record<string, number>,
+      byAgeGroup: Record<string, number>
+    }> = {};
+    
+    data.forEach(item => {
+      const tenantName = item.metadata?.tenant?.name || 'Unknown';
+      const gender = item.customer?.gender || 'Unknown';
+      const age = parseInt(item.customer?.age) || 0;
+      
+      // Initialize tenant entry if not exists
+      if (!tenantSummary[tenantName]) {
+        tenantSummary[tenantName] = {
+          count: 0,
+          byGender: { Male: 0, Female: 0, Unknown: 0 },
+          byAgeGroup: { 
+            'Under 18': 0, 
+            '18-24': 0, 
+            '25-34': 0, 
+            '35-44': 0, 
+            '45-54': 0, 
+            '55+': 0,
+            'Unknown': 0
+          }
+        };
+      }
+      
+      // Increment total count
+      tenantSummary[tenantName].count++;
+      
+      // Increment gender count
+      tenantSummary[tenantName].byGender[gender] = 
+        (tenantSummary[tenantName].byGender[gender] || 0) + 1;
+      
+      // Increment age group count
+      let ageGroup = 'Unknown';
+      if (age > 0) {
+        if (age < 18) ageGroup = 'Under 18';
+        else if (age < 25) ageGroup = '18-24';
+        else if (age < 35) ageGroup = '25-34';
+        else if (age < 45) ageGroup = '35-44';
+        else if (age < 55) ageGroup = '45-54';
+        else ageGroup = '55+';
+      }
+      
+      tenantSummary[tenantName].byAgeGroup[ageGroup]++;
+    });
+    
+    // Convert to array and sort by count
+    return Object.entries(tenantSummary)
+      .map(([tenant, data]) => ({ tenant, ...data }))
+      .sort((a, b) => b.count - a.count);
   }
 } 

@@ -147,7 +147,7 @@ export class TasksServices {
 				complaintId,
 				"System",
 				"1",
-				`https://main.dy9kln3badsnq.amplifyapp.com/services/${complaint_id}/details`
+				`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaint_id}/details`
 			);
 			
 			if (!emailResult.success) {
@@ -516,7 +516,7 @@ export class TasksServices {
 			complaint_update.id,  
 			"System", 
 			"1",
-			`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaint_update.id}/details`
+			`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/complaint/${complaint_update.id}/details`
 		);
 		if (!emailResult.success) {
 			console.warn(`Email notification partially failed: ${emailResult.error}`);

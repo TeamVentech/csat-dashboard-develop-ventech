@@ -77,4 +77,8 @@ export class TransactionSurvey {
   category: Category;
 
 
+  @Column({ type: 'jsonb', nullable: true })
+  touchpoint: any;
+
+
 }

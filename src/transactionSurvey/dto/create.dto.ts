@@ -48,4 +48,7 @@ export class CreateTransactionSurveyDto {
 
 	@IsOptional()
 	rating: string
+
+	@IsOptional()
+	touchpoint: any
 }
