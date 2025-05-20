@@ -128,15 +128,41 @@ export class TouchPointsService {
 		})
 	}
 
-	async findByCategory(id: string) {
-		return this.touchpointRepository.find({
-			where: { categoryId: id },
-			select: {
-				id: true,
-				name: true,
-				avatar: true,
-			},
-		})
+	async findByCategory(id: string, filledWorkflow = false) {
+		if (!filledWorkflow) {
+			return this.touchpointRepository.find({
+				where: { categoryId: id },
+				select: {
+					id: true,
+					name: true,
+					avatar: true,
+				},
+			})
+		}
+
+		const keys = [
+			'GM',
+			'CX_Team',
+			'Level_1',
+			'Level_2',
+			'Level_3',
+			'Final_Level',
+			'First_Level',
+		]
+
+		const conditions = keys
+			.map(
+				(key) =>
+					`(CASE WHEN jsonb_typeof(touchpoint.workflow->'${key}') = 'array' THEN jsonb_array_length(touchpoint.workflow->'${key}') ELSE 0 END > 0)`,
+			)
+			.join(' AND ')
+
+		return this.touchpointRepository
+			.createQueryBuilder('touchpoint')
+			.select(['touchpoint.id', 'touchpoint.name', 'touchpoint.avatar'])
+			.where('touchpoint.categoryId = :id', { id })
+			.andWhere(conditions)
+			.getMany()
 	}
 
 	async getTouchpointsGroupedByCategory(type) {
