@@ -64,6 +64,7 @@ export class RolesService {
 
   async remove(id: string) {
     const role = await this.findOne(id);
-    await this.roleRepository.remove(role);
+    console.log(role)
+    await this.roleRepository.delete(id); 
   }
 }

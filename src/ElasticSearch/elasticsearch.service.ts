@@ -267,6 +267,9 @@ export class ElasticService {
         if (query?.type) {
             must.push({ match: { "type.keyword": query.type } });
         }
+        if (query?.surveyId) {
+            must.push({ match: { "surveyId.keyword": query.surveyId } });
+        }
         if (query?.state) {
             must.push({ match: { "state.keyword": query.state } });
         }
@@ -275,7 +278,7 @@ export class ElasticService {
         }
         if (query?.customer) {
             must.push({ match: { "metadata.parents.id": query.customer } });
-            // must.push({ match: { "metadata.parents.id": query.customer } });
+            // must.push({ match: { "metadata.parentss.id": query.customer } });
         }
         if (query?.complaintDate) {
             const dateStr = query.complaintDate;
@@ -611,6 +614,25 @@ export class ElasticService {
         if (query?.status) {
             must.push({ match: { "status.keyword": query.status } });
         }
+        if(query?.search) {
+            const prefixes = ['#LC-', '#FC-', '#LF-', '#CMP-', '#SUG-', '#CMT-', '#GVS-C-', '#GVS-I-', '#W-S-', '#PB-', '#HF-', '#INC-', '#SRV-', '#CO-'];
+            
+            if (prefixes.some(prefix => query.search.startsWith(prefix))) {
+                must.push({ 
+                    term: { 
+                        "complaintId.keyword": query.search 
+                    } 
+                });
+            } else {
+                // Otherwise, use the standard query_string search
+                must.push({
+                    query_string: {
+                        query: query.search
+                    }
+                });
+            }
+
+        }
 
         if (query?.tasksDate) {
             const dateStr = query.tasksDate;
@@ -628,6 +650,7 @@ export class ElasticService {
                 });
             }
         }
+        console.log(JSON.stringify(query))
         const result = await this.elasticsearchService.search({
             index,
             body: {

@@ -50,7 +50,11 @@ export class TouchPointsController {
     @Query('filter') filter: string = '',
     @Query('type') type: string = '',
   ) {
-    return this.touchpointsService.findAllSearch(page, perPage, filter, type);
+
+    const filterOptions = {
+			filter
+		}
+    return this.touchpointsService.findAllSearch(page, perPage, filterOptions, type);
   }
 
   @Get('touchpoint/all')

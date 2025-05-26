@@ -99,4 +99,11 @@ export class CustomersController {
     async remove(@Param('id') id: string): Promise<void> {
         return this.customersService.remove(id);
     }
+
+    // Soft delete a customer by ID
+    @Delete(':id/soft')
+    @Permissions('Clients Management::delete')
+    async softDelete(@Param('id') id: string): Promise<Customer> {
+        return this.customersService.softDelete(id);
+    }
 }

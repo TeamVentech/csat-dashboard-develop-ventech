@@ -57,10 +57,20 @@ export class CategoriesService {
 					search: `%${filterOptions.search}%`,
 				})
 			}
+			if (filterOptions.filter) {
+				queryBuilder.andWhere(
+					'("user".id::text LIKE :filter OR LOWER("user".name->>\'en\') LIKE :filterLower OR LOWER("user".name->>\'ar\') LIKE :filterLower)',
+					{
+						filter: `%${filterOptions.filter}%`,
+						filterLower: `%${filterOptions.filter.toLowerCase()}%`
+					}
+				)
+			}
 			queryBuilder.orderBy('user.updatedAt', 'DESC')
 
+			// Process other filters except 'search' and 'filter' which were already handled
 			Object.keys(filterOptions).forEach((key) => {
-				if (key !== 'search' && filterOptions[key]) {
+				if (key !== 'search' && key !== 'filter' && filterOptions[key]) {
 					queryBuilder.andWhere(`user.${key} = :${key}`, {
 						[key]: filterOptions[key],
 					})

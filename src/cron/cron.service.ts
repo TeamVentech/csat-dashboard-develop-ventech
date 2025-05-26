@@ -218,4 +218,13 @@ export class CronsService {
     const approvedNumbers = ["+962776850132"]; 
     return approvedNumbers.includes(number);
   }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async updateRefundedVouchers() {
+    try {
+      await this.vouchersService.updateRefundedVouchers();
+    } catch (error) {
+      console.error('Error updating refunded vouchers:', error);
+    }
+  }
 }

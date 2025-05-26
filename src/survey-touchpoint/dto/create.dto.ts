@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateSurveyTouchpointDto {
   @IsString()
@@ -12,6 +12,9 @@ export class CreateSurveyTouchpointDto {
   @IsString()
   @IsNotEmpty()
   touchpointName: string;
+
+  @IsOptional()
+  category: any;
 
   @IsString()
   @IsNotEmpty()

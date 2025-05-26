@@ -45,9 +45,11 @@ export class CategoriesController {
 		@Query('page') page: number,
 		@Query('perPage') perPage: number,
 		@Query('search') search?: string,
+		@Query('filter') filter?: string,
 	) {
 		const filterOptions = {
 			search,
+			filter
 		}
 		return this.categoriesService.findAll(page, perPage, filterOptions)
 	}

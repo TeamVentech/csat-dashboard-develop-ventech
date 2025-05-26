@@ -98,7 +98,7 @@ export class VouchersService {
       const variables = item.denominations;
       const result = await this.vouchersRepository
         .createQueryBuilder('vouchers')
-        .where('vouchers.state NOT IN (:...statuses)', { statuses: ['Sold', 'Extended'] })
+        .where('vouchers.state NOT IN (:...statuses)', { statuses: ['Sold', 'Extended', 'Refunded'] })
         .andWhere("vouchers.metadata->>'Denomination' = :denomination", { denomination: `${variables} JOD` })
         .limit(item.Vouchers)
         .getMany();
@@ -272,26 +272,31 @@ export class VouchersService {
         throw new HttpException("The voucher has already been refunded.", HttpStatus.CONFLICT);
       }
       voucher_data.metadata.status = "Refunded";
-      voucher_data.state = "Refunded";
-      delete voucher_data?.metadata?.type_sale
-      delete voucher_data?.metadata?.Client_ID
-      delete voucher_data?.metadata?.date_sale
-      delete voucher_data?.metadata?.expired_date
-      delete voucher_data?.metadata?.purchase_reason
+      voucher_data.state = "Re-Pending";
+      // delete voucher_data?.metadata?.type_sale
+      // delete voucher_data?.metadata?.Client_ID
+      // delete voucher_data?.metadata?.date_sale
+      // delete voucher_data?.metadata?.expired_date
+      // delete voucher_data?.metadata?.purchase_reason
+      console.log(service.metadata.value)
       await this.vouchersRepository.update(voucher_data.id, voucher_data);
       for (let j = 0; j < service.metadata.voucher.length; j++) {
         for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
           if (service.metadata.voucher[j].vouchers[i].id === id) {
             voucher_data.metadata.status = "Refunded"
-            voucher_data.state = "Refunded"
+            voucher_data.state = "Re-Pending"
             voucher_data.metadata.refunded_date = new Date()
             const denominations = parseInt(voucher_data.metadata.Denomination)
-            service.metadata.value -= denominations
+            console.log(denominations)
+            console.log(service.metadata.value)
+            service.metadata.value = service.metadata.value - denominations
+            console.log(service.metadata.value)
             service.metadata.voucher[j].Vouchers -= 1
             service.metadata.voucher[j].vouchers[i] = { ...voucher_data, refundedBy: data.refundedBy };
           }
         }
       }
+      console.log(service.metadata.value)
       await this.requestServiceRepository.update(service.id, service);
       await this.elasticService.updateDocument('services', service.id, service);
       const updated_data  = await this.elasticService.getById('services', service.id)
@@ -523,6 +528,45 @@ export class VouchersService {
       console.error('Error sending voucher expiry reminders:', error);
       throw new HttpException(
         error.message || 'Error sending voucher expiry reminders',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+
+  async updateRefundedVouchers() {
+    try {
+      // Find all vouchers with state Pending and metadata.status Refunded
+      const pendingRefundedVouchers = await this.vouchersRepository
+        .createQueryBuilder('voucher')
+        .where('voucher.state = :state', { state: 'Pending' })
+        .andWhere("voucher.metadata->>'status' = :status", { status: 'Refunded' })
+        .getMany();
+      
+      if (pendingRefundedVouchers.length === 0) {
+        return {
+          success: true,
+          message: 'No pending refunded vouchers to update',
+          count: 0
+        };
+      }
+      
+      // Update all found vouchers to state Refunded
+      for (const voucher of pendingRefundedVouchers) {
+        console.log(voucher.serialNumber)
+        voucher.state = 'Refunded';
+        await this.vouchersRepository.save(voucher);
+      }
+      
+      return {
+        success: true,
+        message: `Updated ${pendingRefundedVouchers.length} vouchers from Pending to Refunded state`,
+        count: pendingRefundedVouchers.length
+      };
+    } catch (error) {
+      console.error('Error updating refunded vouchers:', error);
+      throw new HttpException(
+        error.message || 'Error updating refunded vouchers',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

@@ -14,6 +14,9 @@ export class SurveyTouchpoint {
   @Column()
   touchpointName: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  category: any;
+
   @Column()
   qrImage: string;
 

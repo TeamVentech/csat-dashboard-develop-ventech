@@ -41,19 +41,21 @@ export class SectionsService {
     page = page || 1;
     perPage = perPage || 10;
     const queryBuilder = this.sectionRepository.createQueryBuilder('section')
-      .leftJoinAndSelect('section.department', 'department') // Include customer relationship
+      .leftJoinAndSelect('section.department', 'department')
 
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString = filterOptions.search.startsWith(' ')
-          ? filterOptions.search.replace(' ', '+')
-          : filterOptions.search;
-        filterOptions.search = searchString
-        queryBuilder.andWhere('(section.name ILIKE :search)', {
-          search: `%${filterOptions.search}%`, // Use wildcards for substring search
-        });
-
+        queryBuilder.andWhere(
+          '(section.name ILIKE :search OR ' +
+          'section.id::text ILIKE :search OR ' + 
+          'department.name ILIKE :search OR ' +
+          'department.id::text ILIKE :search OR ' +
+          'section.role::text ILIKE :search)', 
+          {
+            search: `%${filterOptions.search}%`,
+          }
+        );
       }
 
       Object.keys(filterOptions).forEach(key => {

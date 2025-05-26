@@ -195,6 +195,9 @@ export class RequestServicesService {
 
         // Update the total value in metadata
         Service.metadata.value = totalValue;
+        
+        // Resave the service with updated total value
+        savedService = await queryRunner.manager.save(Service);
 
         // Update vouchers first - if this fails, we won't save the service
         for (let i = 0; i < Service.metadata.voucher.length; i++) {

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common'
 import { SurveysService } from './surveys.service'
 import { CreateSurveysDto } from './dto/create.dto'
-import { UpdateSurveysDto } from './dto/update.dto'
+import { UpdateSurveyDetailsDto, UpdateSurveysDto } from './dto/update.dto'
 import { TransformInterceptor } from '../interceptors/transform.interceptor'
 import { AuthGuard } from '@nestjs/passport'
 import { PermissionsGuard } from '../guards/permissions.guard'
@@ -74,6 +74,12 @@ export class SurveysController {
 			id,
 			updateSurveysTouchpointDto,
 		)
+	}
+
+	@Patch(':id/details')
+	@Permissions('Survey Management::update')
+	updateSurveyDetails(@Param('id') id: string, @Body() updateSurveyDetailsDto: UpdateSurveyDetailsDto) {
+		return this.surveysService.updateSurveyDetails(id, updateSurveyDetailsDto)
 	}
 
 	@Get(':id/touchpoint')

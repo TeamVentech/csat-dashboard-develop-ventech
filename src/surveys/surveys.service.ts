@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Surveys } from './entities/Surveys.entity';
 import { CreateSurveysDto } from './dto/create.dto';
-import { UpdateSurveysDto } from './dto/update.dto';
+import { UpdateSurveyDetailsDto, UpdateSurveysDto } from './dto/update.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -16,8 +16,14 @@ export class SurveysService {
   ) {}
 
   async create(createSurveysDto: any) {
-    const Surveys = this.SurveysRepository.create(createSurveysDto);
-    return this.SurveysRepository.save(Surveys);
+    try {
+      const survey = await this.SurveysRepository.create(createSurveysDto);
+      await this.SurveysRepository.save(survey);
+      return survey;
+    } catch (error) {
+      console.log(error)
+      throw new BadRequestException(error.message)
+    }
   }
 
   async findAll(page, perPage, filterOptions) {
@@ -112,6 +118,26 @@ export class SurveysService {
     }
   
     return data.map(row => ({ date: row.date, value: Number(row.value) }));
+  }
+
+  async updateSurveyDetails(id: string, updateSurveyDetailsDto: UpdateSurveyDetailsDto){
+    try {
+      const survey = await this.findOne(id);
+      survey.name = updateSurveyDetailsDto.name;
+      survey.brief = updateSurveyDetailsDto.brief;
+      survey.state = updateSurveyDetailsDto.state
+      await this.SurveysRepository.update(id, survey);
+      return {
+        message: 'Survey details updated successfully',
+        statusCode: 200
+      }
+    } catch (error) {
+      console.log(error)
+      return {
+        message: 'Survey details update failed',
+        statusCode: 500
+      }
+    }
   }
 
   // Update a Surveys by ID

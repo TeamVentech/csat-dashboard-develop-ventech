@@ -76,6 +76,9 @@ export class CustomersService {
     perPage = perPage || 10;
     const queryBuilder = this.customerRepository.createQueryBuilder('user');
 
+    // Only return non-deleted customers
+    queryBuilder.andWhere('user.isDeleted = :isDeleted', { isDeleted: false });
+
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
@@ -104,7 +107,9 @@ export class CustomersService {
   }
 
   async findAllCustomers(){
-    const customer = await this.customerRepository.find();
+    const customer = await this.customerRepository.find({
+      where: { isDeleted: false }
+    });
     return customer;
   }
 
@@ -156,6 +161,16 @@ export class CustomersService {
       return this.update(customer.id, updateCustomerDto);
     }
     return this.customerRepository.update(customer.id, updateCustomerDto);
+  }
+
+  async softDelete(id: string): Promise<Customer> {
+    const customer = await this.findOne(id);
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${id} not found`);
+    }
+    
+    customer.isDeleted = true;
+    return this.customerRepository.save(customer);
   }
 
   async remove(id: string): Promise<void> {

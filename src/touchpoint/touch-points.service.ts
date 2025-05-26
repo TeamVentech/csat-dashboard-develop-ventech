@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Inject } from '@nestjs/common'
-import { Repository } from 'typeorm'
+import { Repository, Not } from 'typeorm'
 import { Touchpoint } from './entities/touchpoint.entity'
 import { Category } from 'categories/entities/categories.entity'
 import { UpdateCategoryDto } from 'categories/dto/update.dto'
@@ -79,7 +79,7 @@ export class TouchPointsService {
 		page: number,
 		perPage: number,
 		filterOptions: any,
-		categoryType: string,
+			categoryType: string,
 	) {
 		page = page || 1
 		perPage = perPage || 10
@@ -91,19 +91,17 @@ export class TouchPointsService {
 
 		// Apply filters based on filterOpdtions
 		if (filterOptions) {
-			if (filterOptions.search) {
-				const searchString = filterOptions.search.trim().startsWith(' ')
-					? filterOptions.search.replace(' ', '+')
-					: filterOptions.search
-
-				filterOptions.search = searchString
-
-				queryBuilder.andWhere('(touchpoint.name ILIKE :search)', {
-					search: `%${filterOptions.search}%`, // Use wildcards for substring search
-				})
+			if (filterOptions.filter) {
+				queryBuilder.andWhere(
+					'("touchpoint".id::text LIKE :filter OR LOWER("touchpoint".name->>\'en\') LIKE :filterLower OR LOWER("touchpoint".name->>\'ar\') LIKE :filterLower OR LOWER(category.name->>\'en\') LIKE :filterLower)',
+					{
+						filter: `%${filterOptions.filter}%`,
+						filterLower: `%${filterOptions.filter.toLowerCase()}%`
+					}
+				)
 			}
 			Object.keys(filterOptions).forEach((key) => {
-				if (key !== 'search' && filterOptions[key]) {
+				if (key !== 'filter' && filterOptions[key]) {
 					queryBuilder.andWhere(`touchpoint.${key} = :${key}`, {
 						[key]: filterOptions[key],
 					})
@@ -201,20 +199,71 @@ export class TouchPointsService {
 	}
 
 	async update_touchpoint(id: string, updateTouchPointDto: any, file) {
+		console.log(JSON.stringify(updateTouchPointDto));
 		let avatar = null
-		updateTouchPointDto.name = {
-			ar: updateTouchPointDto.name_ar,
-			en: updateTouchPointDto.name_en,
+		
+		// Find the current touchpoint to get existing values
+		const currentTouchpoint = await this.touchpointRepository.findOne({ where: { id } });
+		if (!currentTouchpoint) {
+			throw new NotFoundException(`Touchpoint with ID ${id} not found`);
 		}
+		
+		// Only update name if either name field is provided
+		if (updateTouchPointDto.name_ar || updateTouchPointDto.name_en) {
+			updateTouchPointDto.name = {
+				ar: updateTouchPointDto.name_ar || currentTouchpoint.name?.ar || "",
+				en: updateTouchPointDto.name_en || currentTouchpoint.name?.en || "",
+			}
+		} else {
+			// If no name fields provided, remove name from update to preserve existing value
+			delete updateTouchPointDto.name;
+		}
+		
 		delete updateTouchPointDto.name_ar
 		delete updateTouchPointDto.name_en
+		
 		if (file) {
 			avatar = await this.filesAzureService.uploadFile(file, 'users')
 		}
-		await this.touchpointRepository.update(id, {
-			...updateTouchPointDto,
-			avatar,
-		})
+		
+		const updateData = {...updateTouchPointDto}
+		
+		// Only include avatar in update if it was uploaded
+		if (avatar) {
+			updateData.avatar = avatar;
+		}
+		
+		// Check if another touchpoint with the same name and category already exists
+		if (updateData.name && (updateData.categoryId || currentTouchpoint.categoryId)) {
+			const categoryId = updateData.categoryId || currentTouchpoint.categoryId;
+			
+			// Don't check if we're not changing name or category
+			const isNameChanged = JSON.stringify(updateData.name) !== JSON.stringify(currentTouchpoint.name);
+			const isCategoryChanged = updateData.categoryId && updateData.categoryId !== currentTouchpoint.categoryId;
+			
+			if (isNameChanged || isCategoryChanged) {
+				const existingTouchpoint = await this.touchpointRepository.findOne({
+					where: {
+						name: updateData.name,
+						categoryId: categoryId,
+						id: Not(id)
+					}
+				});
+				
+				if (existingTouchpoint) {
+					throw new Error(`A touchpoint with the name "${updateData.name.en || updateData.name.ar}" already exists in this category`);
+				}
+			}
+		}
+		
+		try {
+			await this.touchpointRepository.update(id, updateData);
+		} catch (error) {
+			if (error.code === '23505' && error.constraint === 'UQ_aec31d1c81bcf7159cd940b263b') {
+				throw new Error(`A touchpoint with this name already exists in the selected category`);
+			}
+			throw error;
+		}
 	}
 
 	// Delete a touchpoint by ID
