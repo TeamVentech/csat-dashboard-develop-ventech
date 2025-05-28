@@ -76,6 +76,32 @@ export class TenantsService {
 		return tenant
 	}
 
+	async findAllTenants(filterOptions?: any) {
+		console.log(filterOptions)
+		const queryBuilder = this.tenantRepository.createQueryBuilder('user');
+		// Apply filters based on filterOptions
+		if (filterOptions) {
+			if (filterOptions.search) {
+				const searchString = await filterOptions.search.startsWith(' ')
+					? filterOptions.search.replace(' ', '+')
+					: filterOptions.search;
+				filterOptions.search = searchString
+				queryBuilder.andWhere('("user"."email" ILIKE :search OR "user"."name" ILIKE :search OR "user"."phone_number" ILIKE :search OR "user"."manager_email" ILIKE :search OR "user"."contact_name" ILIKE :search OR "user"."manager_account" ILIKE :search)', {
+					search: `%${filterOptions.search}%`,
+				});
+			}
+			Object.keys(filterOptions).forEach(key => {
+				if (key !== 'search' && filterOptions[key]) {
+					queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
+				}
+			});
+		}
+
+		queryBuilder.orderBy('user.createdAt', 'DESC');
+
+		return queryBuilder.getMany();
+	}
+
 	async findByPhoneNumber(phone_number: string): Promise<Tenant> {
 		const formattedPhoneNumber = PhoneValidator.formatPhoneNumber(phone_number)
 		return await this.tenantRepository.findOne({ where: { phone_number: formattedPhoneNumber } })

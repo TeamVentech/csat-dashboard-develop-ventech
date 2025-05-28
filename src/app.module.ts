@@ -47,6 +47,7 @@ import { ExportModule } from './export/export.module';
 import { AwsParameterStoreModule } from './config/aws-ssm.module';
 import { MessagesModule } from './messages/messages.module';
 import { SharedModule } from './shared/shared.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { SharedModule } from './shared/shared.module';
     SmsModule,
     ExportModule,
     MessagesModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -50,7 +50,13 @@ export class TenantsController {
         return this.tenantsService.findAll(page, perPage, filterOptions);
     }
 
-
+    @Get('report/all')
+    findAllTenants(@Query('search') search: number) {
+        const filterOptions = {
+            search
+        };
+        return this.tenantsService.findAllTenants(filterOptions);
+    }
     // Get a tenant by ID
     @Get(':id')
     @Permissions('Lookups::read')

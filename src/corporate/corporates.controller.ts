@@ -59,8 +59,11 @@ export class CorporatesController {
 
 
     @Get('report/all')
-    findAllCorporate( ) {
-        return this.corporatesService.findAllCorporate();
+    findAllCorporate(@Query('search') search: number,) {
+        const filterOptions = {
+            search
+        };
+        return this.corporatesService.findAllCorporate(filterOptions);
     }
     // Get a corporate by ID
     @Get(':id')

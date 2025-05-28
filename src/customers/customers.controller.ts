@@ -52,9 +52,11 @@ export class CustomersController {
     }
 
     @Get('report/all')
-    findAllCustomer( ) {
-
-        return this.customersService.findAllCustomers();
+    findAllCustomer(@Query('search') search: number,) {
+        const filterOptions = {
+            search
+        };
+        return this.customersService.findAllCustomers(filterOptions);
     }
 
     @Get('check-existence')

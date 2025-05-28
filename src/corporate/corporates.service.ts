@@ -72,9 +72,32 @@ export class CorporatesService {
     return Corporate;
   }
 
-  async findAllCorporate(){
-    const Corporate = await this.corporateRepository.find();
-    return Corporate;
+  async findAllCorporate(filterOptions?: any){
+    const queryBuilder = this.corporateRepository.createQueryBuilder('user');
+
+    // Apply filters based on filterOptions
+    if (filterOptions) {
+      if (filterOptions.search) {
+        const searchString = await filterOptions.search.startsWith(' ')
+          ? filterOptions.search.replace(' ', '+')
+          : filterOptions.search;
+        filterOptions.search = searchString
+        queryBuilder.andWhere('("user"."email" ILIKE :search OR "user"."name" ILIKE :search OR "user"."phone_number" ILIKE :search OR "user"."id"::text ILIKE :search)', {
+          search: `%${filterOptions.search}%`, // Use wildcards for substring search
+        });
+      }
+      Object.keys(filterOptions).forEach(key => {
+        if (key !== 'search' && filterOptions[key]) {
+          queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
+        }
+      });
+    }
+
+    const [categories, total] = await queryBuilder
+      .getManyAndCount();
+
+    return { categories, total };
+
   }
 
   async find(name: string) {

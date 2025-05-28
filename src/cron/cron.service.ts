@@ -97,7 +97,7 @@ export class CronsService {
     }
   }
 
-  @Cron(CronExpression.EVERY_2_HOURS)
+  @Cron('0 0 9-21 * * *')
   async updateIncidentReportingStatus() {
     try {
       

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Repository, In } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -17,7 +17,19 @@ export class UsersService {
   // Create a new user 
   async create(createUserDto: CreateUserDto, file): Promise<User> {
     let avatarUrl = null;
-  
+    
+    // Check if the email already exists
+    const existingUser = await this.userRepository.findOne({ where: { email: createUserDto.email } });
+    if (existingUser) {
+      throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+    }
+    
+    // Check if the phone number already exists
+    const existingUserPhone = await this.userRepository.findOne({ where: { phoneNumber: createUserDto.phoneNumber } });
+    if (existingUserPhone) {
+      throw new HttpException('Phone number already exists', HttpStatus.CONFLICT);
+    }
+    
     // Upload file to Azure if avatar exists
     if (file) {
       avatarUrl = await this.filesAzureService.uploadFile(file, "users"); 

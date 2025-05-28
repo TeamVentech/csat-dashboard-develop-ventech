@@ -39,28 +39,24 @@ export class CustomersService {
         createCustomerDto.age = (currentYear - DobYear).toString()
       }
       
-      // Check if email already exists (case-insensitive)
-      if (createCustomerDto.email) {
-        const existingCustomer = await this.customerRepository
-          .createQueryBuilder('customer')
-          .where('LOWER(customer.email) = LOWER(:email)', { email: createCustomerDto.email })
-          .getOne();
-        
-        if (existingCustomer) {
+      // Check if email or phone number already exists
+      const existingCustomer = await this.doesEmailOrPhoneExist(
+        createCustomerDto.email, 
+        createCustomerDto.phone_number
+      );
+      
+      if (existingCustomer) {
+        // Determine which field caused the conflict
+        if (existingCustomer.email && createCustomerDto.email && 
+            existingCustomer.email.toLowerCase() === createCustomerDto.email.toLowerCase()) {
           throw new HttpException('Email already exists', HttpStatus.CONFLICT);
         }
-      }
-      
-      // Check if phone number already exists
-      if (createCustomerDto.phone_number) {
-        const existingCustomer = await this.customerRepository
-          .createQueryBuilder('customer')
-          .where('customer.phone_number = :phone_number', { phone_number: createCustomerDto.phone_number })
-          .getOne();
-        
-        if (existingCustomer) {
+        if (existingCustomer.phone_number && createCustomerDto.phone_number && 
+            existingCustomer.phone_number === createCustomerDto.phone_number) {
           throw new HttpException('Phone number already exists', HttpStatus.CONFLICT);
         }
+        
+        throw new HttpException('Customer with this email or phone number already exists', HttpStatus.CONFLICT);
       }
       
       const customer = this.customerRepository.create(createCustomerDto);
@@ -86,7 +82,7 @@ export class CustomersService {
           ? filterOptions.search.replace(' ', '+')
           : filterOptions.search;
         filterOptions.search = searchString
-        queryBuilder.andWhere('(user.email ILIKE :search OR user.name ILIKE :search OR user.phone_number ILIKE :search OR user.gender ILIKE :search)', {
+        queryBuilder.andWhere('("user"."email" ILIKE :search OR "user"."name" ILIKE :search OR "user"."phone_number" ILIKE :search OR "user"."gender" ILIKE :search OR "user"."id"::text ILIKE :search OR "user"."national_id"::text ILIKE :search OR "user"."passport_number"::text ILIKE :search OR "user"."dob"::text ILIKE :search)', {
           search: `%${filterOptions.search}%`,
         });
       }
@@ -106,11 +102,29 @@ export class CustomersService {
     return { categories, total };
   }
 
-  async findAllCustomers(){
-    const customer = await this.customerRepository.find({
-      where: { isDeleted: false }
-    });
-    return customer;
+  async findAllCustomers(filterOptions?: any){
+    const queryBuilder = this.customerRepository.createQueryBuilder('user');
+    // Apply filters based on filterOptions
+    if (filterOptions) {
+      if (filterOptions.search) {
+        const searchString = await filterOptions.search.startsWith(' ')
+          ? filterOptions.search.replace(' ', '+')
+          : filterOptions.search;
+        filterOptions.search = searchString
+        queryBuilder.andWhere('("user"."email" ILIKE :search OR "user"."name" ILIKE :search OR "user"."phone_number" ILIKE :search OR "user"."gender" ILIKE :search OR "user"."id"::text ILIKE :search OR "user"."national_id"::text ILIKE :search OR "user"."passport_number"::text ILIKE :search OR "user"."dob"::text ILIKE :search)', {
+          search: `%${filterOptions.search}%`,
+        });
+      }
+      Object.keys(filterOptions).forEach(key => {
+        if (key !== 'search' && filterOptions[key]) {
+          queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
+        }
+      });
+    }
+    
+    queryBuilder.orderBy('user.createdAt', 'DESC');
+    
+    return queryBuilder.getMany();
   }
 
   async findOne(id: string): Promise<Customer> {

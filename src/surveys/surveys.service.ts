@@ -34,11 +34,7 @@ export class SurveysService {
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        const searchString =await filterOptions.search.startsWith(' ')
-          ? filterOptions.search.replace(' ', '+')
-          : filterOptions.search;
-        filterOptions.search = searchString
-        queryBuilder.andWhere('(user.name ILIKE :search)', {
+        queryBuilder.andWhere('("user"."name" ILIKE :search OR "user"."id"::text ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
 
