@@ -78,6 +78,7 @@ export class TenantsController {
     @Delete(':id')
     @Permissions('Lookups::delete')
     async remove(@Param('id') id: string): Promise<void> {
-        return this.tenantsService.remove(id);
+        const ids = id.split(',');
+        return this.tenantsService.removeMultiple(ids);
     }
 }

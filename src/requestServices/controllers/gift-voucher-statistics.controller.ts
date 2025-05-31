@@ -13,6 +13,7 @@ import { RatingByPeriodDto } from 'requestServices/dto/rating-by-period.dto';
 import { RatingStatisticsDto } from 'requestServices/dto/rating-statistics.dto';
 import { GiftVoucherPaymentMethodsDto } from '../dto/gift-voucher-payment-methods.dto';
 import { GiftVoucherExtensionsDto } from '../dto/gift-voucher-extensions.dto';
+import { GiftVoucherDurationAfterExpiryDto } from '../dto/gift-voucher-duration-after-expiry.dto';
 
 @Controller('gift-voucher-statistics')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -73,5 +74,12 @@ export class GiftVoucherStatisticsController {
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
   getRefundedVouchersStatistics(@Body() filters: GiftVoucherExtensionsDto) {
     return this.giftVoucherStatisticsService.getRefundedVouchersStatistics(filters);
+  }
+
+  @Post('duration-after-expiry')
+  @Permissions('Customer Care Center::read')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  getDurationAfterExpiry(@Body() filters: GiftVoucherDurationAfterExpiryDto) {
+    return this.giftVoucherStatisticsService.getDurationAfterExpiry(filters);
   }
 } 

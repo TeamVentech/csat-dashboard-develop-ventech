@@ -191,4 +191,23 @@ export class CustomersService {
     const customer = await this.findOne(id); // Check if the customer exists
     await this.customerRepository.remove(customer);
   }
+
+  async removeMultiple(ids: string[]): Promise<any> {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const customer = await this.findOne(id);
+        await this.customerRepository.remove(customer);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Customers deletion completed',
+      results
+    };
+  }
 }

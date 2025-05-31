@@ -59,6 +59,7 @@ export class DepartmentsController {
   @Permissions('Lookups::delete')
 
   remove(@Param('id') id: string) {
-    return this.departmentsService.remove(id);
+    const ids = id.split(',');
+    return this.departmentsService.removeMultiple(ids);
   }
 }

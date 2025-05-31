@@ -82,4 +82,23 @@ export class DepartmentsService {
     // await this.elasticService.deleteDocument('department', id);
     return {}
   }
+
+  async removeMultiple(ids: string[]) {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        await this.departmentRepository.delete(id);
+        // await this.elasticService.deleteDocument('department', id);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Departments deletion completed',
+      results
+    };
+  }
 }

@@ -72,6 +72,7 @@ export class CommentController {
   @Delete(':id')
   @Permissions('Customer Care Center::delete')
   remove(@Param('id') id: string) {
-    return this.requestServicesService.remove(id);
+    const ids = id.split(',');
+    return this.requestServicesService.removeMultiple(ids);
   }
 }

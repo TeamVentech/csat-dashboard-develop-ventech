@@ -175,4 +175,23 @@ export class SurveysService {
     const Surveys = await this.findOne(id);
     await this.SurveysRepository.remove(Surveys);
   }
+
+  async removeMultiple(ids: string[]) {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const survey = await this.findOne(id);
+        await this.SurveysRepository.remove(survey);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Surveys deletion completed',
+      results
+    };
+  }
 }

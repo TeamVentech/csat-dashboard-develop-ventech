@@ -91,6 +91,7 @@ export class SurveysController {
 	@Delete(':id')
 	@Permissions('Survey Management::delete')
 	remove(@Param('id') id: string) {
-		return this.surveysService.remove(id)
+		const ids = id.split(',');
+		return this.surveysService.removeMultiple(ids);
 	}
 }

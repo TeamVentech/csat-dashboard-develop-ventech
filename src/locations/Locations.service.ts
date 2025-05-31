@@ -78,4 +78,23 @@ export class LocationsService {
     const location = await this.findOne(id);
     await this.LocationRepository.remove(location);
   }
+
+  async removeMultiple(ids: string[]) {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const location = await this.findOne(id);
+        await this.LocationRepository.remove(location);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Locations deletion completed',
+      results
+    };
+  }
 }

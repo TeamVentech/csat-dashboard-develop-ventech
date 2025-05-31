@@ -61,7 +61,8 @@ export class ComplaintsController {
   @Delete(':id')
   @Permissions('Customer Care Center::delete')
   remove(@Param('id') id: string) {
-    return this.complaintsService.remove(id);
+    const ids = id.split(',');
+    return this.complaintsService.removeMultiple(ids);
   }
   @Post('search/query')
   elasticSerchQurey(

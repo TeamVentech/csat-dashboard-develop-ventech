@@ -85,6 +85,7 @@ export class CorporatesController {
     @Delete(':id')
     @Permissions('Clients Management::delete')
     async remove(@Param('id') id: string): Promise<void> {
-        return this.corporatesService.remove(id);
+        const ids = id.split(',');
+        return this.corporatesService.removeMultiple(ids);
     }
 }

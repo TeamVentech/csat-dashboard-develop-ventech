@@ -255,4 +255,31 @@ export class ComplaintsService {
 		const Complaints = await this.findOne(id)
 		// await this.complaintsRepository.remove(Complaints);
 	}
+
+	async removeMultiple(ids: string[]) {
+		const results = [];
+		
+		for (const id of ids) {
+			try {
+				const complaint = await this.findOne(id);
+				// Delete from both repository and elastic search
+				if (complaint) {
+					try {
+						await this.complaintsRepository.delete({ id });
+						await this.elasticService.deleteDocument('complaints', id);
+					} catch (error) {
+						console.error(`Error deleting complaint ${id}:`, error);
+					}
+				}
+				results.push({ id, success: true });
+			} catch (error) {
+				results.push({ id, success: false, message: error.message });
+			}
+		}
+		
+		return {
+			message: 'Complaints deletion completed',
+			results
+		};
+	}
 }

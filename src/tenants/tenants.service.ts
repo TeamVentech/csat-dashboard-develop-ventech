@@ -132,4 +132,23 @@ export class TenantsService {
 		const tenant = await this.findOne(id) // Check if the tenant exists
 		await this.tenantRepository.remove(tenant)
 	}
+
+	async removeMultiple(ids: string[]): Promise<any> {
+		const results = [];
+		
+		for (const id of ids) {
+			try {
+				const tenant = await this.findOne(id);
+				await this.tenantRepository.remove(tenant);
+				results.push({ id, success: true });
+			} catch (error) {
+				results.push({ id, success: false, message: error.message });
+			}
+		}
+		
+		return {
+			message: 'Tenants deletion completed',
+			results
+		};
+	}
 }

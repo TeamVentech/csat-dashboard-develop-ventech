@@ -5,14 +5,21 @@ import { GiftVoucherCorporateSpendersDto } from '../dto/gift-voucher-corporate-s
 import { GiftVoucherOccasionsDto } from '../dto/gift-voucher-occasions.dto';
 import { GiftVoucherPaymentMethodsDto, PeriodType as PaymentMethodPeriodType } from '../dto/gift-voucher-payment-methods.dto';
 import { GiftVoucherExtensionsDto, PeriodType as ExtensionPeriodType } from '../dto/gift-voucher-extensions.dto';
+import { GiftVoucherDurationAfterExpiryDto, PeriodType as DurationPeriodType } from '../dto/gift-voucher-duration-after-expiry.dto';
+import { Repository } from 'typeorm';
+import { Vouchers } from '../../vochers/entities/vouchers.entity';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class GiftVoucherStatisticsService {
-  // Add a cache with 5-minute TTL
-  private cache = new Map<string, { data: any, timestamp: number, totalValue: number }>();
+  private cache = new Map<string, { data: any, timestamp: number, totalValue?: number }>();
   private CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private readonly elasticSearchService: ElasticService) {}
+  constructor(
+    private readonly elasticSearchService: ElasticService,
+    @Inject('VOUCHERS_REPOSITORY')
+    private vouchersRepository: Repository<Vouchers>,
+  ) {}
 
   async getVoucherSalesByDenomination(filters: GiftVoucherChartDto) {
     try {
@@ -495,17 +502,29 @@ export class GiftVoucherStatisticsService {
     }
   }
 
-  private getPeriodKeyForDate(date: Date, periodType: string | undefined): string {
-    switch (periodType) {
-      case PeriodType.DAILY:
-        return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-      case PeriodType.WEEKLY:
-        const weekStart = this.getWeekStartDate(date);
-        const weekEnd = this.getWeekEndDate(weekStart);
-        return `${this.formatDateAsMonthDay(weekStart)} to ${this.formatDateAsMonthDay(weekEnd)}`;
-      case PeriodType.MONTHLY:
-      default:
-        return `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+  private getPeriodKeyForDate(date: Date, periodType: string | undefined | DurationPeriodType): string {
+    if (periodType === DurationPeriodType.DAILY) {
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    } else if (periodType === DurationPeriodType.WEEKLY) {
+      // Calculate week start date (Sunday)
+      const weekStart = this.getWeekStartDate(date);
+      return `Week of ${weekStart.getFullYear()}-${(weekStart.getMonth() + 1).toString().padStart(2, '0')}-${weekStart.getDate().toString().padStart(2, '0')}`;
+    } else if (periodType === DurationPeriodType.MONTHLY) {
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    } else {
+      // Original behavior for string period types
+      switch (periodType) {
+        case PeriodType.DAILY:
+          return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        case PeriodType.WEEKLY:
+          const weekStart = this.getWeekStartDate(date);
+          const weekEnd = this.getWeekEndDate(weekStart);
+          return `${this.formatDateAsMonthDay(weekStart)} to ${this.formatDateAsMonthDay(weekEnd)}`;
+        case PeriodType.MONTHLY:
+          return `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+        default:
+          return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+      }
     }
   }
 
@@ -2007,5 +2026,159 @@ private processRefundedVouchersData(
   };
 }
 
+async getDurationAfterExpiry(filters: GiftVoucherDurationAfterExpiryDto) {
+  try {
+    // Create cache key from filters
+    const cacheKey = 'duration_after_expiry_' + JSON.stringify(filters);
+    
+    // Check cache
+    const cachedResult = this.cache.get(cacheKey);
+    if (cachedResult && (Date.now() - cachedResult.timestamp) < this.CACHE_TTL) {
+      return {
+        success: true,
+        data: cachedResult.data
+      };
+    }
 
+    // Build query conditions for date range
+    const queryOptions: any = {};
+    if (filters.fromDate || filters.toDate) {
+      queryOptions.where = {};
+      
+      // We query by extension date (which is the request date)
+      if (filters.fromDate) {
+        queryOptions.where.createdAt = queryOptions.where.createdAt || {};
+        queryOptions.where.createdAt.gte = new Date(filters.fromDate);
+      }
+      if (filters.toDate) {
+        queryOptions.where.createdAt = queryOptions.where.createdAt || {};
+        queryOptions.where.createdAt.lte = new Date(filters.toDate);
+      }
+    }
+
+    // Query vouchers with extension_date and expired_date in metadata
+    const vouchers = await this.vouchersRepository.createQueryBuilder('voucher')
+      .where('voucher.metadata ? :extensionKey', { extensionKey: 'extention_date' })
+      .andWhere('voucher.metadata ? :expiryKey', { expiryKey: 'expired_date' })
+      .andWhere('voucher.state IN (:...states)', { states: ['Sold', 'Extended'] })
+      .andWhere('voucher.metadata @> :status', { status: JSON.stringify({ status: 'Extended' }) })
+      .orderBy('voucher.createdAt', 'ASC')
+      .getMany();
+
+    // Process data based on the period type
+    const periodType = filters.period || DurationPeriodType.DAILY;
+    const formattedData = this.processDurationAfterExpiryData(vouchers, periodType, filters);
+    
+    // Cache the results
+    this.cache.set(cacheKey, { 
+      data: formattedData,
+      timestamp: Date.now()
+    });
+    
+    return {
+      success: true,
+      data: formattedData
+    };
+  } catch (error) {
+    console.error('Error generating duration after expiry statistics:', error);
+    return {
+      success: false,
+      message: 'Error generating duration after expiry statistics',
+      error: error.message || error
+    };
+  }
+}
+
+private processDurationAfterExpiryData(vouchers: any[], periodType: string | undefined, filters: GiftVoucherDurationAfterExpiryDto) {
+  if (!vouchers || vouchers.length === 0) {
+    return {
+      periods: [],
+      data: [],
+      averageDuration: 0
+    };
+  }
+
+  // Create a map to group vouchers by period
+  const periodMap = new Map();
+  let totalDuration = 0;
+  let totalCount = 0;
+
+  // Process each voucher
+  vouchers.forEach(voucher => {
+    if (!voucher.metadata?.expired_date || !voucher.metadata?.extention_date) {
+      return;
+    }
+
+    // Parse dates
+    const expiredDate = new Date(voucher.metadata.expired_date);
+    const extensionDate = new Date(voucher.metadata.extention_date);
+
+    // Calculate duration in minutes
+    // If extension date is after expiry, it will be negative (extension after expiry)
+    // If extension date is before expiry, it will be positive (extension before expiry)
+    // We want to know how long after expiry, so we use expiry - extension
+    const durationInMinutes = Math.round((expiredDate.getTime() - extensionDate.getTime()) / (1000 * 60));
+
+    // Skip if denomination filter is provided and doesn't match
+    if (filters.denomination !== undefined) {
+      const denomStr = voucher.metadata.Denomination || '';
+      const denomMatch = denomStr.match(/(\d+)/);
+      const denomination = denomMatch ? parseInt(denomMatch[1]) : 0;
+      
+      if (denomination !== filters.denomination) {
+        return;
+      }
+    }
+
+    // Determine period key based on the extension date (when the action was taken)
+    const date = extensionDate;
+    const periodKey = this.getPeriodKeyForDate(date, periodType);
+
+    // Initialize period if not exists
+    if (!periodMap.has(periodKey)) {
+      periodMap.set(periodKey, {
+        period: periodKey,
+        totalDuration: 0,
+        count: 0,
+        averageDuration: 0
+      });
+    }
+
+    // Update period data
+    const periodData = periodMap.get(periodKey);
+    periodData.totalDuration += durationInMinutes;
+    periodData.count++;
+
+    // Update overall totals
+    totalDuration += durationInMinutes;
+    totalCount++;
+  });
+
+  // Calculate averages for each period
+  periodMap.forEach(periodData => {
+    periodData.averageDuration = periodData.count > 0 
+      ? Math.round(periodData.totalDuration / periodData.count) 
+      : 0;
+  });
+
+  // Convert map to array and sort by period
+  const periodsData = Array.from(periodMap.values())
+    .sort((a, b) => a.period.localeCompare(b.period));
+
+  // Calculate overall average
+  const overallAverageDuration = totalCount > 0 
+    ? Math.round(totalDuration / totalCount) 
+    : 0;
+
+  return {
+    periods: periodsData.map(p => p.period),
+    data: periodsData.map(p => ({
+      period: p.period,
+      averageDuration: p.averageDuration,
+      count: p.count,
+      __typename: "DurationAfterExpiryStats"
+    })),
+    averageDuration: overallAverageDuration
+  };
+}
 } 

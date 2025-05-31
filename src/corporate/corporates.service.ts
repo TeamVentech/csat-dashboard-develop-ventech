@@ -140,4 +140,23 @@ export class CorporatesService {
     const Corporate = await this.findOne(id); // Check if the Corporate exists
     await this.corporateRepository.remove(Corporate);
   }
+
+  async removeMultiple(ids: string[]): Promise<any> {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const corporate = await this.findOne(id);
+        await this.corporateRepository.remove(corporate);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Corporates deletion completed',
+      results
+    };
+  }
 }

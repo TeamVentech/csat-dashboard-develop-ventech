@@ -74,4 +74,23 @@ export class ComplaintCategoryService {
     const category = await this.findOne(id);
     await this.categoryRepository.remove(category);
   }
+
+  async removeMultiple(ids: string[]) {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const category = await this.findOne(id);
+        await this.categoryRepository.remove(category);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Categories deletion completed',
+      results
+    };
+  }
 }

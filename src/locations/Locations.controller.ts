@@ -58,6 +58,7 @@ export class LocationsController {
   @Delete(':id')
   @Permissions('Lookups::delete')
   remove(@Param('id') id: string) {
-    return this.LocationsService.remove(id);
+    const ids = id.split(',');
+    return this.LocationsService.removeMultiple(ids);
   }
 }

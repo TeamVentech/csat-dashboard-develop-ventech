@@ -65,6 +65,7 @@ export class CategoriesController {
   @Permissions('Survey::delete')
 
   async remove(@Param('id') id: string) {
-    return this.complaintCategoryService.remove(id);
+    const ids = id.split(',');
+    return this.complaintCategoryService.removeMultiple(ids);
   }
 }

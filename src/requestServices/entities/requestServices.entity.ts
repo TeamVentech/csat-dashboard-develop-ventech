@@ -28,6 +28,9 @@ export class RequestServices {
   @Column({ nullable: true })
   closedBy: string;
 
+  @Column({ nullable: true })
+  closedAt: string;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 

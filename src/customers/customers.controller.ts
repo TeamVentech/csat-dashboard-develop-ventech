@@ -99,7 +99,8 @@ export class CustomersController {
     @Delete(':id')
     @Permissions('Clients Management::delete')
     async remove(@Param('id') id: string): Promise<void> {
-        return this.customersService.remove(id);
+        const ids = id.split(',');
+        return this.customersService.removeMultiple(ids);
     }
 
     // Soft delete a customer by ID

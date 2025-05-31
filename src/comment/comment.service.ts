@@ -134,4 +134,23 @@ export class CommentService {
     const Comment = await this.findOne(id);
     await this.commentRepository.remove(Comment);
   }
+
+  async removeMultiple(ids: string[]) {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const comment = await this.findOne(id);
+        await this.commentRepository.remove(comment);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Comments deletion completed',
+      results
+    };
+  }
 }
