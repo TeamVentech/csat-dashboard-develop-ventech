@@ -88,6 +88,16 @@ export class VouchersController {
     return this.vouchersService.refund(id, service_id, data);
   }
 
+  @Patch('bulk-refund/:transaction_id')
+  bulkRefund(@Param('transaction_id') transaction_id: string, @Body() data: any) {
+    return this.vouchersService.bulkRefund(transaction_id, data);
+  }
+
+  @Patch('bulk-extend/:transaction_id')
+  bulkExtend(@Param('transaction_id') transaction_id: string, @Body() data: any) {
+    return this.vouchersService.bulkExtend(transaction_id, data);
+  }
+
   // @Patch(':id/refund')
   // @Permissions('Stock::update')
   // updateRefunded(@Param('id') id: string) {

@@ -117,6 +117,7 @@ export class RequestServicesService {
   }
 
   async create(createRequestServicesDto: CreateRequestServicesDto) {
+    console.log(createRequestServicesDto)
     let Service;
     let savedService;
     
@@ -145,7 +146,7 @@ export class RequestServicesService {
         createRequestServicesDto.state = 'Open';
         if(createRequestServicesDto.metadata.Incident.outcome === 'Resolved'){
           // Check if solve_date is not in the future
-          const solveDate = new Date(createRequestServicesDto.metadata.solve_date);
+          const solveDate = new Date(createRequestServicesDto.metadata.time_solved);
           const currentDate = new Date();
 
           if(solveDate > currentDate) {
@@ -697,12 +698,15 @@ export class RequestServicesService {
       const language = updateRequestServicesDto?.metadata?.IsArabic
         ? 'ar'
         : 'en';
-      updateRequestServicesDto.state = 'Awaiting Collection';
-      const message =
-        SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
-          language
-        ];
-      await this.smsService.sendSms(numbers, message, numbers);
+      if(updateRequestServicesDto.state !== 'Awaiting Collection'){
+        updateRequestServicesDto.state = 'Awaiting Collection';
+        const message =
+          SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
+            language
+          ];
+        await this.smsService.sendSms(numbers, message, numbers);
+  
+      }
     }
 
     if (updateRequestServicesDto?.actions === 'Send Damage SMS') {
@@ -818,11 +822,13 @@ export class RequestServicesService {
     // Handle Wheelchair & Stroller Request
     if (updateRequestServicesDto.type === 'Wheelchair & Stroller Request') {
       if (updateRequestServicesDto.metadata.type === 'Wheelchair') {
+        updateRequestServicesDto.metadata.closedAt = new Date();
         await this.wheelchairStrollerHandler.handleWheelchairRequest(
           updateRequestServicesDto,
           id,
         );
       } else if (updateRequestServicesDto.metadata.type === 'Stroller') {
+        updateRequestServicesDto.metadata.closedAt = new Date();
         await this.wheelchairStrollerHandler.handleStrollerRequest(
           updateRequestServicesDto,
           id,
@@ -850,23 +856,11 @@ export class RequestServicesService {
       data.state !== 'Closed' &&
       updateRequestServicesDto.state === 'Closed'
     ) {
-      // if (
-      //   data.type === 'Incident Reporting' &&
-      //   data.state === 'Pending Internal'
-      // ) {
-      //   const now = moment();
-      //   const createdAt = moment(data.createdAt);
-      //   const hoursDifference = now.diff(createdAt, 'hours');
-      //   if (
-      //     hoursDifference < 24 ||
-      //     !updateRequestServicesDto.metadata?.callCompleted
-      //   ) {
-      //     throw new HttpException(
-      //       'Cannot close incident case. Must wait 24 hours and mark call as completed.',
-      //       HttpStatus.BAD_REQUEST,
-      //     );
-      //   }
-      // }
+      if (
+        data.type === 'Incident Reporting' 
+      ) {
+        updateRequestServicesDto.metadata.closedAt = new Date();
+      }
       const numbers =
         data?.metadata?.parents?.phone_number ||
         data?.metadata?.customer?.phone_number ||
@@ -883,7 +877,7 @@ export class RequestServicesService {
         updateRequestServicesDto.type === 'Found Child' ||
         updateRequestServicesDto.type === 'Lost Child'
       ) {
-        const messageFound = updateRequestServicesDto.metadata.IsArabic ?  message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "نتمنى سلامتكم"` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`;
+        const messageFound = updateRequestServicesDto.metadata.IsArabic ?  message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n نتمنى سلامتكم` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`;
         await this.smsService.sendSms(
           numbers,
           `${messageFound}`,

@@ -78,7 +78,7 @@ export class VouchersService {
         existingVoucher.updatedAt = new Date();
       } else {
         // Create new voucher
-        if(denominations.includes(item.Denomination)){
+        if (denominations.includes(item.Denomination)) {
           existingVoucher = this.vouchersRepository.create({
             name: "Vouchers",
             addedBy: "System",
@@ -200,8 +200,8 @@ export class VouchersService {
       if (voucher_data.metadata.status === "Extended") {
         throw new HttpException("The voucher has already been extended.", HttpStatus.CONFLICT);
       }
-      const extended_voucher = await this.GetAvailableVoucher({ 
-        "vouchers": [{ "Vouchers": 1, "denominations": parseInt(voucher_data.metadata.Denomination), "serialNumbers": ["4408398"] }] 
+      const extended_voucher = await this.GetAvailableVoucher({
+        "vouchers": [{ "Vouchers": 1, "denominations": parseInt(voucher_data.metadata.Denomination), "serialNumbers": ["4408398"] }]
       });
       if (!extended_voucher.data[0]) {
         throw new HttpException("You don't have enough denomination", HttpStatus.BAD_REQUEST);
@@ -221,7 +221,7 @@ export class VouchersService {
       extended_voucher.data[0].vouchers[0].metadata.Client_ID = service.metadata.customer.id || service.metadata.Company.id;
       extended_voucher.data[0].vouchers[0].metadata.Type_of_Sale = service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual';
       extended_voucher.data[0].vouchers[0].metadata.main_voucher = voucher_data.serialNumber;
-      extended_voucher.data[0].vouchers[0].metadata.expired_date = specificDate  
+      extended_voucher.data[0].vouchers[0].metadata.expired_date = specificDate
       await this.vouchersRepository.update(extended_voucher.data[0].vouchers[0].id, extended_voucher.data[0].vouchers[0]);
       for (let j = 0; j < service.metadata.voucher.length; j++) {
         for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
@@ -232,7 +232,7 @@ export class VouchersService {
       }
       await this.requestServiceRepository.update(service.id, service);
       await this.elasticService.updateDocument('services', service.id, service);
-      const updated_data  = await this.elasticService.getById('services', service.id)
+      const updated_data = await this.elasticService.getById('services', service.id)
       const language = service?.metadata?.IsArabic ? "ar" : "en";
       const formattedDate = new Date(voucher_data.metadata.extanded_expired_date).toLocaleDateString('en-GB');
       const message = {
@@ -240,12 +240,12 @@ export class VouchersService {
         ar: `تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: ${formattedDate}\nيرجى تقييم الخدمة من خلال الرابط\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${service_id}/rating`
       };
       let phoneNumber;
-      if(service.type === 'Corporate Voucher Sale'){
+      if (service.type === 'Corporate Voucher Sale') {
         phoneNumber = service?.metadata?.recipient?.recipient_phone_number
-      }else{
+      } else {
         phoneNumber = service?.metadata?.customer?.phone_number
       }
-      if(phoneNumber){
+      if (phoneNumber) {
         await this.sendSms(null, message[language], phoneNumber);
       }
       return { message: "Voucher extended successfully", status: HttpStatus.OK, data: updated_data };
@@ -256,7 +256,7 @@ export class VouchersService {
       throw new HttpException(error.message || "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-  
+
 
   async refund(id: string, service_id: string, data: any) {
     try {
@@ -299,8 +299,8 @@ export class VouchersService {
       console.log(service.metadata.value)
       await this.requestServiceRepository.update(service.id, service);
       await this.elasticService.updateDocument('services', service.id, service);
-      const updated_data  = await this.elasticService.getById('services', service.id)
-      if(service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number){
+      const updated_data = await this.elasticService.getById('services', service.id)
+      if (service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number) {
         const numbers = service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number
         const language = service?.metadata?.IsArabic ? "ar" : "en"
         const message = SmsMessage["Individual Voucher Sale"]["Refunded"][language]
@@ -315,6 +315,153 @@ export class VouchersService {
     }
   }
 
+  // async refund(id: string, service_id: string, data: any) {
+
+  // }
+
+  async bulkRefund(transaction_id: string, data: any) {
+    if (data.voucherIds.length > 0) {
+      let countRefunded = 0
+      const service = await this.requestServiceRepository.findOne({ where: { id: transaction_id } });
+      if (!service) {
+        throw new HttpException("Service not found", HttpStatus.NOT_FOUND);
+      }
+      for (const voucherId of data.voucherIds) {
+        try {
+          const voucher_data = await this.vouchersRepository.findOne({ where: { id: voucherId } });
+          if (voucher_data) {
+            if (voucher_data.metadata.status !== "Refunded") {
+              voucher_data.metadata.status = "Refunded";
+              voucher_data.state = "Re-Pending";
+              await this.vouchersRepository.update(voucher_data.id, voucher_data);
+              for (let j = 0; j < service.metadata.voucher.length; j++) {
+                for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
+                  if (service.metadata.voucher[j].vouchers[i].id === voucherId) {
+                    voucher_data.metadata.status = "Refunded"
+                    voucher_data.state = "Re-Pending"
+                    voucher_data.metadata.refunded_date = new Date()
+                    const denominations = parseInt(voucher_data.metadata.Denomination)
+                    service.metadata.value = service.metadata.value - denominations
+                    service.metadata.voucher[j].Vouchers -= 1
+                    service.metadata.voucher[j].vouchers[i] = { ...voucher_data, refundedBy: data.refundedBy };
+                    countRefunded += 1
+                  }
+                }
+              }
+              await this.requestServiceRepository.update(service.id, service);
+              await this.elasticService.updateDocument('services', service.id, service);
+              await this.elasticService.getById('services', service.id)
+            }
+          }
+        } catch (error) {
+          console.log(error)
+        }
+      }
+      if (countRefunded > 0) {
+        if (service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number) {
+          const numbers = service?.metadata?.Company?.phone_number || service?.metadata?.customer?.phone_number
+          const language = service?.metadata?.IsArabic ? "ar" : "en"
+          const message = SmsMessage["Individual Voucher Sale"]["Refunded"][language]
+          await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+        }
+      }
+      return {
+        message: "Vouchers refunded successfully", status: HttpStatus.OK, data: {
+          countRefunded,
+          countNotRefunded: data.voucherIds.length - countRefunded
+        }
+      };
+    }
+  }
+
+  async bulkExtend(transaction_id: string, data: any) {
+    if (data.voucherIds.length > 0) {
+      let countExtended = 0
+      let extanded_expired = null
+      const service = await this.requestServiceRepository.findOne({ where: { id: transaction_id } });
+      if (!service) {
+        throw new HttpException("Service not found", HttpStatus.NOT_FOUND);
+      }
+      for (const voucherId of data.voucherIds) {
+        const voucher_data = await this.vouchersRepository.findOne({ where: { id: voucherId } });
+        if (voucher_data) {
+          const createdAt = new Date(service.createdAt);
+          const now = new Date();
+          const diffTime = now.getTime() - createdAt.getTime();
+          const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365);
+          if (diffYears > 1) {
+            continue;
+          }
+          if (voucher_data.metadata.status === "Extended") {
+            continue;
+          }
+          const extended_voucher = await this.GetAvailableVoucher({
+            "vouchers": [{ "Vouchers": 1, "denominations": parseInt(voucher_data.metadata.Denomination), "serialNumbers": ["4408398"] }]
+          });
+          if (!extended_voucher.data[0]) {
+            continue;
+          }
+          voucher_data.metadata.extanded = true;
+          voucher_data.metadata.status = "Extended";
+          let specificDate = new Date(service.metadata.Expiry_date);
+          specificDate.setDate(specificDate.getDate() + 14);
+          voucher_data.metadata.extanded_expired_date = specificDate.toISOString();
+          voucher_data.metadata.extendedBy = data.extendedBy;
+          voucher_data.metadata.extention_date = new Date();
+          voucher_data.metadata.newVoucher = extended_voucher.data[0].vouchers[0].id;
+          voucher_data.metadata.newVoucherSerialNumber = extended_voucher.data[0].vouchers[0].serialNumber;
+          await this.vouchersRepository.update(voucher_data.id, voucher_data);
+          extended_voucher.data[0].vouchers[0].state = "Extended";
+          extended_voucher.data[0].vouchers[0].metadata.status = "Extended";
+          extended_voucher.data[0].vouchers[0].metadata.Client_ID = service.metadata.customer.id || service.metadata.Company.id;
+          extended_voucher.data[0].vouchers[0].metadata.Type_of_Sale = service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual';
+          extended_voucher.data[0].vouchers[0].metadata.main_voucher = voucher_data.serialNumber;
+          extended_voucher.data[0].vouchers[0].metadata.expired_date = specificDate
+          await this.vouchersRepository.update(extended_voucher.data[0].vouchers[0].id, extended_voucher.data[0].vouchers[0]);
+          for (let j = 0; j < service.metadata.voucher.length; j++) {
+            for (let i = 0; i < service.metadata.voucher[j].vouchers.length; i++) {
+              if (service.metadata.voucher[j].vouchers[i].id === voucherId) {
+                service.metadata.voucher[j].vouchers[i] = { ...voucher_data, extendedBy: data.extendedBy };
+                countExtended += 1
+                extanded_expired = voucher_data.metadata.extanded_expired_date
+              }
+            }
+          }
+          await this.requestServiceRepository.update(service.id, service);
+          await this.elasticService.updateDocument('services', service.id, service);
+        }
+
+
+      }
+      if (countExtended > 0) {
+        const language = service?.metadata?.IsArabic ? "ar" : "en";
+        const formattedDate = new Date(extanded_expired).toLocaleDateString('en-GB');
+          const message = {
+            en: `We would like to inform you that your extension request is approved. The new expiry date is ${formattedDate}\nPlease rate our service by following the below link:\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${transaction_id}/rating`,
+            ar: `تمت الموافقة على تمديد صلاحية القسيمة. تاريخ الانتهاء: ${formattedDate}\nيرجى تقييم الخدمة من خلال الرابط\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${transaction_id}/rating`
+          };
+          let phoneNumber;
+          if (service.type === 'Corporate Voucher Sale') {
+            phoneNumber = service?.metadata?.recipient?.recipient_phone_number
+          } else {
+            phoneNumber = service?.metadata?.customer?.phone_number
+          }
+          if (phoneNumber) {
+          await this.sendSms(null, message[language], phoneNumber);
+        }
+        return { message: "Voucher extended successfully", status: HttpStatus.OK, data: {
+          countExtended,
+          countNotExtended: data.voucherIds.length - countExtended
+        } };
+    }
+      return {
+        message: "Vouchers extended successfully", status: HttpStatus.OK, data: {
+          countExtended,
+          countNotExtended: data.voucherIds.length - countExtended
+        }
+      };
+    }
+  }
   // async updateRefunded(id: string) {
   // if (updateVouchersDto.actions) {
   // const service = await this.requestServiceRepository.findOne({ where: { id: updateVouchersDto.service_id } });
@@ -346,7 +493,7 @@ export class VouchersService {
   async updateNameCategory(id: string, updateData: { name?: string; categoryId?: string }) {
     try {
       const voucher = await this.vouchersRepository.findOne({ where: { id } });
-      
+
       if (!voucher) {
         throw new HttpException(`Voucher with ID ${id} not found`, HttpStatus.NOT_FOUND);
       }
@@ -390,7 +537,7 @@ export class VouchersService {
                 }
               }
             }
-            
+
             // Update the service record and its Elasticsearch entry
             await this.requestServiceRepository.save(service);
             await this.elasticService.updateDocument('services', service.id, service);
@@ -398,17 +545,17 @@ export class VouchersService {
         }
       }
 
-      return { 
-        success: true, 
-        message: 'Voucher updated successfully', 
-        data: voucher 
+      return {
+        success: true,
+        message: 'Voucher updated successfully',
+        data: voucher
       };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
       throw new HttpException(
-        error.message || 'Error updating voucher', 
+        error.message || 'Error updating voucher',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -423,7 +570,7 @@ export class VouchersService {
     try {
       // Get current date
       const currentDate = new Date();
-      
+
       // Find vouchers that need reminders
       const extendedVouchersExpiring = await this.vouchersRepository
         .createQueryBuilder('voucher')
@@ -433,7 +580,7 @@ export class VouchersService {
         .andWhere("(voucher.metadata->>'extanded_expired_date')::timestamp > :currentDate", { currentDate })
         .andWhere("voucher.metadata->>'reminderSent' IS NULL")
         .getMany();
-        
+
       const soldVouchersExpiring = await this.vouchersRepository
         .createQueryBuilder('voucher')
         .where('voucher.state = :state', { state: 'Sold' })
@@ -442,16 +589,16 @@ export class VouchersService {
         .andWhere("(voucher.metadata->>'expired_date')::timestamp > :currentDate", { currentDate })
         .andWhere("voucher.metadata->>'reminderSent' IS NULL")
         .getMany();
-      
+
       // Process extended vouchers (3 days before expiry)
       for (const voucher of extendedVouchersExpiring) {
         try {
           const serviceId = voucher.metadata?.service_id;
           if (!serviceId) continue;
-          
+
           const service = await this.requestServiceRepository.findOne({ where: { id: serviceId } });
           if (!service) continue;
-          
+
           // Check if there's a recipient who should receive the SMS instead of purchaser
           let phoneNumber;
           if (voucher.metadata?.recipient_number) {
@@ -463,15 +610,15 @@ export class VouchersService {
           } else {
             continue; // No phone number to send to
           }
-          
+
           const language = service?.metadata?.IsArabic ? "ar" : "en";
-          const message ={
+          const message = {
             ar: `ستنتهي صلاحية قسيمة الإهداء خلال 3 أيام.\n استخدمها قريباً\n يرجى تجاهل الرسالة في حال قمت باستخدامها.\n نتمنى لكم تسوّق سعيد`,
             en: `Your gift voucher expires in (3) days.\nDon't forget to use it soon.\nIf you have used it already, please disregard this text.\nHappy Shopping`
           }
-          
+
           await this.sendSms(null, message, phoneNumber);
-          
+
           // Mark as reminder sent
           voucher.metadata.reminderSent = true;
           await this.vouchersRepository.save(voucher);
@@ -479,16 +626,16 @@ export class VouchersService {
           console.error(`Error sending reminder for voucher ${voucher.id}:`, error);
         }
       }
-      
+
       // Process sold vouchers (7 days before expiry)
       for (const voucher of soldVouchersExpiring) {
         try {
           const serviceId = voucher.metadata?.service_id;
           if (!serviceId) continue;
-          
+
           const service = await this.requestServiceRepository.findOne({ where: { id: serviceId } });
           if (!service) continue;
-          
+
           // Check if there's a recipient who should receive the SMS instead of purchaser
           let phoneNumber;
           if (voucher.metadata?.recipient_number) {
@@ -500,16 +647,16 @@ export class VouchersService {
           } else {
             continue; // No phone number to send to
           }
-          
+
           const language = service?.metadata?.IsArabic ? "ar" : "en";
           // Modify message to mention 7 days instead of 3
-          const message ={
+          const message = {
             ar: `ستنتهي صلاحية قسيمة الإهداء خلال 7 أيام.\n استخدمها قريباً\n يرجى تجاهل الرسالة في حال قمت باستخدامها.\n نتمنى لكم تسوّق سعيد`,
             en: `Your gift voucher expires in (7) days.\nDon't forget to use it soon.\nIf you have used it already, please disregard this text.\nHappy Shopping`
           }
-          
+
           await this.sendSms(null, message, phoneNumber);
-          
+
           // Mark as reminder sent
           voucher.metadata.reminderSent = true;
           await this.vouchersRepository.save(voucher);
@@ -517,7 +664,7 @@ export class VouchersService {
           console.error(`Error sending reminder for voucher ${voucher.id}:`, error);
         }
       }
-      
+
       return {
         success: true,
         message: `SMS reminders sent: ${extendedVouchersExpiring.length + soldVouchersExpiring.length}`,
@@ -542,7 +689,7 @@ export class VouchersService {
         .where('voucher.state = :state', { state: 'Pending' })
         .andWhere("voucher.metadata->>'status' = :status", { status: 'Refunded' })
         .getMany();
-      
+
       if (pendingRefundedVouchers.length === 0) {
         return {
           success: true,
@@ -550,14 +697,14 @@ export class VouchersService {
           count: 0
         };
       }
-      
+
       // Update all found vouchers to state Refunded
       for (const voucher of pendingRefundedVouchers) {
         console.log(voucher.serialNumber)
         voucher.state = 'Refunded';
         await this.vouchersRepository.save(voucher);
       }
-      
+
       return {
         success: true,
         message: `Updated ${pendingRefundedVouchers.length} vouchers from Pending to Refunded state`,
