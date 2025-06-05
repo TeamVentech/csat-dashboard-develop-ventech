@@ -74,9 +74,16 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto, file);
   }
 
-  @Delete(':id')
-  @Permissions('Admin::delete')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
-  }
+  // @Delete(':id')
+  // @Permissions('Admin::delete')
+  // remove(@Param('id') id: string) {
+  //   return this.usersService.remove(id);
+  // }
+
+	@Delete(':id')
+	@Permissions('Survey Management::delete')
+	remove(@Param('id') id: string) {
+		const ids = id.split(',');
+		return this.usersService.removeMultiple(ids);
+	}
 }

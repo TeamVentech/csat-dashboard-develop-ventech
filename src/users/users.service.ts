@@ -5,6 +5,8 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create.dto';
 import { UpdateUserDto } from './dto/update.dto';
 import {  FilesS3Service } from 'azure-storage/aws-storage.service';
+import { PhoneValidator } from '../utils/phone-validator.util';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -25,9 +27,8 @@ export class UsersService {
     }
     
     // Check if the phone number already exists
-    const existingUserPhone = await this.userRepository.findOne({ where: { phoneNumber: createUserDto.phoneNumber } });
-    if (existingUserPhone) {
-      throw new HttpException('Phone number already exists', HttpStatus.CONFLICT);
+    if (createUserDto.phoneNumber) {
+      createUserDto.phoneNumber = PhoneValidator.formatPhoneNumber(createUserDto.phoneNumber);
     }
     
     // Upload file to Azure if avatar exists
@@ -67,13 +68,17 @@ export class UsersService {
     // Apply filters based on filterOptions
     if (filterOptions) {
       if (filterOptions.search) {
-        queryBuilder.andWhere('(user.email ILIKE :search OR user.username ILIKE :search OR user.role ILIKE :search OR user.phone_number ILIKE :search)', {
+        const searchString = await filterOptions.search.startsWith(' ')
+        ? filterOptions.search.replace(' ', '+')
+        : filterOptions.search;
+      filterOptions.search = searchString
+        queryBuilder.andWhere('("user"."email" ILIKE :search OR "user"."username" ILIKE :search OR "user"."role" ILIKE :search OR "user"."phone_number" ILIKE :search OR "user"."id"::text ILIKE :search)', {
           search: `%${filterOptions.search}%`, // Use wildcards for substring search
         });
       }
       Object.keys(filterOptions).forEach(key => {
         if (key !== 'search' && filterOptions[key]) {
-          queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
+          queryBuilder.andWhere(`"user"."${key}" = :${key}`, { [key]: filterOptions[key] });
         }
       });
     }
@@ -112,6 +117,23 @@ export class UsersService {
   // Update a user by ID
   async update(id: string, updateUserDto: UpdateUserDto, file): Promise<User> {
     let avatarUrl = null;
+    
+    // Check if email is being updated and if it already exists for another user
+    if (updateUserDto.email) {
+      const existingUser = await this.userRepository.findOne({ where: { email: updateUserDto.email.toLowerCase() } });
+      if (existingUser && existingUser.id !== id) {
+        throw new HttpException('Email already exists for another user', HttpStatus.CONFLICT);
+      }
+    }
+    
+    // Check if phone number is being updated and if it already exists for another user
+    if (updateUserDto.phoneNumber) {
+      const existingUserPhone = await this.userRepository.findOne({ where: { phoneNumber: updateUserDto.phoneNumber } });
+      if (existingUserPhone && existingUserPhone.id !== id) {
+        throw new HttpException('Phone number already exists for another user', HttpStatus.CONFLICT);
+      }
+    }
+    
     if (file) {
       updateUserDto.avatar = await this.filesAzureService.uploadFile(file, "users"); 
     }
@@ -144,4 +166,24 @@ export class UsersService {
     return this.findOne(user.id);
 
   }
+
+  async removeMultiple(ids: string[]) {
+    const results = [];
+    
+    for (const id of ids) {
+      try {
+        const user = await this.findOne(id);
+        await this.userRepository.remove(user);
+        results.push({ id, success: true });
+      } catch (error) {
+        results.push({ id, success: false, message: error.message });
+      }
+    }
+    
+    return {
+      message: 'Users deletion completed',
+      results
+    };
+  }
+
 }
