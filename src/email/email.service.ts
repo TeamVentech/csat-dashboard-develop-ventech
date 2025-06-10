@@ -14,17 +14,25 @@ export class EmailService {
 
 	constructor(private configService: ConfigService) {
 		this.transporter = nodemailer.createTransport({
-			service: "gmail",
+/*			service: "gmail",
 			auth: {
 				user: 'nazir.alkahwaji@gmail.com', // Your Gmail email
 				pass: "crdgwksoigtaifwp", // API Key
+			}, */
+			host: 'smtp.office365.com',
+			port: 587,
+			auth: {
+				user: 'digital@citymall.jo',
+				pass: process.env.MAIL_PASSWORD,
 			},
+
 		});
 
 		// Initialize Mailtrap client as fallback
 		this.mailtrapClient = new MailtrapClient({
 			token: '59a71cdda41f91268fbbdf3f1c8ebc64',
 		});
+
 	}
 
 	async sendEmail(recipients: string[], from: string, subject: string, text: string, user_name: string, complaint_id: string, submitted_by: string, priority: string, action_link: string) {
@@ -43,7 +51,7 @@ export class EmailService {
 			<p style="color: #555;">Best Regards,<br>Support Team</p>
 		  </div>
 		</body>`;
-  
+
 		let anySuccessful = false;
 		let lastError = null;
 
@@ -62,7 +70,7 @@ export class EmailService {
 				} catch (error) {
 					console.warn(`Failed to send email to ${recipient} via Gmail: ${error.message}`);
 					lastError = error;
-					
+
 					// If Gmail fails (likely due to sending limit), use Mailtrap as fallback
 					if (error.responseCode === 550 || error.code === 'EENVELOPE') {
 						try {
@@ -95,11 +103,11 @@ export class EmailService {
 		return { success: true };
 	}
 
-	private async sendViaMailtrap(recipient: string, subject: string, html: string, variables: { 
-		complaint_id: string, 
-		submitted_by: string, 
-		priority: string, 
-		action_link: string 
+	private async sendViaMailtrap(recipient: string, subject: string, html: string, variables: {
+		complaint_id: string,
+		submitted_by: string,
+		priority: string,
+		action_link: string
 	}) {
 		return this.mailtrapClient.send({
 			from: this.mailtrapSender,

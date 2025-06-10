@@ -35,7 +35,7 @@ export class TasksServices {
 		private readonly emailService: EmailService,
 		private readonly filesAzureService: FilesS3Service, // Inject TouchPointsSegrvice
 		private readonly smsService: SmsService,
-	) { 
+	) {
 		this.client = new MailtrapClient({
 			token: '59a71cdda41f91268fbbdf3f1c8ebc64',
 		})
@@ -115,13 +115,13 @@ export class TasksServices {
 		delete complaint_update.category;
 		delete complaint_update.customer;
 		delete complaint_update.touchpoint;
-		
+
 		await this.complaintsRepository.update(
-			{ 
-				id: complaint_update.id, 
-				customerId: complaint_update.customerId, 
-				categoryId: complaint_update.categoryId, 
-				touchpointId: complaint_update.touchpointId 
+			{
+				id: complaint_update.id,
+				customerId: complaint_update.customerId,
+				categoryId: complaint_update.categoryId,
+				touchpointId: complaint_update.touchpointId
 			},
 			complaint_update
 		);
@@ -140,7 +140,7 @@ export class TasksServices {
 			const email_users = [...new Set(users.map(user => user.email).flat())];
 			const emailResult = await this.emailService.sendEmail(
 				email_users,
-				"nazir.alkahwaji@gmail.com",
+				"digital@citymall.jo",
 				"Complaint Actions",
 				"Take Actions",
 				" ",
@@ -149,7 +149,7 @@ export class TasksServices {
 				"1",
 				`https://main.dy9kln3badsnq.amplifyapp.com/complaint/${complaint_id}/details`
 			);
-			
+
 			if (!emailResult.success) {
 				console.warn(`Email notification partially failed: ${emailResult.error}`);
 			}
@@ -196,7 +196,7 @@ export class TasksServices {
 
 		if(status === "Pending (First Level)"){
 			const number = updateTasksDto?.complaints?.customer?.phone_number || updateTasksDto?.complaints?.tenant?.phone_number
-			this.sendSmsToCustomer(number, updateTasksDto.complaints.id, updateTasksDto.complaints.metadata?.IsArabic, 'reviewing')	
+			this.sendSmsToCustomer(number, updateTasksDto.complaints.id, updateTasksDto.complaints.metadata?.IsArabic, 'reviewing')
 		}
 
 	}
@@ -232,35 +232,35 @@ export class TasksServices {
 		if (!workflow[`Level_${level}`] || !Array.isArray(workflow[`Level_${level}`])) {
 			throw new NotFoundException(`Workflow escalation level ${level} not found or is not a valid array`);
 		}
-		
+
 		const assignedTo = [...new Set(workflow[`Level_${level}`].map(user => user.name).flat())];
 		updateTasksDto.type = `Escalated ${level}`;
 		updateTasksDto.status = `Escalated (Level ${level})`;
 		updateTasksDto.complaints.status = `Escalated (Level ${level})`;
-		
+
 		// Add escalation flag to complaint metadata
 		if (!updateTasksDto.complaints.metadata) {
 			updateTasksDto.complaints.metadata = {};
 		}
 		updateTasksDto.complaints.metadata.escalation = true;
-		
+
 		updateTasksDto.assignedTo = assignedTo;
 	}
 
 	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false, messageType: string = 'resolved') {
 		const ratingLink = `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaintId}/rating`;
 		let message = '';
-		
+
 		if (messageType === 'resolved') {
-			message = isArabic 
+			message = isArabic
 				? `زبوننا العزيز،\nتم إغلاق شكوتكم\nيرجى تقييم الخدمة من خلال الرابط\n${ratingLink}`
 				: `Dear Customer,\nWe would like to inform you that your complaint has been resolved.\nPlease rate our service by following the below link:\n${ratingLink}`;
 		} else if (messageType === 'reviewing') {
-			message = isArabic 
+			message = isArabic
 				? `زبوننا العزيز،\nشكوتكم قيد المراجعة حالياً. سنبلغكم بأي جديد.`
 				: `Dear Customer,\nWe would like to inform you that your complaint is now being reviewed. We will keep you updated.`;
 		}
-		
+
 		await this.smsService.sendSms(null, message, phoneNumber);
 	}
 
@@ -431,7 +431,7 @@ export class TasksServices {
 		}
 
 		// Check if the task is being escalated and handle accordingly
-		if (updateTasksDto.type === "Escalated (Level 1)" || 
+		if (updateTasksDto.type === "Escalated (Level 1)" ||
 		    updateTasksDto.type === "Escalated 1") {
 			await this.handleEscalationAction(updateTasksDto, workflow, 1);
 		} else if (updateTasksDto.type === "Escalated (Level 2)") {
@@ -439,7 +439,7 @@ export class TasksServices {
 		} else if (updateTasksDto.type === "Escalated (Level 3)") {
 			await this.handleEscalationAction(updateTasksDto, workflow, 3);
 		}
-		
+
 		await this.updateComplaintStatus(updateTasksDto.complaints);
 
 		const elastic_data = { ...updateTasksDto };
@@ -475,15 +475,15 @@ export class TasksServices {
 			if (!workflow || !workflow.First_Level || !Array.isArray(workflow.First_Level)) {
 				throw new NotFoundException('Workflow or First_Level roles not found for this touchpoint, or First_Level is not a valid array');
 			}
-		
-		
+
+
 		const assignedTo = [...new Set(workflow.First_Level.map(user => user.name).flat())];
 		updateTasksDto.type = "Re-sent"
 		updateTasksDto.assignedTo = assignedTo
 		updateTasksDto.complaints.status = "Re-sent"
 		updateTasksDto.status = "Re-sent"
 		// if(file){
-		// 	updateTasksDto.actions['firstResend'].Attach = await this.filesAzureService.uploadFile(file, "complaint"); 
+		// 	updateTasksDto.actions['firstResend'].Attach = await this.filesAzureService.uploadFile(file, "complaint");
 		// }
 		const complaint_update = updateTasksDto.complaints
 		delete complaint_update.category
@@ -497,7 +497,7 @@ export class TasksServices {
 		const elastic_data = updateTasksDto;
 		delete updateTasksDto.complaints;
 		delete updateTasksDto.action_role;
-		
+
 		await this.tasksRepository.update(id, updateTasksDto);
 		await this.elasticService.updateDocument('tasks', id, elastic_data);
 		const users = await this.usersService.getUsersByRoles(updateTasksDto.assignedTo)
@@ -508,32 +508,32 @@ export class TasksServices {
 
 	async sendEmail(email_user: string[], complaint_update: any) {
 		const emailResult = await this.emailService.sendEmail(
-			email_user, 
-			"nazir.alkahwaji@gmail.com", 
-			"Complaint Actions", 
+			email_user,
+			"digital@citymall.jo",
+			"Complaint Actions",
 			"Take Actions",
-			" ", 
-			complaint_update.id,  
-			"System", 
+			" ",
+			complaint_update.id,
+			"System",
 			"1",
 			`https://main.d3n0sp6u84gnwb.amplifyapp.com/#/complaint/${complaint_update.id}/details`
 		);
 		if (!emailResult.success) {
 			console.warn(`Email notification partially failed: ${emailResult.error}`);
 		}
-	}	
+	}
 
 	async updateEscalation(id: string, updateTasksDto: UpdateTaskServicesDto) {
 		// const task_data = await this.findOne(id)
 		const data = updateTasksDto.complaints;
-		
+
 		// Ensure metadata exists and set escalation flag
 		if (data) {
 			if (!data.metadata) {
 				data.metadata = {};
 			}
 			data.metadata.escalation = true;
-			
+
 			// Update complaint in database and elasticsearch
 			await this.complaintsRepository.update(
 				{ id: data.id, customerId: data.customerId, categoryId: data.categoryId, touchpointId: data.touchpointId },
@@ -541,7 +541,7 @@ export class TasksServices {
 			);
 			await this.elasticService.updateDocument('complaints', data.id, data);
 		}
-		
+
 		const elastic_data = updateTasksDto;
 		delete updateTasksDto.complaints;
 		await this.tasksRepository.update(id, updateTasksDto);
