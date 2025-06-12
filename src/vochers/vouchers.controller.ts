@@ -35,9 +35,15 @@ export class VouchersController {
     @Query('page') page: number,
     @Query('perPage') perPage: number,
     @Query('search') search?: string,
+    @Query('denomination') denomination?: string,
+    @Query('type_sale') type_sale?: string,
+    @Query('state') state?: string,
   ) {
     const filterOptions = {
-      search
+      search,
+	    denomination,
+	    type_sale,
+	    state
   };
     return this.vouchersService.findAll(page, perPage, filterOptions);
   }

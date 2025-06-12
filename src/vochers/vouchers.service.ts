@@ -26,35 +26,47 @@ export class VouchersService {
   async findAll(page, perPage, filterOptions) {
     page = page || 1;
     perPage = perPage || 10;
-    const queryBuilder = this.vouchersRepository.createQueryBuilder('user');
+	  const queryBuilder = this.vouchersRepository.createQueryBuilder('voucher');
 
-    // Apply filters based on filterOptions
-    if (filterOptions) {
-      if (filterOptions.search) {
-        const searchString = await filterOptions.search.startsWith(' ')
-          ? filterOptions.search.replace(' ', '+')
-          : filterOptions.search;
-        filterOptions.search = searchString
-        queryBuilder.andWhere("(user.serialNumber ILIKE :search OR (\"user\".metadata->>'Client_ID')::text ILIKE :search)", {
-          search: `%${filterOptions.search}%`,
-        });
+	 if(filterOptions){
+	  if (filterOptions.search) {
+		  const search = filterOptions.search.trim();
+		  queryBuilder.andWhere(
+			  `(voucher.serialNumber ILIKE :search OR (voucher.metadata->>'Client_ID') ILIKE :search)`,
+			  { search: `%${search}%` }
+		  );
+	  }
 
-      }
-      queryBuilder.orderBy('user.updatedAt', 'DESC');
+	  if (filterOptions.type_sale) {
+		  queryBuilder.andWhere(
+			  `(voucher.metadata->>'type_sale') = :type_sale`,
+			  { type_sale: filterOptions.type_sale }
+		  );
+	  }
 
-      Object.keys(filterOptions).forEach(key => {
-        if (key !== 'search' && filterOptions[key]) {
-          queryBuilder.andWhere(`user.${key} = :${key}`, { [key]: filterOptions[key] });
-        }
-      });
-    }
+	  if (filterOptions.denomination) {
+		  queryBuilder.andWhere(
+			  `(voucher.metadata->>'Denomination') = :denomination`,
+			  { denomination: filterOptions.denomination }
+		  );
+	  }
 
-    const [data, total] = await queryBuilder
-      .skip((page - 1) * perPage)
-      .take(perPage)
-      .getManyAndCount();
+	  if (filterOptions.state) {
+		  queryBuilder.andWhere(
+			  `voucher.state = :state`,
+			  { state: filterOptions.state }
+		  );
+	  }
+	  }
 
-    return { data, total };
+	  queryBuilder.orderBy('voucher.updatedAt', 'DESC');
+
+	  const [data, total] = await queryBuilder
+		  .skip((page - 1) * perPage)
+		  .take(perPage)
+		  .getManyAndCount();
+
+	  return { data, total };
   }
 
   async findOne(id: string) {
