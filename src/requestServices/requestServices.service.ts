@@ -61,7 +61,7 @@ export class RequestServicesService {
           customerData.email,
           null,
         );
-        
+
         // If customer exists with the same email, check phone number match
         if (customer && customerData.phone_number) {
           if (customer.phone_number !== customerData.phone_number) {
@@ -71,20 +71,20 @@ export class RequestServicesService {
               HttpStatus.BAD_REQUEST
             );
           }
-          
+
           // Phone numbers match, proceed with update
           await this.customerService.update(customer.id, { ...customerData });
           return;
         }
       }
-      
+
       // If no match by email, check by phone number
       if (customerData.phone_number) {
         customer = await this.customerService.doesEmailOrPhoneExist(
           null,
           customerData.phone_number,
         );
-        
+
         if (customer) {
           // If customer exists with different email, check if trying to change email
           if (customerData.email && customer.email !== customerData.email) {
@@ -93,7 +93,7 @@ export class RequestServicesService {
               HttpStatus.BAD_REQUEST
             );
           }
-          
+
           // No email change, proceed with update
           await this.customerService.update(customer.id, { ...customerData });
         } else {
@@ -120,7 +120,7 @@ export class RequestServicesService {
     console.log(createRequestServicesDto)
     let Service;
     let savedService;
-    
+
     // Get a query runner to manage transactions
     const queryRunner = this.requestServicesRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
@@ -136,7 +136,7 @@ export class RequestServicesService {
       if (createRequestServicesDto?.metadata?.customer) {
         await this.handleCustomerData(createRequestServicesDto.metadata.customer);
       }
-      
+
       // Process parents data for lost children services
       if (createRequestServicesDto?.metadata?.parents) {
         await this.handleCustomerData(createRequestServicesDto.metadata.parents);
@@ -196,7 +196,7 @@ export class RequestServicesService {
 
         // Update the total value in metadata
         Service.metadata.value = totalValue;
-        
+
         // Resave the service with updated total value
         savedService = await queryRunner.manager.save(Service);
 
@@ -231,7 +231,7 @@ export class RequestServicesService {
             );
           }
         }
-        
+
         // Try to index in Elasticsearch
         try {
           await this.elasticService.indexData('services', savedService.id, savedService);
@@ -243,7 +243,7 @@ export class RequestServicesService {
             HttpStatus.INTERNAL_SERVER_ERROR,
           );
         }
-        
+
         // SMS is now sent only after both database and Elasticsearch operations succeed
         if (createRequestServicesDto.type === 'Individual Voucher Sale') {
           const numbers =
@@ -275,7 +275,7 @@ export class RequestServicesService {
         );
 
 
-        
+
         // Save using transaction
         savedService = await queryRunner.manager.save(Service);
         // Try to index in Elasticsearch
@@ -294,7 +294,7 @@ export class RequestServicesService {
             HttpStatus.INTERNAL_SERVER_ERROR,
           );
         }
-        
+
         // Send SMS messages only after both database and Elasticsearch operations succeed
         if (createRequestServicesDto.type === 'Found Child') {
           if (createRequestServicesDto.metadata.parents.phone_number) {
@@ -320,10 +320,10 @@ export class RequestServicesService {
           await this.smsService.sendSms(numbers, message, numbers);
         }
       }
-      
+
       // If everything is successful, commit the transaction
       await queryRunner.commitTransaction();
-      
+
     } catch (error) {
       // Roll back the transaction on any error
       await queryRunner.rollbackTransaction();
@@ -705,7 +705,7 @@ export class RequestServicesService {
             language
           ];
         await this.smsService.sendSms(numbers, message, numbers);
-  
+
       }
     }
 
@@ -857,7 +857,7 @@ export class RequestServicesService {
       updateRequestServicesDto.state === 'Closed'
     ) {
       if (
-        data.type === 'Incident Reporting' 
+        data.type === 'Incident Reporting'
       ) {
         updateRequestServicesDto.metadata.closedAt = new Date();
       }
@@ -972,7 +972,7 @@ export class RequestServicesService {
       if (type === 'Handsfree Request') {
         completedState = 'Bags Returned';
       } else if (type === 'Wheelchair & Stroller Request' || type === 'Power Bank Request') {
-        completedState = 'Item Returned';
+	     completedState = ['Item Returned', 'Item Not Returned', 'Closed'];
       }
 
       // Query Elasticsearch for active services of the specified type
@@ -984,8 +984,7 @@ export class RequestServicesService {
               { match: { 'metadata.customer.phone_number': phoneNumber } },
             ],
             must_not: [
-              { match: { 'state.keyword': completedState } },
-              { match: { 'state.keyword': 'Closed' } }
+              { match: { 'state.keyword': completedState } }
             ]
           }
         }
