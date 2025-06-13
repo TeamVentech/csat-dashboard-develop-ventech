@@ -967,12 +967,12 @@ export class RequestServicesService {
   async checkActiveServicesByType(type: string, phoneNumber: string) {
     try {
       // Determine the completed state based on service type
-      let completedState = 'Closed';
+	    let completedState = ['Closed'];
 
       if (type === 'Handsfree Request') {
-        completedState = 'Bags Returned';
+	      completedState = ['Bags Returned'];
       } else if (type === 'Wheelchair & Stroller Request' || type === 'Power Bank Request') {
-	     completedState = ['Item Returned', 'Item Not Returned', 'Closed'];
+	      completedState = ['Item Returned', 'Item Not Returned', 'Closed'];
       }
 
       // Query Elasticsearch for active services of the specified type
