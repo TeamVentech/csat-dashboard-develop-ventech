@@ -972,7 +972,7 @@ export class RequestServicesService {
       if (type === 'Handsfree Request') {
 	      completedState = ['Bags Returned'];
       } else if (type === 'Wheelchair & Stroller Request' || type === 'Power Bank Request') {
-	      completedState = ['Item Returned', 'Item Not Returned', 'Closed'];
+	      completedState = ['Item Returned', 'Item not Returned', 'Item Not Returned', 'Closed'];
       }
 
       // Query Elasticsearch for active services of the specified type
