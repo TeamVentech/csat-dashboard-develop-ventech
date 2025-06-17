@@ -90,7 +90,7 @@ export class TransactionSurveyService {
 						metadata: {
 							additional_information: '',
 							answer: answer.answer,
-							channel: 'survey',
+							channel: 'Survey',
 							contact_choices: '',
 							time_incident: surveyData?.createdAt,
 							survey_id: createTransactionSurveyDto.surveyId,

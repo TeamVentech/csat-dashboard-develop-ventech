@@ -68,7 +68,6 @@ export class ComplaintsController {
   elasticSerchQurey(
     @Body() data: any,
   ) {
-    console.log(data)
     return this.elasticSearchService.search("complaints", data.query, data.page, data.perPage);
   }
 

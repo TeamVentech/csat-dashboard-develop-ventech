@@ -325,13 +325,13 @@ export class ElasticService {
         if(query?.search) {
             // Check if search starts with any service ID prefix
             const prefixes = ['LC-', 'FC-', 'LF-', 'CMP-', 'SUG-', 'CMT-', 'GVS-C-', 'GVS-I-', 'W-S-', 'PB-', 'HF-', 'INC-', 'SRV-'];
-            
+
             if (prefixes.some(prefix => query.search.startsWith(prefix))) {
                 // If search term looks like a service ID, use term query on serviceId field
-                must.push({ 
-                    term: { 
-                        "serviceId.keyword": query.search 
-                    } 
+                must.push({
+                    term: {
+                        "serviceId.keyword": query.search
+                    }
                 });
             } else {
                 // Otherwise, use the standard query_string search
@@ -616,12 +616,12 @@ export class ElasticService {
         }
         if(query?.search) {
             const prefixes = ['#LC-', '#FC-', '#LF-', '#CMP-', '#SUG-', '#CMT-', '#GVS-C-', '#GVS-I-', '#W-S-', '#PB-', '#HF-', '#INC-', '#SRV-', '#CO-'];
-            
+
             if (prefixes.some(prefix => query.search.startsWith(prefix))) {
-                must.push({ 
-                    term: { 
-                        "complaintId.keyword": query.search 
-                    } 
+                must.push({
+                    term: {
+                        "complaintId.keyword": query.search
+                    }
                 });
             } else {
                 // Otherwise, use the standard query_string search

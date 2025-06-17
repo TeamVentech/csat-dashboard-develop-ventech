@@ -39,9 +39,15 @@ export class CommentController {
     @Query('perPage') perPage: number,
     @Query('search') search?: string,
     @Query('state') state?: string,
+    @Query('status') status?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     const filterOptions = {
       search,
+      status,
+      from,
+      to,
     };
     return this.requestServicesService.findAll(
       page,

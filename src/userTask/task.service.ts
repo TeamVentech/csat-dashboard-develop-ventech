@@ -456,7 +456,7 @@ export class TasksServices {
 		delete updateTasksDto.complaints
 		delete updateTasksDto.action_role
 
-		console.log(elastic_data)
+		// console.log(updateTasksDto)
 		await this.tasksRepository.update(id, updateTasksDto)
 		await this.elasticService.updateDocument('tasks', id, elastic_data)
 
