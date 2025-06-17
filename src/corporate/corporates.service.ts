@@ -15,6 +15,11 @@ export class CorporatesService {
 
   async create(createCorporateDto: CreateCorporateDto): Promise<Corporate> {
     try {
+	    // Check if name already exists
+	    const existing = await this.corporateRepository.findOne({ where: { name: createCorporateDto.name } });
+	    if (existing) {
+		    throw new HttpException('A corporate with this name already exists', HttpStatus.CONFLICT);
+	    }
       // Format phone number if provided
       if (createCorporateDto.phone_number) {
         createCorporateDto.phone_number = PhoneValidator.formatPhoneNumber(createCorporateDto.phone_number);
@@ -26,7 +31,7 @@ export class CorporatesService {
         }
         createCorporateDto.email = createCorporateDto.email.toLowerCase();
       }
-      
+      console.log(createCorporateDto)
       const Corporate = this.corporateRepository.create(createCorporateDto);
       return this.corporateRepository.save(Corporate);
     } catch (error) {
@@ -113,20 +118,20 @@ export class CorporatesService {
 
   async update(id: string, updateCorporateDto: UpdateCorporateDto): Promise<Corporate> {
     await this.findOne(id);
-    
+
     // Format phone number if provided in update
     if (updateCorporateDto.phone_number) {
       updateCorporateDto.phone_number = PhoneValidator.formatPhoneNumber(updateCorporateDto.phone_number);
     }
-    
+
     if (updateCorporateDto.email) {
       if (!this.validateEmail(updateCorporateDto.email)) {
         throw new HttpException('Invalid email format', HttpStatus.BAD_REQUEST);
       }
       updateCorporateDto.email = updateCorporateDto.email.toLowerCase();
     }
-        
-    
+
+
     await this.corporateRepository.update(id, updateCorporateDto);
     return this.findOne(id);
   }
@@ -143,7 +148,7 @@ export class CorporatesService {
 
   async removeMultiple(ids: string[]): Promise<any> {
     const results = [];
-    
+
     for (const id of ids) {
       try {
         const corporate = await this.findOne(id);
@@ -153,7 +158,7 @@ export class CorporatesService {
         results.push({ id, success: false, message: error.message });
       }
     }
-    
+
     return {
       message: 'Corporates deletion completed',
       results
