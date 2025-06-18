@@ -4,7 +4,7 @@ import axios from 'axios'
 @Injectable()
 export class SmsService {
 	async sendSms(data: any, message: string, number: string) {
-		const senderId = 'City Mall'
+		const senderId = 'srvCityMall'
 		const numbers = number
 		const accName = 'CityMall'
 		const accPass = 'G_PAXDujRvrw_KoD'
