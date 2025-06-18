@@ -3,6 +3,7 @@ import {
   UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
+  ValidationPipe,
 } from '@nestjs/common';
 import { RequestServicesService } from './requestServices.service';
 import { CreateRequestServicesDto } from './dto/create.dto';
@@ -18,6 +19,8 @@ import { LostChildChartDto } from './dto/lost-child-chart.dto';
 import { LostChildLocationChartDto } from './dto/lost-child-location-chart.dto';
 import { LostChildDurationDto } from './dto/lost-child-duration.dto';
 import { SuggestionChartDto } from './dto/suggestion-chart.dto';
+import { AdditionalPickupRequestHandfreeDto } from './dto/additional-pickup-request-handfree.dto';
+
 
 @Controller('request-services')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -81,7 +84,15 @@ export class RequestServicesController {
     return this.requestServicesService.update(id, updateRequestServicesDto);
   }
 
-  
+  @Patch('add-additional-pickup-request-handfree/:id')
+  @Permissions('Customer Care Center::update')
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  additionalPickupRequestHandfree(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) body: AdditionalPickupRequestHandfreeDto
+  ) {
+    return this.requestServicesService.additionalPickupRequestHandfree(id, body);
+  }
 
   @Patch(':id/rating')
   rating(@Param('id') id: string, @Body() rate: any) {
