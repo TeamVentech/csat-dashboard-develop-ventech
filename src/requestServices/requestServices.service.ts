@@ -22,7 +22,7 @@ import {
 	PowerBankHandler,
 	HandsfreeHandler,
 } from './handlers'
-import { SmsService } from './services/sms.service'
+import { SmsService } from 'sms/sms.service'
 import { ComplaintsService } from 'complaint/complaint.service'
 import { AddedValueServiceHandler } from './handlers/added-value-service.handler'
 import {
@@ -1048,3 +1048,5 @@ export class RequestServicesService {
 		return this.requestServicesRepository.findOne({ where: { id } })
 	}
 }
+
+

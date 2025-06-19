@@ -5,8 +5,8 @@ import { CreateVouchersDto } from './dto/create.dto';
 import { UpdateVouchersDto } from './dto/update.dto';
 import { RequestServices } from 'requestServices/entities/requestServices.entity';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
-import axios from 'axios';
 import SmsMessage from 'requestServices/messages/smsMessages';
+import { SmsService } from 'sms/sms.service';
 
 @Injectable()
 export class VouchersService {
@@ -16,6 +16,7 @@ export class VouchersService {
     @Inject('REQUEST_SERVICES_REPOSITORY')
     private readonly requestServiceRepository: Repository<RequestServices>,
     private readonly elasticService: ElasticService,
+    private readonly smsService: SmsService,
   ) { }
 
   async create(createVouchersDto: CreateVouchersDto) {
@@ -415,7 +416,7 @@ export class VouchersService {
           }
           voucher_data.metadata.extanded = true;
           voucher_data.metadata.status = "Extended";
-          let specificDate = new Date(service.metadata.Expiry_date);
+          const specificDate = new Date(service.metadata.Expiry_date);
           specificDate.setDate(specificDate.getDate() + 14);
           voucher_data.metadata.extanded_expired_date = specificDate.toISOString();
           voucher_data.metadata.extendedBy = data.extendedBy;
@@ -484,22 +485,7 @@ export class VouchersService {
     await this.vouchersRepository.remove(Vouchers);
   }
   async sendSms(data: any, message: any, number: string) {
-    const senderId = 'City Mall';
-    const numbers = number
-    const accName = 'CityMall';
-    const accPass = 'G_PAXDujRvrw_KoD';
-
-    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-    const response = await axios.get(smsUrl, {
-      params: {
-        senderid: senderId,
-        numbers: numbers,
-        accname: accName,
-        AccPass: accPass,
-        msg: encodeURIComponent(message)
-
-      },
-    });
+    return await this.smsService.sendSms(data, message, number);
   }
 
   async updateNameCategory(id: string, updateData: { name?: string; categoryId?: string }) {

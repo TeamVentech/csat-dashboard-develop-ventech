@@ -12,7 +12,7 @@ import { CustomersModule } from 'customers/customers.module';
 import { WheelchairStrollerHandler } from './handlers/wheelchair-stroller.handler';
 import { PowerBankHandler } from './handlers/power-bank.handler';
 import { HandsfreeHandler } from './handlers/handsfree.handler';
-import { SmsService } from './services/sms.service';
+import { SmsModule } from 'sms/sms.module';
 import { ComplaintsModule } from 'complaint/complaint.module';
 import { AddedValueServiceHandler } from './handlers/added-value-service.handler';
 import { LostItemStatisticsService } from './services/lost-item-statistics.service';
@@ -45,6 +45,7 @@ import { CommentModule } from 'comment/comment.module';
     ServicesModule,
     CustomersModule,
     ComplaintsModule,
+    SmsModule,
     forwardRef(() => CommentModule),
   ],
   controllers: [
@@ -69,7 +70,6 @@ import { CommentModule } from 'comment/comment.module';
     WheelchairStrollerHandler,
     PowerBankHandler,
     HandsfreeHandler,
-    SmsService,
     AddedValueServiceHandler,
     LostItemStatisticsService,
     IncidentStatisticsService,

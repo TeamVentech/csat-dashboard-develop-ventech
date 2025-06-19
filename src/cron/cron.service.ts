@@ -13,6 +13,7 @@ import { VouchersService } from 'vochers/vouchers.service';
 import axios from 'axios';
 import SmsMessage from 'requestServices/messages/smsMessages';
 import { resolveSrv } from 'dns/promises';
+import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class CronsService {
@@ -22,6 +23,7 @@ export class CronsService {
     private readonly elasticService: ElasticService,
     private readonly requestServicesService: RequestServicesService,
     private readonly vouchersService: VouchersService,
+    private readonly smsService: SmsService,
   ) { }
 
 
@@ -179,39 +181,11 @@ export class CronsService {
   }
 
   async sendSms(data: any, message: any, number: string) {
-    const senderId = 'City Mall';
-    const numbers = number
-    const accName = 'CityMall';
-    const accPass = 'G_PAXDujRvrw_KoD';
-
-    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
-    const response = await axios.get(smsUrl, {
-      params: {
-        senderid: senderId,
-        numbers: numbers,
-        accname: accName,
-        AccPass: accPass,
-        msg: encodeURIComponent(message)
-
-      },
-    });
+    return await this.smsService.sendSms(data, message, number);
   }
-  async sendSmss(data: any, message: string, number: string) {
-    const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`;
 
-    try {
-      const response = await axios.get(smsUrl, {
-        params: {
-          senderid: 'City Mall',
-          numbers: number,
-          accname: 'CityMall',
-          AccPass: 'G_PAXDujRvrw_KoD',
-          msg: encodeURIComponent(message),
-        },
-      });
-    } catch (error) {
-      console.error(`Failed to send SMS to ${number}:`, error);
-    }
+  async sendSmss(data: any, message: string, number: string) {
+    return await this.smsService.sendSms(data, message, number);
   }
 
   async checkUserConsent(number: string): Promise<boolean> {

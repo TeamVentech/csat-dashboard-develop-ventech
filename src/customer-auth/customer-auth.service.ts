@@ -1,9 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import axios from 'axios'
-import { CustomersService } from '../customers/customers.service'
-import { TenantsService } from '../tenants/tenants.service'
+import { CustomersService } from 'customers/customers.service'
+import { TenantsService } from 'tenants/tenants.service'
+import { SmsService } from 'sms/sms.service'
 
 @Injectable()
 export class CustomerAuthService {
@@ -15,6 +15,7 @@ export class CustomerAuthService {
 		private configService: ConfigService,
 		private customersService: CustomersService,
 		private tenantsService: TenantsService, // Added TenantsService
+		private smsService: SmsService,
 	) {
 	}
 
@@ -107,20 +108,6 @@ export class CustomerAuthService {
 	}
 
 	async sendSms(data: any, message: any, number: string) {
-		const senderId = 'City Mall'
-		const numbers = number
-		const accName = 'CityMall'
-		const accPass = 'G_PAXDujRvrw_KoD'
-
-		const smsUrl = `https://josmsservice.com/SMSServices/Clients/Prof/RestSingleSMS_General/SendSMS`
-		const response = await axios.get(smsUrl, {
-			params: {
-				senderid: senderId,
-				numbers: numbers,
-				accname: accName,
-				AccPass: accPass,
-				msg: encodeURIComponent(message),
-			},
-		})
+		return await this.smsService.sendSms(data, message, number)
 	}
 }
