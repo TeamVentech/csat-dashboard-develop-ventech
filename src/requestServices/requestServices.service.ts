@@ -540,6 +540,7 @@ export class RequestServicesService {
 
 	async update(id: string, updateRequestServicesDto: UpdateRequestServicesDto) {
 		const data = await this.findOneColumn(id)
+		const language = data?.metadata?.IsArabic ? 'ar' : 'en'
 
 		// Prevent manual change to 'Pending Internal' for Incident Reporting cases if 24 hours haven't passed
 		if (
@@ -572,9 +573,6 @@ export class RequestServicesService {
 			updateRequestServicesDto.type === 'Lost Child'
 		) {
 			const numbers = data?.metadata?.parents?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
 			const message =
 				SmsMessage[updateRequestServicesDto.type][
 					updateRequestServicesDto.state
@@ -653,13 +651,7 @@ export class RequestServicesService {
 				}
 
 			}
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
-			const message =
-				SmsMessage[updateRequestServicesDto.type][
-					updateRequestServicesDto.state
-					][language]
+			const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
 
 			await this.smsService.sendSms(
 				numbers,
@@ -676,7 +668,7 @@ export class RequestServicesService {
 			const numbers =
 				updateRequestServicesDto?.metadata?.customer?.phone_number ||
 				updateRequestServicesDto?.metadata?.Company?.constact?.phone_number
-			const message = updateRequestServicesDto.metadata.isArabic
+			const message = data?.metadata?.isArabic
 				? 'عزيزي العميل، تم العثور على طفلكم وهو الآن في مكتب خدمة العملاء بالطابق الأرضي في سيتي مول. يُرجى إحضار هوية سارية لاستلام الطفل. لمزيد من المساعدة، يُرجى الاتصال على [رقم خدمة العمsلاء].'
 				: 'Dears Customer, your child has been found and is safe at the Customer Care Desk on the Ground Floor of City Mall. Please bring a valid ID to collect your child.'
 			await this.smsService.sendSms(numbers, message, numbers)
@@ -688,7 +680,7 @@ export class RequestServicesService {
 		) {
 			const numbers =
 				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const message = updateRequestServicesDto.metadata.isArabic
+			const message = data?.metadata?.isArabic
 				? 'السلعة تالفة، وفقًا للسياسة، يلزم دفع مبلغ 20 دينارًا أردنيًا'
 				: 'The item is damaged. As per policy, a payment of 20 JDs is required'
 			await this.smsService.sendSms(numbers, message, numbers)
@@ -696,9 +688,6 @@ export class RequestServicesService {
 
 		if (updateRequestServicesDto?.actions === 'Awaiting Collection Child') {
 			const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
 			updateRequestServicesDto.state = 'Awaiting Collection'
 			const message =
 				SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
@@ -710,33 +699,19 @@ export class RequestServicesService {
 		if (updateRequestServicesDto?.actions === 'Awaiting Collection Item') {
 			const numbers =
 				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
 			if (updateRequestServicesDto.state !== 'Awaiting Collection') {
 				updateRequestServicesDto.state = 'Awaiting Collection'
-				const message =
-					SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][
-						language
-						]
+				const message = SmsMessage[updateRequestServicesDto.type]['Awaiting Collection'][language]
 				await this.smsService.sendSms(numbers, message, numbers)
-
 			}
 		}
 
 		if (updateRequestServicesDto?.actions === 'Send Damage SMS') {
-			const numbers =
-				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
+			const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
 			updateRequestServicesDto.metadata.sendDamageSms = true
 			let message = ''
 			if (updateRequestServicesDto.type === 'Power Bank Request') {
-				message =
-					SmsMessage[updateRequestServicesDto.type][
-						updateRequestServicesDto.metadata.condition
-						][language]
+				message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.metadata.condition][language]
 			} else {
 				message = SmsMessage['Wheelchair Request']['Damaged'][language]
 			}
@@ -745,7 +720,7 @@ export class RequestServicesService {
 
 		if (updateRequestServicesDto?.actions === 'Awaiting Collection') {
 			const numbers = updateRequestServicesDto?.metadata?.parents?.phone_number
-			const message = updateRequestServicesDto?.metadata?.IsArabic
+			const message = data?.metadata?.isArabic
 				? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
 				: `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
 			await this.smsService.sendSms(numbers, message, numbers)
@@ -755,43 +730,27 @@ export class RequestServicesService {
 			updateRequestServicesDto?.actions === 'in_progress_item' ||
 			updateRequestServicesDto?.actions === 'ArticleFound'
 		) {
-			const numbers =
-				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
+			const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
 			if (updateRequestServicesDto?.actions === 'ArticleFound') {
-				const message =
-					SmsMessage[updateRequestServicesDto.type]['Article Found'][language]
+				const message = SmsMessage[updateRequestServicesDto.type]['Article Found'][language]
 				await this.smsService.sendSms(
 					numbers,
 					`${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
 					numbers,
 				)
 			} else {
-				const message =
-					SmsMessage[updateRequestServicesDto.type]['In Progress'][language]
+				const message = SmsMessage[updateRequestServicesDto.type]['In Progress'][language]
 				await this.smsService.sendSms(numbers, message, numbers)
 			}
 		}
 		if (updateRequestServicesDto?.actions === 'in_progress_item_3') {
-			const numbers =
-				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
-			const message =
-				SmsMessage[updateRequestServicesDto.type]['In Progress Day 3'][
-					language
-					]
+			const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+			const message = SmsMessage[updateRequestServicesDto.type]['In Progress Day 3'][language]
 			await this.smsService.sendSms(numbers, message, numbers)
 		}
 		if (updateRequestServicesDto?.actions === 'in_progress_item_7') {
 			const numbers =
 				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
 			const message =
 				SmsMessage[updateRequestServicesDto.type]['Article Not Found'][
 					language
@@ -802,9 +761,6 @@ export class RequestServicesService {
 			const numbers =
 				data?.metadata?.customer?.phone_number ||
 				data?.metadata?.Company?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
 			const message =
 				SmsMessage[updateRequestServicesDto.type]['Refunded'][language]
 			await this.smsService.sendSms(
@@ -817,16 +773,13 @@ export class RequestServicesService {
 			const numbers =
 				data?.metadata?.customer?.phone_number ||
 				data?.metadata?.Company?.phone_number
-			const message = updateRequestServicesDto?.metadata?.IsArabic
+			const message = data?.metadata?.isArabic
 				? `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
 				: `Your Child Found Location : Floor : ${updateRequestServicesDto.metadata.location.floor}, Area : ${updateRequestServicesDto.metadata.location.tenant}`
 			await this.smsService.sendSms(numbers, message, numbers)
 		}
 		if (updateRequestServicesDto?.actions === 'In Service') {
 			const numbers = data?.metadata?.customer?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
 			const message =
 				SmsMessage[updateRequestServicesDto.type][
 					updateRequestServicesDto.state
@@ -881,18 +834,12 @@ export class RequestServicesService {
 				data?.metadata?.customer?.phone_number ||
 				data?.metadata?.Company?.constact?.phone_number ||
 				updateRequestServicesDto?.metadata?.parents?.phone_number
-			const language = updateRequestServicesDto?.metadata?.IsArabic
-				? 'ar'
-				: 'en'
-			const message =
-				SmsMessage[updateRequestServicesDto.type][
-					updateRequestServicesDto.state
-					][language]
+			const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
 			if (
 				updateRequestServicesDto.type === 'Found Child' ||
 				updateRequestServicesDto.type === 'Lost Child'
 			) {
-				const messageFound = updateRequestServicesDto.metadata.IsArabic ? message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n نتمنى سلامتكم` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`
+				const messageFound = data?.metadata?.isArabic ? message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n نتمنى سلامتكم` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`
 				await this.smsService.sendSms(
 					numbers,
 					`${messageFound}`,

@@ -333,27 +333,27 @@ export class TasksServices {
 		switch (action_role) {
 			case 'CX_Team':
 				if (!workflow.First_Level || !Array.isArray(workflow.First_Level) || !workflow.GM || !Array.isArray(workflow.GM)) {
-					throw new NotFoundException('workflow sub-category missing , or they are not valid arrays')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 			case 'first_role':
 				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 			case 'final_role':
 				if (!workflow.CX_Team || !Array.isArray(workflow.CX_Team)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 			case 'resend_role':
 				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 			case 'CX_Check_Team':
 				if (!workflow.CX_Team || !Array.isArray(workflow.CX_Team)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 		}
@@ -366,17 +366,17 @@ export class TasksServices {
 		switch (action_role) {
 			case 'first_role':
 				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 			case 'final_role':
 				if (!workflow.CX_Team || !Array.isArray(workflow.CX_Team)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 			case 'resend_role':
 				if (!workflow.Final_Level || !Array.isArray(workflow.Final_Level)) {
-					throw new NotFoundException('workflow sub-category missing, or it is not a valid array')
+					throw new NotFoundException('Workflow sub-category missing')
 				}
 				break
 
