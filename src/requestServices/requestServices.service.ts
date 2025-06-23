@@ -118,7 +118,6 @@ export class RequestServicesService {
 	}
 
 	async create(createRequestServicesDto: CreateRequestServicesDto) {
-		console.log(createRequestServicesDto)
 		let Service
 		let savedService
 
@@ -246,6 +245,7 @@ export class RequestServicesService {
 				}
 
 				// SMS is now sent only after both database and Elasticsearch operations succeed
+				const voucherMessageType = createRequestServicesDto?.metadata?.payment_method === 'Exchange' ? 'Extended' : 'Sold'
 				if (createRequestServicesDto.type === 'Individual Voucher Sale') {
 					const numbers =
 						createRequestServicesDto?.metadata?.customer?.phone_number
@@ -253,7 +253,7 @@ export class RequestServicesService {
 						? 'ar'
 						: 'en'
 					const message =
-						SmsMessage[createRequestServicesDto.type]['Sold'][language]
+						SmsMessage[createRequestServicesDto.type][voucherMessageType][language]
 					await this.smsService.sendSms(
 						numbers,
 						`${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`,
@@ -266,7 +266,7 @@ export class RequestServicesService {
 						? 'ar'
 						: 'en'
 					const message =
-						SmsMessage[createRequestServicesDto.type]['Sold'][language]
+						SmsMessage[createRequestServicesDto.type][voucherMessageType][language]
 					await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`, numbers)
 				}
 			} else {
@@ -616,6 +616,20 @@ export class RequestServicesService {
 			}
 			updateRequestServicesDto.metadata.value = totalValue
 		}
+		//update vouchers metadata when purchase reason is changed
+		if (updateRequestServicesDto.name === 'Gift Voucher Sales' && data?.metadata?.purchase_reason !== updateRequestServicesDto?.metadata?.purchase_reason) {
+			for (let i = 0; i < data.metadata.voucher.length; i++) {
+				for (let j = 0; j < data.metadata.voucher[i].vouchers.length; j++) {
+					data.metadata.voucher[i].vouchers[j].metadata.purchase_reason =
+						updateRequestServicesDto?.metadata?.purchase_reason
+					await this.vouchersService.update(
+						data.metadata.voucher[i].vouchers[j].id,
+						data.metadata.voucher[i].vouchers[j],
+					)
+				}
+			}
+		}
+
 
 		if (
 			data.state === 'Open' &&
