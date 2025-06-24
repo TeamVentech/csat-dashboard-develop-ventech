@@ -513,7 +513,7 @@ export class RequestServicesService {
 	async findOne(id: string) {
 		const RequestServices = await this.elasticService.getById('services', id)
 		if (!RequestServices) {
-			throw new NotFoundException(`Department with ID ${id} not found`)
+			throw new NotFoundException(`Service with ID ${id} not found`)
 		}
 		return RequestServices.data
 	}
@@ -523,7 +523,7 @@ export class RequestServicesService {
 			where: { id: id },
 		})
 		if (!RequestServices) {
-			throw new NotFoundException(`Department with ID ${id} not found`)
+			throw new NotFoundException(`Service with ID ${id} not found`)
 		}
 		return RequestServices
 	}
@@ -533,7 +533,7 @@ export class RequestServicesService {
 			where: { type: type },
 		})
 		if (!RequestServices) {
-			throw new NotFoundException(`Department with ID ${type} not found`)
+			throw new NotFoundException(`Service with ID ${type} not found`)
 		}
 		return RequestServices
 	}
@@ -926,7 +926,7 @@ export class RequestServicesService {
 	 * @param phoneNumber Customer's phone number
 	 * @returns Object with hasActiveService flag and serviceDetails if applicable
 	 */
-	async checkActiveServicesByType(type: string, phoneNumber: string) {
+	async checkActiveServicesByType(type: string, phoneNumber: string, subtype: string) {
 		try {
 			// Determine the completed state based on service type
 			let completedState = ['Closed']
@@ -937,14 +937,20 @@ export class RequestServicesService {
 				completedState = ['Item Returned', 'Item not Returned', 'Item Not Returned', 'Closed']
 			}
 
+			const must: any[] = [
+				{ match: { 'type.keyword': type } },
+				{ match: { 'metadata.customer.phone_number': phoneNumber } },
+			]
+
+			if (type === 'Wheelchair & Stroller Request' && subtype) {
+				must.push({ match: { 'metadata.type': subtype } }) //subtype is Wheelchair or Stroller
+			}
+
 			// Query Elasticsearch for active services of the specified type
 			const activeServices = await this.elasticService.searchByQuery('services', {
 				query: {
 					bool: {
-						must: [
-							{ match: { 'type.keyword': type } },
-							{ match: { 'metadata.customer.phone_number': phoneNumber } },
-						],
+						must,
 						must_not: [
 							{ terms: { 'state.keyword': completedState } },
 						],

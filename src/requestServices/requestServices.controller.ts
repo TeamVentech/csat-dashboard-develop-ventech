@@ -126,7 +126,8 @@ export class RequestServicesController {
   checkActiveService(@Body() checkActiveServiceDto: CheckActiveServiceDto) {
     return this.requestServicesService.checkActiveServicesByType(
       checkActiveServiceDto.type,
-      checkActiveServiceDto.phoneNumber
+      checkActiveServiceDto.phoneNumber,
+	  checkActiveServiceDto.subtype,
     );
   }
 
