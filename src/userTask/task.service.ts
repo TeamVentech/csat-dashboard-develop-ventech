@@ -384,7 +384,7 @@ export class TasksServices {
 	}
 
 	async update(id: string, updateTasksDto: UpdateTaskServicesDto, file: any) {
-		const task_data = await this.findOne(id)
+		// const task_data = await this.findOne(id)
 		const data = typeof updateTasksDto.complaints === 'string' ? JSON.parse(updateTasksDto.complaints) : updateTasksDto.complaints
 
 		if (typeof updateTasksDto.actions === 'string') {
@@ -452,11 +452,11 @@ export class TasksServices {
 		await this.updateComplaintStatus(updateTasksDto.complaints)
 
 		const elastic_data = { ...updateTasksDto }
+
 		const complaint_id = updateTasksDto.complaints.id
 		delete updateTasksDto.complaints
 		delete updateTasksDto.action_role
 
-		// console.log(updateTasksDto)
 		await this.tasksRepository.update(id, updateTasksDto)
 		await this.elasticService.updateDocument('tasks', id, elastic_data)
 

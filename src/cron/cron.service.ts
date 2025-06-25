@@ -28,12 +28,14 @@ export class CronsService {
 	}
 
 
-	@Cron(CronExpression.EVERY_2_HOURS)
+	// @Cron(CronExpression.EVERY_2_HOURS)
+	@Cron(CronExpression.EVERY_30_SECONDS)
 	async handleCron() {
 		const status = 'Closed'
 		const page = 1
-		const per_page = 10
+		const per_page = 100
 		const complaint_tasks = await this.elasticService.searchComplaintTask('tasks', status, page, per_page)
+		// console.log(complaint_tasks.results.length)
 		for (const task of complaint_tasks.results as any[]) {
 			if (task.createdAt) {
 				const taskDate = moment(task.createdAt)
@@ -49,8 +51,11 @@ export class CronsService {
 				if (hoursDifference >= 120 && task.type === 'Escalated 2') {
 					level = 'Escalated (Level 3)'
 				}
+				// console.log(hoursDifference,task.type)
 				if (level) {
+					console.log(taskDate, now, hoursDifference, task.type, 'Complaint ID', task.complaints.id)
 					task.type = level
+					task.action_role = 'system'
 					await this.tasksService.update(task.id, task, null)
 				}
 			} else {
