@@ -495,14 +495,20 @@ export class ElasticService {
     }
     async customer_search(index: string, query: any, page: number = 1, pageSize: number = 10) {
         const from = (page - 1) * pageSize;
+        const customerId = query.customer;
+        const esQuery = {
+            bool: {
+                should: [
+                    { match: { "metadata.customer.id": customerId } },
+                    { match: { "metadata.parents.id": customerId } }
+                ],
+                minimum_should_match: 1
+            }
+        };
         const result = await this.elasticsearchService.search({
             index,
             body: {
-                query: {
-                    query_string: {
-                        query: query.customer
-                    }
-                },
+                query: esQuery,
                 sort: [
                     {
                         createdAt: {
