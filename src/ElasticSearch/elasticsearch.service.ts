@@ -552,36 +552,32 @@ export class ElasticService {
         }
     }
 
-    async searchComplaintTask(index: string, query: any, page: number = 1, pageSize: number = 10) {
-        const from = (page - 1) * pageSize;
+    async searchComplaintTask(index: string, status: any, page: number = 1, pageSize: number = 10) {
+	    const from = (page - 1) * pageSize;
 
-        // const must: any[] = [];
-        const must_status: any[] = [];
-        // if (query?.name) {
-        //     must.push({ match: { "name": query.name } });
-        // }
-        if (query) {
-            must_status.push({ match: { "status": query } });
-        }
-        const result = await this.elasticsearchService.search({
-            index,
-            body: {
-                query: {
-                    bool: {
-                        must_not: must_status.length > 0 ? must_status : [{ match_all: {} }]
-                    },
-                },
-                sort: [
-                    {
-                        createdAt: {
-                            order: "desc"
-                        }
-                    }
-                ]
-            },
-            from,
-            size: pageSize,
-        });
+	    const mustNot: any[] = [];
+	    if (status) {
+		    mustNot.push({ match: { "status": status } });
+	    }
+	    const result = await this.elasticsearchService.search({
+		    index,
+		    body: {
+			    query: {
+				    bool: {
+					    must_not: mustNot.length > 0 ? mustNot : [{ match_all: {} }]
+				    },
+			    },
+			    sort: [
+				    {
+					    createdAt: {
+						    order: "desc"
+					    }
+				    }
+			    ]
+		    },
+		    from,
+		    size: pageSize,
+	    });
         let totalHits: number;
 
         if (typeof result.body.hits.total === 'number') {

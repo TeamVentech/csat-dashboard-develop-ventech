@@ -127,7 +127,7 @@ export class CommentService {
 				},
 				name: 'Comment Complaint',
 				customer: data.customer,
-				tenant: {},
+				tenant: updateCommentDto.metadata?.tenant ? updateCommentDto.metadata?.tenant : {},
 				category: data.category,
 				touchpoint: updateCommentDto.metadata.Touchpoint,
 				sections: {},
