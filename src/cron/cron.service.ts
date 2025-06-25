@@ -28,8 +28,7 @@ export class CronsService {
 	}
 
 
-	// @Cron(CronExpression.EVERY_2_HOURS)
-	@Cron(CronExpression.EVERY_30_SECONDS)
+	@Cron(CronExpression.EVERY_2_HOURS)
 	async handleCron() {
 		const status = 'Closed'
 		const page = 1
