@@ -13,7 +13,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../guards/permissions.guard';
 import { Permissions } from '../decorator/permissions.decorator';
 import { ElasticService } from 'ElasticSearch/elasticsearch.service';
-import { AddedValueServiceDto } from './dto/added-value-service.dto';
+// import { AddedValueServiceDto } from './dto/added-value-service.dto';
 import { CheckActiveServiceDto } from './dto/check-active-service.dto';
 import { LostChildChartDto } from './dto/lost-child-chart.dto';
 import { LostChildLocationChartDto } from './dto/lost-child-location-chart.dto';
@@ -38,7 +38,7 @@ export class RequestServicesController {
   @Post('added-value-service')
   @Permissions('Customer Care Center::write')
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  addedValueService(@Body() createRequestServicesDto: AddedValueServiceDto) {
+  addedValueService(@Body() createRequestServicesDto: any) {
     return this.requestServicesService.addedValueService(createRequestServicesDto);
   }
 
