@@ -89,7 +89,7 @@ export class CronsService {
 								const numbers = data[i].metadata.customer.phone_number || data[i].metadata.Company.phone_number
 								const language = data[i]?.metadata?.IsArabic ? 'ar' : 'en'
 								const message = SmsMessage[data.type]['Note Extented'][language]
-								await this.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+								await this.sendSms(numbers, message, numbers)
 							}
 						}
 					}

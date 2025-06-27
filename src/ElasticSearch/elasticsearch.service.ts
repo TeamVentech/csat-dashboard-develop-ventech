@@ -342,7 +342,7 @@ export class ElasticService {
                 });
             }
         }
-        console.log(JSON.stringify(query))
+
         const result = await this.elasticsearchService.search({
             index,
             body: {

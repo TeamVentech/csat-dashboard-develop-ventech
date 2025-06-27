@@ -63,7 +63,7 @@ export class PowerBankHandler {
 			console.warn('Cannot update service status: service ID is undefined')
 		}
 
-		const message = SmsMessage['Power Bank Request']['Item Returned'][language]
-		await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${id}/rating`, numbers)
+		const message = SmsMessage.get('Power Bank Request', 'Item Returned', language, { id })
+		await this.smsService.sendSms(numbers, message, numbers)
 	}
 }

@@ -15,6 +15,7 @@ import { MailtrapClient } from 'mailtrap'
 import { EmailService } from 'email/email.service'
 import { FilesS3Service } from 'azure-storage/aws-storage.service'
 import { SmsService } from 'sms/sms.service'
+import SmsMessages from 'requestServices/messages/smsMessages'
 
 @Injectable()
 export class TasksServices {
@@ -254,18 +255,8 @@ export class TasksServices {
 	}
 
 	private async sendSmsToCustomer(phoneNumber: string, complaintId: string, isArabic: boolean = false, messageType: string = 'resolved') {
-		const ratingLink = `https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${complaintId}/rating`
-		let message = ''
 
-		if (messageType === 'resolved') {
-			message = isArabic
-				? `زبوننا العزيز،\nتم إغلاق شكوتكم\nيرجى تقييم الخدمة من خلال الرابط\n${ratingLink}`
-				: `Dear Customer,\nWe would like to inform you that your complaint has been resolved.\nPlease rate our service by following the below link:\n${ratingLink}`
-		} else if (messageType === 'reviewing') {
-			message = isArabic
-				? `زبوننا العزيز،\nشكوتكم قيد المراجعة حالياً. سنبلغكم بأي جديد.`
-				: `Dear Customer,\nWe would like to inform you that your complaint is now being reviewed. We will keep you updated.`
-		}
+		const message = SmsMessages.get('Complaints', messageType, isArabic ? 'ar' : 'en', {id: complaintId})
 
 		await this.smsService.sendSms(null, message, phoneNumber)
 	}

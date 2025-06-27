@@ -252,11 +252,12 @@ export class RequestServicesService {
 					const language = createRequestServicesDto?.metadata?.IsArabic
 						? 'ar'
 						: 'en'
-					const message =
-						SmsMessage[createRequestServicesDto.type][voucherMessageType][language]
+
+					const message = SmsMessage.get(createRequestServicesDto.type, voucherMessageType, language, { id: savedService.id })
+
 					await this.smsService.sendSms(
 						numbers,
-						`${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`,
+						message,
 						numbers,
 					)
 				} else {
@@ -265,9 +266,9 @@ export class RequestServicesService {
 					const language = createRequestServicesDto?.metadata?.IsArabic
 						? 'ar'
 						: 'en'
-					const message =
-						SmsMessage[createRequestServicesDto.type][voucherMessageType][language]
-					await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${savedService.id}/rating`, numbers)
+					const message = SmsMessage.get(createRequestServicesDto.type, voucherMessageType, language, { id: savedService.id })
+
+					await this.smsService.sendSms(numbers, message, numbers)
 				}
 			} else {
 				// Create and save the service
@@ -732,10 +733,10 @@ export class RequestServicesService {
 		) {
 			const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
 			if (updateRequestServicesDto?.actions === 'ArticleFound') {
-				const message = SmsMessage[updateRequestServicesDto.type]['Article Found'][language]
+				const message = SmsMessage.get(updateRequestServicesDto.type, 'Article Found', language, { id: data.id })
 				await this.smsService.sendSms(
 					numbers,
-					`${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
+					message,
 					numbers,
 				)
 			} else {
@@ -749,25 +750,14 @@ export class RequestServicesService {
 			await this.smsService.sendSms(numbers, message, numbers)
 		}
 		if (updateRequestServicesDto?.actions === 'in_progress_item_7') {
-			const numbers =
-				updateRequestServicesDto?.metadata?.customer?.phone_number
-			const message =
-				SmsMessage[updateRequestServicesDto.type]['Article Not Found'][
-					language
-					]
-			await this.smsService.sendSms(numbers, `${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`, numbers)
+			const numbers = updateRequestServicesDto?.metadata?.customer?.phone_number
+			const message = SmsMessage.get(updateRequestServicesDto.type, 'Article Not Found', language, { id: data.id })
+			await this.smsService.sendSms(numbers, message, numbers)
 		}
 		if (updateRequestServicesDto?.actions === 'refunded_voucher') {
-			const numbers =
-				data?.metadata?.customer?.phone_number ||
-				data?.metadata?.Company?.phone_number
-			const message =
-				SmsMessage[updateRequestServicesDto.type]['Refunded'][language]
-			await this.smsService.sendSms(
-				numbers,
-				`${message}https://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
-				numbers,
-			)
+			const numbers = data?.metadata?.customer?.phone_number || data?.metadata?.Company?.phone_number
+			const message = SmsMessage.get(updateRequestServicesDto.type, 'Refunded', language, { id: data.id })
+			await this.smsService.sendSms(numbers, message, numbers)
 		}
 		if (updateRequestServicesDto?.actions === 'Refunded') {
 			const numbers =
@@ -824,9 +814,7 @@ export class RequestServicesService {
 			data.state !== 'Closed' &&
 			updateRequestServicesDto.state === 'Closed'
 		) {
-			if (
-				data.type === 'Incident Reporting'
-			) {
+			if (data.type === 'Incident Reporting') {
 				updateRequestServicesDto.metadata.closedAt = new Date()
 			}
 			const numbers =
@@ -834,24 +822,8 @@ export class RequestServicesService {
 				data?.metadata?.customer?.phone_number ||
 				data?.metadata?.Company?.constact?.phone_number ||
 				updateRequestServicesDto?.metadata?.parents?.phone_number
-			const message = SmsMessage[updateRequestServicesDto.type][updateRequestServicesDto.state][language]
-			if (
-				updateRequestServicesDto.type === 'Found Child' ||
-				updateRequestServicesDto.type === 'Lost Child'
-			) {
-				const messageFound = data?.metadata?.isArabic ? message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n نتمنى سلامتكم` : message + `\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating\n "Stay Safe" from City Mall`
-				await this.smsService.sendSms(
-					numbers,
-					`${messageFound}`,
-					numbers,
-				)
-			} else {
-				await this.smsService.sendSms(
-					numbers,
-					`${message}\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/${data.id}/rating`,
-					numbers,
-				)
-			}
+			const message = SmsMessage.get(updateRequestServicesDto.type, updateRequestServicesDto.state, language, { id: data.id })
+			await this.smsService.sendSms(numbers, message, numbers)
 		}
 		try {
 			await this.requestServicesRepository.update(id, updateRequestServicesDto)
