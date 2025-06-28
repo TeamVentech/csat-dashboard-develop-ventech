@@ -70,6 +70,19 @@ export class ServicesService {
     return result;
   }
 
+  async getAllServiceStatusCounts() {
+    const types = await this.servicesRepository
+      .createQueryBuilder('service')
+      .select('DISTINCT service.type', 'type')
+      .getRawMany();
+
+    const result = {};
+    for (const t of types) {
+      const type = t.type;
+      result[type] = await this.getServiceStatusCounts(type);
+    }
+    return result;
+  }
 
   async findOne(id: string) {
     const Services = await this.servicesRepository.findOne({ where: { id: id } });
@@ -100,22 +113,22 @@ export class ServicesService {
     if (!id || id.trim() === '') {
       throw new HttpException('Invalid service ID', HttpStatus.BAD_REQUEST);
     }
-    
+
     // Check if updateServicesDto has at least one property
     if (!updateServicesDto || Object.keys(updateServicesDto).length === 0) {
       throw new HttpException('Update data cannot be empty', HttpStatus.BAD_REQUEST);
     }
-    
+
     // First check if the service exists
     const service = await this.findOne(id);
-    
+
     try {
       await this.servicesRepository.update(id, updateServicesDto);
       return this.findOne(id);
     } catch (error) {
       console.error('Update error:', error);
       throw new HttpException(
-        'Failed to update service: ' + error.message, 
+        'Failed to update service: ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

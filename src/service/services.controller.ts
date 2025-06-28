@@ -60,6 +60,11 @@ export class ServicesController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.servicesService.remove(id); 
+    return this.servicesService.remove(id);
+  }
+
+  @Get('status-counts/all')
+  getAllStatusCounts() {
+    return this.servicesService.getAllServiceStatusCounts();
   }
 }
