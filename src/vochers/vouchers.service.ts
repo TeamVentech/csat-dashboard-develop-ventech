@@ -517,6 +517,39 @@ export class VouchersService {
 		await this.vouchersRepository.remove(Vouchers)
 	}
 
+	async deleteMultiple(ids: string[]) {
+		const results = []
+		for (const id of ids) {
+			try {
+				const voucher = await this.vouchersRepository.findOne({ where: { id } })
+				if (!voucher) {
+					results.push({ id, success: false, message: 'Voucher not found' })
+					continue
+				}
+				if (
+					voucher.state === 'Sold' ||
+					voucher.state === 'Extended' ||
+					voucher.state === 'Refunded'
+				) {
+					results.push({
+						id,
+						success: false,
+						message: `Cannot delete voucher with state: ${voucher.state}`,
+					})
+					continue
+				}
+				await this.remove(id)
+				results.push({ id, success: true })
+			} catch (error) {
+				results.push({ id, success: false, message: error.message })
+			}
+		}
+		return {
+			message: 'Vouchers deletion completed',
+			results,
+		}
+	}
+
 	async sendSms(data: any, message: any, number: string) {
 		return await this.smsService.sendSms(data, message, number)
 	}

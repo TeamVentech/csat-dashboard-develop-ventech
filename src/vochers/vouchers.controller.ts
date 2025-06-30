@@ -120,6 +120,15 @@ export class VouchersController {
     return this.vouchersService.remove(id);
   }
 
+  @Post('delete-multiple')
+  @Permissions('Stock Management::write')
+  async deleteMultiple(@Body('ids') ids: string[]) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new HttpException('Invalid IDs array', HttpStatus.BAD_REQUEST);
+    }
+    return await this.vouchersService.deleteMultiple(ids);
+  }
+
   @Post('send-expiry-reminders')
   async sendExpiryReminders() {
     return await this.vouchersService.sendExpiryReminders();
