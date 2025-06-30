@@ -1,4 +1,4 @@
-const ratingLink = '\nhttps://main.d3n0sp6u84gnwb.amplifyapp.com/#/services/{id}/rating'
+const ratingLink = '\nhttps://cc.ventech.co/rating/{id}'
 
 const SmsMessage = {
 	get(type: string, state: string, language: string, vars: Record<string, string> = {}): string | undefined {

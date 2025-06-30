@@ -49,7 +49,7 @@ export class TransactionSurveyService {
 			const touchpoints = await this.touchPointsService.findOne(createTransactionSurveyDto.touchpointId)
 			// Create transaction survey
 			createTransactionSurveyDto.touchpoint = {
-				name: {...touchpoints.name},
+				name: { ...touchpoints.name },
 				id: touchpoints.id,
 			}
 			const transactionSurvey = this.transactionSurveyRepository.create(createTransactionSurveyDto)
@@ -120,28 +120,30 @@ export class TransactionSurveyService {
 				await Promise.all(complaintPromises)
 			}
 
-			// Process comments
-			/*			const commentsWithAnswers = createTransactionSurveyDto.answers.filter(answer => answer.comment)
-						if (commentsWithAnswers.length > 0) {
-							const commentPromises = commentsWithAnswers.map(answer => {
-								const createCommentDto: CreateCommentDto = {
-									customerId: createTransactionSurveyDto.customerId,
-									categoryId: createTransactionSurveyDto?.categoryId || null,
-									touchpointId: createTransactionSurveyDto.touchpointId,
-									surveyId: createTransactionSurveyDto.surveyId,
-									touchpointName: touchpoint.name,
-									status: 'Open',
-									message: answer.comment,
-									type: 'Survey Comment',
-									metadata: {
-										questionId: answer.id,
-									},
-								}
-								return this.commentService.create(createCommentDto)
-							})
+			// Process comments, we exlude low rating answers because they are already handled as complaints
+			const commentsWithAnswers = createTransactionSurveyDto.answers.filter(
+				answer => answer.comment && !lowRatingAnswers.includes(answer),
+			)
+			if (commentsWithAnswers.length > 0) {
+				const commentPromises = commentsWithAnswers.map(answer => {
+					const createCommentDto: CreateCommentDto = {
+						customerId: createTransactionSurveyDto.customerId,
+						categoryId: createTransactionSurveyDto?.categoryId || null,
+						touchpointId: createTransactionSurveyDto.touchpointId,
+						surveyId: createTransactionSurveyDto.surveyId,
+						touchpointName: touchpoint.name,
+						status: 'Open',
+						message: answer.comment,
+						type: 'Survey Comment',
+						metadata: {
+							questionId: answer.id,
+						},
+					}
+					return this.commentService.create(createCommentDto)
+				})
 
-							await Promise.all(commentPromises)
-						}*/
+				await Promise.all(commentPromises)
+			}
 
 			return savedSurvey
 		} catch (error) {
@@ -223,7 +225,7 @@ export class TransactionSurveyService {
 				}
 			})
 		}
-		queryBuilder.orderBy('transactionSurvey.createdAt', 'DESC');
+		queryBuilder.orderBy('transactionSurvey.createdAt', 'DESC')
 
 		queryBuilder.andWhere('transactionSurvey.surveyId = :surveyId', { surveyId })
 
