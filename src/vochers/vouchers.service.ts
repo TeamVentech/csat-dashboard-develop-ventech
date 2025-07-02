@@ -114,6 +114,7 @@ export class VouchersService {
 				.createQueryBuilder('vouchers')
 				.where('vouchers.state NOT IN (:...statuses)', { statuses: ['Sold', 'Extended', 'Refunded'] })
 				.andWhere('vouchers.metadata->>\'Denomination\' = :denomination', { denomination: `${variables} JOD` })
+				.orderBy('vouchers.serial_number', 'ASC') // Ensures sequential selection (I hope so :) don't care too much )
 				.limit(item.Vouchers)
 				.getMany()
 			list.push({ denominations: variables, vouchers: result, Vouchers: item.Vouchers })

@@ -166,31 +166,29 @@ export class RequestServicesService {
 			}
 
 			if (createRequestServicesDto.name === 'Gift Voucher Sales') {
+
+				const availableVouchers = await this.vouchersService.GetAvailableVoucher({
+					vouchers: createRequestServicesDto.metadata.voucher,
+				})
+				if (!availableVouchers.success) {
+					throw new HttpException(availableVouchers.message, HttpStatus.BAD_REQUEST)
+				}
+
 				// Create service instance but don't save it yet
 				Service = this.requestServicesRepository.create(
 					createRequestServicesDto,
 				)
 				savedService = await queryRunner.manager.save(Service)
 
+				Service.metadata.voucher = availableVouchers.data // Use sequential vouchers todo:check this
+
 				// Recalculate the total value based on vouchers
 				let totalValue = 0
-				for (let i = 0; i < Service.metadata.voucher.length; i++) {
-					const denomination = parseInt(
-						Service.metadata.voucher[i].denominations,
-					)
-
-					// Count only vouchers that are not in "Refunded" state
-					let countedVouchers = 0
-					for (
-						let j = 0;
-						j < Service.metadata.voucher[i].vouchers.length;
-						j++
-					) {
-						if (Service.metadata.voucher[i].vouchers[j].state !== 'Refunded') {
-							countedVouchers++
-						}
-					}
-
+				for (const voucherGroup of Service.metadata.voucher) {
+					const denomination = parseInt(voucherGroup.denominations)
+					const countedVouchers = voucherGroup.vouchers.filter(
+						(v) => v.state !== 'Refunded',
+					).length
 					totalValue += denomination * countedVouchers
 				}
 
@@ -200,35 +198,18 @@ export class RequestServicesService {
 				// Resave the service with updated total value
 				savedService = await queryRunner.manager.save(Service)
 
-				// Update vouchers first - if this fails, we won't save the service
-				for (let i = 0; i < Service.metadata.voucher.length; i++) {
-					for (
-						let j = 0;
-						j < Service.metadata.voucher[i].vouchers.length;
-						j++
-					) {
-						Service.metadata.voucher[i].vouchers[j].metadata.Client_ID =
-							Service.metadata.customer.id || Service.metadata.Company.id
-						Service.metadata.voucher[i].vouchers[j].state = 'Sold'
-						Service.metadata.voucher[i].vouchers[j].metadata.status = 'Sold'
-						Service.metadata.voucher[i].vouchers[j].metadata.purchase_reason =
-							Service?.metadata?.reason_purchase
-						Service.metadata.voucher[i].vouchers[j].metadata.date_sale =
-							new Date()
-						Service.metadata.voucher[i].vouchers[j].metadata.transaction_id =
-							Service.id
-						Service.metadata.voucher[i].vouchers[j].metadata.expired_date =
-							Service.metadata.Expiry_date
-						Service.metadata.voucher[i].vouchers[j].metadata.transactionSubId =
-							savedService.serviceId
-						Service.metadata.voucher[i].vouchers[j].metadata.type_sale =
-							Service.type === 'Corporate Voucher Sale'
-								? 'Company'
-								: 'Individual'
-						await this.vouchersService.update(
-							Service.metadata.voucher[i].vouchers[j].id,
-							Service.metadata.voucher[i].vouchers[j],
-						)
+				for (const voucherGroup of Service.metadata.voucher) {
+					for (const voucher of voucherGroup.vouchers) {
+						voucher.metadata.Client_ID = Service.metadata.customer?.id || Service.metadata.Company?.id
+						voucher.state = 'Sold'
+						voucher.metadata.status = 'Sold'
+						voucher.metadata.purchase_reason = Service?.metadata?.reason_purchase
+						voucher.metadata.date_sale = new Date()
+						voucher.metadata.transaction_id = Service.id
+						voucher.metadata.expired_date = Service.metadata.Expiry_date
+						voucher.metadata.transactionSubId = savedService.serviceId
+						voucher.metadata.type_sale = Service.type === 'Corporate Voucher Sale' ? 'Company' : 'Individual'
+						await this.vouchersService.update(voucher.id, voucher)
 					}
 				}
 
@@ -581,40 +562,19 @@ export class RequestServicesService {
 			await this.smsService.sendSms(numbers, message, numbers)
 
 		}
-		if (
-			updateRequestServicesDto.name === 'Gift Voucher Sales' &&
-			updateRequestServicesDto.metadata &&
-			updateRequestServicesDto.metadata.voucher
-		) {
+		// update vouchers total value
+		if (updateRequestServicesDto.name === 'Gift Voucher Sales' && updateRequestServicesDto.metadata?.voucher) {
 			let totalValue = 0
-			for (
-				let i = 0;
-				i < updateRequestServicesDto.metadata.voucher.length;
-				i++
-			) {
-				const denomination = parseInt(
-					updateRequestServicesDto.metadata.voucher[i].denominations,
-				)
-
-				// Count only vouchers that are not in "Refunded" state
-				let countedVouchers = 0
-				for (
-					let j = 0;
-					j < updateRequestServicesDto.metadata.voucher[i].vouchers.length;
-					j++
-				) {
-					if (
-						updateRequestServicesDto.metadata.voucher[i].vouchers[j].state !==
-						'Refunded'
-					) {
-						countedVouchers++
-					}
-				}
-
+			for (const voucherGroup of updateRequestServicesDto.metadata.voucher) {
+				const denomination = parseInt(voucherGroup.denominations)
+				const countedVouchers = voucherGroup.vouchers.filter(
+					(v) => v.state !== 'Refunded',
+				).length
 				totalValue += denomination * countedVouchers
 			}
 			updateRequestServicesDto.metadata.value = totalValue
 		}
+
 		//update vouchers metadata when purchase reason is changed
 		if (updateRequestServicesDto.name === 'Gift Voucher Sales' && data?.metadata?.purchase_reason !== updateRequestServicesDto?.metadata?.purchase_reason) {
 			for (let i = 0; i < data.metadata.voucher.length; i++) {
